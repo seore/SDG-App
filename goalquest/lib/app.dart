@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:goalquest/models/mission.dart';
 import 'screens/home_screen.dart';
 import 'screens/community_screen.dart';
 import 'screens/daily_missions_screen.dart';
 import 'screens/mission_detail_screen.dart';
 import 'screens/sdg_map_screen.dart';
 import 'screens/mini_games_screen.dart';
+import 'screens/onboarding.dart';
 import 'screens/quiz_game_screen.dart';
 import 'screens/impact_dashboard_screen.dart';
 import 'screens/community_screen.dart';

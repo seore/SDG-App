@@ -85,32 +85,32 @@ class HomeScreen extends StatelessWidget {
               children: [
                 _FeatureChip(
                   icon: Icons.public,
-                  label: 'SDG Map',
+                  label: ' SDG Map',
                   onTap: () => Navigator.pushNamed(context, '/sdgMap'),
                 ),
                 _FeatureChip(
                   icon: Icons.flag,
-                  label: 'All Missions',
+                  label: ' All Missions',
                   onTap: () => Navigator.pushNamed(context, '/dailyMission'),
                 ),
                 _FeatureChip(
                   icon: Icons.videogame_asset,
-                  label: 'Mini Games',
+                  label: ' Mini Games',
                   onTap: () => Navigator.pushNamed(context, '/miniGames'),
                 ),
                 _FeatureChip(
                   icon: Icons.insights,
-                  label: 'Impact',
+                  label: ' Impact',
                   onTap: () => Navigator.pushNamed(context, '/impactDashboard'),
                 ),
                 _FeatureChip(
                   icon: Icons.groups,
-                  label: 'Community',
+                  label: ' Community',
                   onTap: () => Navigator.pushNamed(context, '/community'),
                 ),
                 _FeatureChip(
                   icon: Icons.menu_book,
-                  label: 'Learn SDGs',
+                  label: ' Learn SDGs',
                   onTap: () => Navigator.pushNamed(context, '/learnSdg', arguments: 1),
                 ),
               ],
