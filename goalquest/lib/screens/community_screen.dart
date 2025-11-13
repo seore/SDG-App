@@ -1,94 +1,141 @@
 import 'package:flutter/material.dart';
+import '../services/live_data_service.dart';
+import '../data/sdg_data.dart';
 
 class CommunityScreen extends StatelessWidget {
   const CommunityScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final localOrgs = [
-      {
-        'name': 'Green Youth Club',
-        'location': 'Local Community Centre',
-        'focus': 'Tree planting & clean-ups',
-      },
-      {
-        'name': 'Food Share Initiative',
-        'location': 'City Food Bank',
-        'focus': 'Reducing food waste',
-      },
-    ];
-
-    final stories = [
-      {
-        'author': 'Amina',
-        'text': 'Our class cleaned up the school playground and sorted all the trash!',
-      },
-      {
-        'author': 'Leo',
-        'text': 'I convinced my family to switch to reusable water bottles this month 💧',
-      },
-    ];
+    final liveData = LiveDataService.instance;
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Community & Actions'),
       ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          Text(
-            'Local Initiatives',
-            style: Theme.of(context).textTheme.titleMedium,
-          ),
-          const SizedBox(height: 8),
-          ...localOrgs.map(
-            (org) => Card(
-              margin: const EdgeInsets.only(bottom: 8),
-              child: ListTile(
-                title: Text(org['name']!),
-                subtitle: Text('${org['location']} • ${org['focus']}'),
-                trailing: const Icon(Icons.open_in_new),
-                onTap: () {
-                  // later will open website/map or contact
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Details for ${org['name']} coming soon!'),
-                    ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          children: [
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                'Community Stories',
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Expanded(
+              child: StreamBuilder<List<CommunityStory>>(
+                stream: liveData.storiesStream,
+                builder: (context, snapshot) {
+                  final stories = snapshot.data ?? [];
+
+                  if (stories.isEmpty) {
+                    return const Center(
+                      child: Text('No stories yet. Be the first to share!'),
+                    );
+                  }
+
+                  return ListView.builder(
+                    itemCount: stories.length,
+                    itemBuilder: (context, index) {
+                      final story = stories[index];
+                      final sdg = story.sdgNumber != null
+                          ? getSdgByNumber(story.sdgNumber!)
+                          : null;
+
+                      return Card(
+                        margin: const EdgeInsets.only(bottom: 8),
+                        child: ListTile(
+                          title: Text(story.userName),
+                          subtitle: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              if (sdg != null)
+                                Text(
+                                  'SDG ${sdg.number}: ${sdg.shortTitle}',
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              const SizedBox(height: 4),
+                              Text(story.message),
+                              const SizedBox(height: 4),
+                              Text(
+                                _timeAgo(story.createdAt),
+                                style: const TextStyle(
+                                  fontSize: 11,
+                                  color: Colors.grey,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
                   );
                 },
               ),
             ),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            'Community Stories',
-            style: Theme.of(context).textTheme.titleMedium,
-          ),
-          const SizedBox(height: 8),
-          ...stories.map(
-            (story) => Card(
-              margin: const EdgeInsets.only(bottom: 8),
-              child: ListTile(
-                title: Text(story['author']!),
-                subtitle: Text(story['text']!),
-              ),
+            const SizedBox(height: 8),
+            ElevatedButton.icon(
+              onPressed: () async {
+                // simple demo input
+                final message = await _showStoryDialog(context);
+                if (message != null && message.trim().isNotEmpty) {
+                  liveData.addStory(
+                    CommunityStory(
+                      userName: 'You',
+                      message: message.trim(),
+                      sdgNumber: null,
+                      createdAt: DateTime.now(),
+                    ),
+                  );
+                }
+              },
+              icon: const Icon(Icons.add),
+              label: const Text('Share your story'),
             ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<String?> _showStoryDialog(BuildContext context) async {
+    final controller = TextEditingController();
+    return showDialog<String>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Share your story'),
+        content: TextField(
+          controller: controller,
+          maxLines: 3,
+          decoration: const InputDecoration(
+            hintText: 'What action did you take today?',
           ),
-          const SizedBox(height: 12),
-          ElevatedButton.icon(
-            onPressed: () {
-              // later will open "Share Story" form
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Story sharing coming soon!'),
-                ),
-              );
-            },
-            icon: const Icon(Icons.add),
-            label: const Text('Share your story'),
-          )
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, controller.text),
+            child: const Text('Post'),
+          ),
         ],
       ),
     );
+  }
+
+  String _timeAgo(DateTime time) {
+    final diff = DateTime.now().difference(time);
+    if (diff.inMinutes < 1) return 'Just now';
+    if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
+    if (diff.inHours < 24) return '${diff.inHours}h ago';
+    return '${diff.inDays}d ago';
   }
 }

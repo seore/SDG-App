@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
+import '../data/sdg_data.dart';
 
 class SdgMapScreen extends StatelessWidget {
   const SdgMapScreen({super.key});
@@ -12,20 +12,34 @@ class SdgMapScreen extends StatelessWidget {
       ),
       body: Column(
         children: [
+          // Map / globe placeholder with a nicer style
           Container(
             margin: const EdgeInsets.all(16),
             height: 180,
             decoration: BoxDecoration(
-              color: Colors.blue[50],
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(24),
+              gradient: const LinearGradient(
+                colors: [
+                  Color(0xFF4CAF50),
+                  Color(0xFF2196F3),
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
             ),
             child: const Center(
               child: Text(
-                'Interactice gloabe coming soon\n(Tap SDGs below to explore)',
+                '🌍 SDG World\nTap a goal below to explore missions & stories.',
                 textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ),
           ),
+
           const Padding(
             padding: EdgeInsets.symmetric(horizontal: 16.0),
             child: Align(
@@ -36,56 +50,74 @@ class SdgMapScreen extends StatelessWidget {
               ),
             ),
           ),
+
           const SizedBox(height: 8),
 
           Expanded(
             child: GridView.builder(
-              padding: EdgeInsets.all(16),
-              itemCount: 17,
+              padding: const EdgeInsets.all(16),
+              itemCount: sdgGoals.length,
               gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: 3,
                 mainAxisSpacing: 10,
                 crossAxisSpacing: 10,
               ),
-              itemBuilder: (context, idx) {
-                final sdgNumber = idx + 1;
+              itemBuilder: (context, index) {
+                final sdg = sdgGoals[index];
                 return GestureDetector(
                   onTap: () {
                     Navigator.pushNamed(
                       context,
                       '/learnSdg',
-                      arguments: sdgNumber,
+                      arguments: sdg.number,
                     );
                   },
                   child: Container(
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: sdg.color,
                       borderRadius: BorderRadius.circular(12),
                       boxShadow: const [
                         BoxShadow(
                           offset: Offset(0, 1),
                           blurRadius: 3,
-                          color: Colors.black12,
+                          color: Colors.black26,
                         )
                       ],
                     ),
-                  child: Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        CircleAvatar(
-                          child: Text('$sdgNumber'),
-                        ),
-                        const SizedBox(height: 6),
-                        Text(
-                          'SDG $sdgNumber',
-                          style: const TextStyle(fontSize: 12),
-                          textAlign: TextAlign.center,
-                        ),
-                      ],
+                    child: Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          CircleAvatar(
+                            backgroundColor: Colors.white,
+                            child: Text(
+                              '${sdg.number}',
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Padding(
+                            padding:
+                                const EdgeInsets.symmetric(horizontal: 4.0),
+                            child: Text(
+                              sdg.shortTitle,
+                              style: const TextStyle(
+                                fontSize: 11,
+                                color: Colors.white,
+                                fontWeight: FontWeight.w600,
+                              ),
+                              textAlign: TextAlign.center,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                  )
-                ));
+                  ),
+                );
               },
             ),
           ),

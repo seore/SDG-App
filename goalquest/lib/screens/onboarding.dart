@@ -20,7 +20,7 @@ class OnboardingScreen extends StatelessWidget {
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 15),
               const Text(
                 'Make the SDGs personal, fun, and achievable — one action at a time.\n\n'
                 'Complete daily missions, play mini-games, and track your impact.',

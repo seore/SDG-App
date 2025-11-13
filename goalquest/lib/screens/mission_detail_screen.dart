@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/mission.dart';
+import '../services/live_data_service.dart';
+import '../data/sdg_data.dart';
 
 class MissionDetailScreen extends StatelessWidget {
   final Mission mission;
@@ -8,6 +10,8 @@ class MissionDetailScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final sdgNumber = _extractSdgNumber(mission.sdg);
+
     return Scaffold(
       appBar: AppBar(
         title: Text(mission.title),
@@ -42,8 +46,16 @@ class MissionDetailScreen extends StatelessWidget {
               width: double.infinity,
               child: ElevatedButton.icon(
                 onPressed: () {
-                  // For now it just show a message and go back.
-                  // Later there will be an update XP, mark as completed, sync to storage/Firebase.
+                  // Fake username for now, later from auth/profile
+                  LiveDataService.instance.addCompletion(
+                    LiveMissionCompletion(
+                      userName: 'You',
+                      missionTitle: mission.title,
+                      sdgNumber: sdgNumber ?? 0,
+                      timestamp: DateTime.now(),
+                    ),
+                  );
+
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text(
@@ -67,5 +79,14 @@ class MissionDetailScreen extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  int? _extractSdgNumber(String sdgLabel) {
+    // If your mission.sdg is like "SDG 7: Affordable and Clean Energy"
+    final match = RegExp(r'SDG\s+(\d+)').firstMatch(sdgLabel);
+    if (match != null) {
+      return int.tryParse(match.group(1)!);
+    }
+    return null;
   }
 }

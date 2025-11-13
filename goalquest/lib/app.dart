@@ -37,10 +37,21 @@ class GoalQuestApp extends StatelessWidget {
           case '/dailyMissions':
             return MaterialPageRoute(builder: (_) => const DailyMissionsScreen());
           case '/missionDetail':
-            final mission = settings.arguments as Mission;
-            return MaterialPageRoute(
-              builder: (_) => MissionDetailScreen(mission: mission),
-            );
+             final args = settings.arguments;
+             if (args is Mission) {
+              return MaterialPageRoute(
+                builder: (_) => MissionDetailScreen(mission: args),
+              );
+              } else {
+                // Fallback if arguments are missing/wrong
+                return MaterialPageRoute(
+                  builder: (_) => const Scaffold(
+                    body: Center(
+                      child: Text('No mission data provided.'),
+                    ),
+                  ),
+                );
+              }
           case '/sdgMap':
             return MaterialPageRoute(builder: (_) => const SdgMapScreen());
           case '/miniGames':

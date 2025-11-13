@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import '../data/dummy_missions.dart';
 import '../models/mission.dart';
+import '../data/sdg_data.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
   Mission get _dailyMission => dummyMissions.first;
+  SdgGoal get _featuredSdg => getSdgByNumber(13) ?? sdgGoals.first;
 
   @override
   Widget build(BuildContext context) {
@@ -28,71 +30,119 @@ class HomeScreen extends StatelessWidget {
                 minHeight: 10,
               ),
             ),
-            const SizedBox(height: 8),
-            Card(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadiusGeometry.circular(16),
-              ),
-              elevation: 3,
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      _dailyMission.title,
-                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      _dailyMission.description,
-                      style: const TextStyle(fontSize: 14),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      '${_dailyMission.sdg} ${_dailyMission.xp} XP', 
-                      style: const TextStyle(fontSize: 12, color: Colors.grey),
-                    ),
-                    const SizedBox(height: 12),
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        onPressed: () {
-                          Navigator.pushNamed(
-                            context, 
-                            '/missionDetail',
-                            arguments: _dailyMission,
-                          );
-                        },
-                        child: const Text('Start Mission'),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 24),
-
-            //Quick Mission Navigator
-            Text(
-              'Explore',
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
             const SizedBox(height: 12),
-            Wrap(
-              spacing: 12,
-              runSpacing: 12,
+            Container(
+              decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(16),
+              gradient: LinearGradient(
+                colors: [
+                  _featuredSdg.color.withOpacity(0.9),
+                  _featuredSdg.color.withOpacity(0.6),
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+            ),
+            padding: const EdgeInsets.all(16),
+            child: Row(
               children: [
-                _FeatureChip(
-                  icon: Icons.public,
-                  label: ' SDG Map',
-                  onTap: () => Navigator.pushNamed(context, '/sdgMap'),
+                const Text(
+                  '⭐ Featured SDG',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
-                _FeatureChip(
-                  icon: Icons.flag,
-                  label: ' All Missions',
-                  onTap: () => Navigator.pushNamed(context, '/dailyMission'),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'SDG ${_featuredSdg.number}: ${_featuredSdg.shortTitle}',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
                 ),
+                IconButton(
+                  onPressed: () {
+                    Navigator.pushNamed(
+                      context,
+                      '/learnSdg',
+                      arguments: _featuredSdg.number,
+                    );
+                  },
+                  icon: const Icon(Icons.arrow_forward, color: Colors.white),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          Card(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadiusGeometry.circular(16),
+            ),
+            elevation: 3,
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    _dailyMission.title,
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    _dailyMission.description,
+                    style: const TextStyle(fontSize: 14),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    '${_dailyMission.sdg} ${_dailyMission.xp} XP', 
+                    style: const TextStyle(fontSize: 12, color: Colors.grey),
+                  ),
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        Navigator.pushNamed(
+                          context, 
+                          '/missionDetail',
+                          arguments: _dailyMission,
+                        );
+                      },
+                      child: const Text('Start Mission'),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 24),
+
+          //Quick Mission Navigator
+          Text(
+            'Explore',
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 12,
+            runSpacing: 12,
+            children: [
+              _FeatureChip(
+                icon: Icons.public,
+                label: ' SDG Map',
+                onTap: () => Navigator.pushNamed(context, '/sdgMap'),
+              ),
+              _FeatureChip(
+                icon: Icons.flag,
+                label: ' All Missions',
+                onTap: () => Navigator.pushNamed(context, '/dailyMissions'),
+              ),
                 _FeatureChip(
                   icon: Icons.videogame_asset,
                   label: ' Mini Games',

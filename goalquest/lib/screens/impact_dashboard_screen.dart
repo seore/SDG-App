@@ -1,88 +1,84 @@
 import 'package:flutter/material.dart';
+import '../services/live_data_service.dart';
+import '../data/sdg_data.dart';
 
 class ImpactDashboardScreen extends StatelessWidget {
   const ImpactDashboardScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    // Placeholder stats, later from Firebase
-    const int missionsCompleted = 5;
-    const int totalXp = 150;
-    const int energyHoursSaved = 3;
-    const int plasticActions = 4;
-    const int waterActions = 2;
+    final liveData = LiveDataService.instance;
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Your Impact'),
       ),
       body: Padding(
-        padding: const EdgeInsets.all(20.0),
+        padding: const EdgeInsets.all(16.0),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Overview',
-                style: Theme.of(context).textTheme.titleLarge),
-            const SizedBox(height: 12),
-            _ImpactCard(
-              title: 'Missions Completed',
-              value: '$missionsCompleted',
-              emoji: '✅',
+            // Top: some static summary for now
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                'Live Impact Feed',
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
             ),
-            _ImpactCard(
-              title: 'Total XP',
-              value: '$totalXp',
-              emoji: '⭐️',
-            ),
-            const SizedBox(height: 24),
-            Text('Estimated Impact',
-                style: Theme.of(context).textTheme.titleLarge),
-            const SizedBox(height: 12),
-            _ImpactCard(
-              title: 'Energy saved',
-              value: '$energyHoursSaved hours',
-              emoji: '💡',
-            ),
-            _ImpactCard(
-              title: 'Plastic-free actions',
-              value: '$plasticActions',
-              emoji: '🧴',
-            ),
-            _ImpactCard(
-              title: 'Water-saving actions',
-              value: '$waterActions',
-              emoji: '🚿',
+            const SizedBox(height: 8),
+            Expanded(
+              child: StreamBuilder<List<LiveMissionCompletion>>(
+                stream: liveData.completionsStream,
+                builder: (context, snapshot) {
+                  final completions = snapshot.data ?? [];
+
+                  if (completions.isEmpty) {
+                    return const Center(
+                      child: Text('No missions completed yet.'),
+                    );
+                  }
+
+                  return ListView.builder(
+                    itemCount: completions.length,
+                    itemBuilder: (context, index) {
+                      final c = completions[index];
+                      final sdg = getSdgByNumber(c.sdgNumber);
+                      return ListTile(
+                        leading: CircleAvatar(
+                          backgroundColor:
+                              sdg?.color ?? Colors.green.withOpacity(0.7),
+                          child: Text(
+                            sdg != null ? '${sdg.number}' : '?',
+                            style: const TextStyle(color: Colors.white),
+                          ),
+                        ),
+                        title: Text('${c.userName} completed "${c.missionTitle}"'),
+                        subtitle: Text(
+                          sdg != null
+                              ? 'SDG ${sdg.number}: ${sdg.shortTitle}'
+                              : 'SDG',
+                        ),
+                        trailing: Text(
+                          _timeAgo(c.timestamp),
+                          style: const TextStyle(fontSize: 11),
+                        ),
+                      );
+                    },
+                  );
+                },
+              ),
             ),
           ],
         ),
       ),
     );
   }
-}
 
-class _ImpactCard extends StatelessWidget {
-  final String title;
-  final String value;
-  final String emoji;
-
-  const _ImpactCard({
-    required this.title,
-    required this.value,
-    required this.emoji,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      child: ListTile(
-        leading: Text(
-          emoji,
-          style: const TextStyle(fontSize: 28),
-        ),
-        title: Text(title),
-        subtitle: Text(value),
-      ),
-    );
+  String _timeAgo(DateTime time) {
+    final diff = DateTime.now().difference(time);
+    if (diff.inMinutes < 1) return 'Just now';
+    if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
+    if (diff.inHours < 24) return '${diff.inHours}h ago';
+    return '${diff.inDays}d ago';
   }
 }
