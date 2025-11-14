@@ -24,12 +24,14 @@ class CommunityStory {
   final String message;
   final int? sdgNumber;
   final DateTime createdAt;
+  final String? photoUrl;
 
   CommunityStory({
     required this.userName,
     required this.message,
     this.sdgNumber,
     required this.createdAt,
+    this.photoUrl,
   });
 }
 
@@ -93,11 +95,13 @@ class LiveDataService {
     required String userName,
     required String message,
     int? sdgNumber,
+    String? photoUrl,
   }) async {
     await _supabase.from('stories').insert({
       'user_name': userName,
       'message': message,
       'sdg_number': sdgNumber,
+      'photo_url': photoUrl,
     });
 
     final story = CommunityStory(
@@ -105,6 +109,7 @@ class LiveDataService {
       message: message,
       sdgNumber: sdgNumber,
       createdAt: DateTime.now(),
+      photoUrl: photoUrl,
     );
     _stories.insert(0, story);
     _storiesController.add(List.unmodifiable(_stories));
@@ -151,6 +156,7 @@ class LiveDataService {
               message: record['message'] as String,
               sdgNumber: record['sdg_number'] as int?,
               createdAt: DateTime.parse(record['created_at'] as String),
+              photoUrl: record['photo_url'] as String?,
             );
             _stories.insert(0, story);
             _storiesController.add(List.unmodifiable(_stories));

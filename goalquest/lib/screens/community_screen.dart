@@ -47,22 +47,46 @@ class CommunityScreen extends StatelessWidget {
 
                       return Card(
                         margin: const EdgeInsets.only(bottom: 8),
-                        child: ListTile(
-                          title: Text(story.userName),
-                          subtitle: Column(
+                        child: Padding(
+                          padding: const EdgeInsets.all(12.0),
+                          child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
+                              Text(
+                                story.userName,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              
                               if (sdg != null)
-                                Text(
-                                  'SDG ${sdg.number}: ${sdg.shortTitle}',
-                                  style: const TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w600,
+                              Text(
+                                'SDG ${sdg.number}: ${sdg.shortTitle}',
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              
+                              Text(story.message),
+                              
+                              const SizedBox(height: 8),
+                              
+                              if (story.photoUrl != null)
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(12),
+                                child: AspectRatio(
+                                  aspectRatio: 4 / 3,
+                                  child: Image.network(
+                                    story.photoUrl!,
+                                    fit: BoxFit.cover,
                                   ),
                                 ),
-                              const SizedBox(height: 4),
-                              Text(story.message),
-                              const SizedBox(height: 4),
+                              ),
+                              const SizedBox(height: 8),
+                              
                               Text(
                                 _timeAgo(story.createdAt),
                                 style: const TextStyle(
