@@ -23,12 +23,12 @@ class _LiveMapScreenState extends State<LiveMapScreen> {
     const mapTilerKey = '3rVFwyPIYfIsi40EV36l';
 
     final tileUrl = isDark 
-    ? 'https://api.maptiler.com/maps/toner-v2/{z}/{x}/{y}.png?key=$mapTilerKey'
-    : 'https://api.maptiler.com/maps/landscape-v4/{z}/{x}/{y}.png?key=$mapTilerKey';
+    ? 'https://api.maptiler.com/maps/pastel/{z}/{x}/{y}.png?key=$mapTilerKey'
+    : 'https://api.maptiler.com/maps/streets-v2/{z}/{x}/{y}.png?key=$mapTilerKey';
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Live Impact Map'),
+        title: const Text('Live SDG Map'),
       ),
       body: Column(
         children: [
@@ -208,11 +208,13 @@ class _LiveMapScreenState extends State<LiveMapScreen> {
                       ),
                       children: [
                         TileLayer(
-                          urlTemplate:
-                              'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                          urlTemplate: tileUrl,
                           userAgentPackageName: 'com.example.goalquest',
+                          retinaMode: true,
                         ),
-                        MarkerLayer(markers: markers),
+                        if (heatCircles.isNotEmpty) 
+                          CircleLayer(circles: heatCircles),
+                          MarkerLayer(markers: markers),
                       ],
                     ),
                     Positioned(
