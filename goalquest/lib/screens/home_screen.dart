@@ -11,160 +11,218 @@ class HomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Scaffold(
-      appBar: AppBar(title: const Text('SDG Goals')),
+      appBar: AppBar(
+        title: const Text('Your Journey'),
+      ),
       body: SafeArea(
         child: ListView(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           children: [
-            // XP value
-            const Text(
-              'Level 1 Trailblazer',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 8),
-            ClipRRect(
-              borderRadius: BorderRadiusGeometry.circular(12),
-              child: const LinearProgressIndicator(
-                value: 0.3,
-                minHeight: 10,
+            // Level + XP
+            Text(
+              'Hi Trailblazer 👋',
+              style: theme.textTheme.titleMedium!.copyWith(
+                fontWeight: FontWeight.w700,
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 4),
+            Text(
+              'Ready for today’s impact?',
+              style: theme.textTheme.bodyMedium!
+                  .copyWith(color: Colors.grey[700]),
+            ),
+            const SizedBox(height: 16),
+            Card(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Level 1 • Trailblazer',
+                      style: theme.textTheme.bodyMedium!.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(20),
+                      child: const LinearProgressIndicator(
+                        value: 0.0,
+                        minHeight: 10,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '0 / 100 XP to next level',
+                      style: theme.textTheme.labelSmall!
+                          .copyWith(color: Colors.grey[600]),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 16),
+
+            // Featured SDG
             Container(
               decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(16),
-              gradient: LinearGradient(
-                colors: [
-                  _featuredSdg.color.withOpacity(0.9),
-                  _featuredSdg.color.withOpacity(0.6),
-                ],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-            ),
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              children: [
-                const Text(
-                  '⭐ Featured SDG',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                  ),
+                borderRadius: BorderRadius.circular(20),
+                gradient: LinearGradient(
+                  colors: [
+                    _featuredSdg.color.withOpacity(0.95),
+                    _featuredSdg.color.withOpacity(0.7),
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    'SDG ${_featuredSdg.number}: ${_featuredSdg.shortTitle}',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
+              ),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+              child: Row(
+                children: [
+                  CircleAvatar(
+                    backgroundColor: Colors.white,
+                    child: Text(
+                      '${_featuredSdg.number}',
+                      style: const TextStyle(fontWeight: FontWeight.bold),
                     ),
                   ),
-                ),
-                IconButton(
-                  onPressed: () {
-                    Navigator.pushNamed(
-                      context,
-                      '/learnSdg',
-                      arguments: _featuredSdg.number,
-                    );
-                  },
-                  icon: const Icon(Icons.arrow_forward, color: Colors.white),
-                ),
-              ],
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      'Featured SDG: ${_featuredSdg.shortTitle}',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: () {
+                      Navigator.pushNamed(
+                        context,
+                        '/learnSdg',
+                        arguments: _featuredSdg.number,
+                      );
+                    },
+                    icon: const Icon(Icons.arrow_forward, color: Colors.white),
+                  ),
+                ],
+              ),
             ),
-          ),
-          const SizedBox(height: 16),
 
-          Card(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadiusGeometry.circular(16),
+            const SizedBox(height: 20),
+
+            // Daily mission
+            Text(
+              'Today’s mission',
+              style: theme.textTheme.titleMedium!
+                  .copyWith(fontWeight: FontWeight.w600),
             ),
-            elevation: 3,
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    _dailyMission.title,
-                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    _dailyMission.description,
-                    style: const TextStyle(fontSize: 14),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    '${_dailyMission.sdg} ${_dailyMission.xp} XP', 
-                    style: const TextStyle(fontSize: 12, color: Colors.grey),
-                  ),
-                  const SizedBox(height: 12),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
+            const SizedBox(height: 8),
+            Card(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(18),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Row(
+                  children: [
+                    const CircleAvatar(
+                      radius: 25,
+                      child: Text('🔥'),
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            _dailyMission.title,
+                            style: theme.textTheme.bodyMedium!.copyWith(
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            '${_dailyMission.sdg} • ${_dailyMission.xp} XP',
+                            style: theme.textTheme.bodySmall!
+                                .copyWith(color: Colors.grey[600]),
+                          ),
+                        ],
+                      ),
+                    ),
+                    ElevatedButton(
                       onPressed: () {
                         Navigator.pushNamed(
-                          context, 
+                          context,
                           '/missionDetail',
                           arguments: _dailyMission,
                         );
                       },
-                      child: const Text('Start Mission'),
+                      child: const Text('Start'),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
-          ),
-          const SizedBox(height: 24),
 
-          //Quick Mission Navigator
-          Text(
-            'Explore',
-            style: Theme.of(context).textTheme.titleMedium,
-          ),
-          const SizedBox(height: 12),
-          Wrap(
-            spacing: 12,
-            runSpacing: 12,
-            children: [
-              _FeatureChip(
-                icon: Icons.public,
-                label: ' SDG Map',
-                onTap: () => Navigator.pushNamed(context, '/sdgMap'),
-              ),
-              _FeatureChip(
-                icon: Icons.flag,
-                label: ' All Missions',
-                onTap: () => Navigator.pushNamed(context, '/dailyMissions'),
-              ),
+            const SizedBox(height: 20),
+
+            // Explore section
+            Text(
+              'Explore',
+              style: theme.textTheme.titleMedium!
+                  .copyWith(fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 10),
+            Wrap(
+              spacing: 12,
+              runSpacing: 12,
+              children: [
+                _FeatureChip(
+                  icon: Icons.public,
+                  label: 'SDG Map',
+                  onTap: () => Navigator.pushNamed(context, '/sdgMap'),
+                ),
+                _FeatureChip(
+                  icon: Icons.flag,
+                  label: 'All missions',
+                  onTap: () => Navigator.pushNamed(context, '/dailyMissions'),
+                ),
                 _FeatureChip(
                   icon: Icons.videogame_asset,
-                  label: ' Mini Games',
+                  label: 'Mini-games',
                   onTap: () => Navigator.pushNamed(context, '/miniGames'),
                 ),
                 _FeatureChip(
                   icon: Icons.insights,
-                  label: ' Impact',
-                  onTap: () => Navigator.pushNamed(context, '/impactDashboard'),
+                  label: 'Impact',
+                  onTap: () =>
+                      Navigator.pushNamed(context, '/impactDashboard'),
                 ),
                 _FeatureChip(
                   icon: Icons.groups,
-                  label: ' Community',
+                  label: 'Community',
                   onTap: () => Navigator.pushNamed(context, '/community'),
                 ),
                 _FeatureChip(
                   icon: Icons.menu_book,
-                  label: ' Learn SDGs',
-                  onTap: () => Navigator.pushNamed(context, '/learnSdg', arguments: 1),
+                  label: 'Learn SDGs',
+                  onTap: () =>
+                      Navigator.pushNamed(context, '/learnSdg', arguments: 1),
                 ),
               ],
-            )
+            ),
           ],
         ),
       ),
@@ -177,7 +235,7 @@ class _FeatureChip extends StatelessWidget {
   final String label;
   final VoidCallback onTap;
 
-  const _FeatureChip ({
+  const _FeatureChip({
     required this.icon,
     required this.label,
     required this.onTap,
@@ -185,34 +243,38 @@ class _FeatureChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final width =
+        (MediaQuery.of(context).size.width - 16 * 2 - 12) / 2; 
     return InkWell(
-      borderRadius: BorderRadius.circular(16),
+      borderRadius: BorderRadius.circular(18),
       onTap: onTap,
       child: Container(
-        width: (MediaQuery.of(context).size.width - 16 * 2 -12) /2,
-        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+        width: width,
+        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 10),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(18),
           boxShadow: const [
             BoxShadow(
-              offset: Offset(0, 2),
-              blurRadius: 4,
+              offset: Offset(0, 3),
+              blurRadius: 6,
               color: Colors.black12,
-            )
+            ),
           ],
         ),
         child: Row(
-          mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon),
-            const SizedBox(height: 8),
+            Icon(icon, size: 22),
+            const SizedBox(width: 8),
             Expanded(
               child: Text(
                 label,
-                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
-            )
+            ),
           ],
         ),
       ),

@@ -10,6 +10,7 @@ class MissionDetailScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final sdgNumber = _extractSdgNumber(mission.sdg);
 
     return Scaffold(
@@ -36,10 +37,32 @@ class MissionDetailScreen extends StatelessWidget {
                 color: Colors.grey,
               ),
             ),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(18),
+                color: theme.colorScheme.primary.withOpacity(0.08),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    mission.sdg,
+                    style: theme.textTheme.labelLarge!.copyWith(fontWeight: FontWeight.w600),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    '${mission.xp} XP',
+                    style: theme.textTheme.bodySmall!.copyWith(color: Colors.grey[70]),
+                  ),
+                ],
+              ),
+            ),
             const SizedBox(height: 16),
             Text(
               mission.description,
-              style: const TextStyle(fontSize: 16),
+              style: theme.textTheme.bodyMedium,
             ),
             const Spacer(),
             SizedBox(
