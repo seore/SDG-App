@@ -39,29 +39,6 @@ end
 
 post_install do |installer|
   installer.pods_project.targets.each do |target|
-    # Keep Flutter's iOS settings
     flutter_additional_ios_build_settings(target)
-
-    # Force a minimum iOS version (matches platform line)
-    target.build_configurations.each do |config|
-      config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '13.0'
-    end
-  end
-
-  # --- gRPC fix for Xcode 16 ----
-  # This will run after every `pod install`
-  # and patch the problematic line in basic_seq.h
-  files = Dir.glob('Pods/gRPC-*/src/core/lib/promise/detail/basic_seq.h')
-  files.each do |file|
-    text = File.read(file)
-    new_text = text.gsub(
-      'Traits::template CallSeqFactory',
-      'Traits::CallSeqFactory'
-    )
-    if text != new_text
-      puts "Patching gRPC basic_seq.h in #{file}"
-      File.open(file, 'w') { |f| f.write(new_text) }
-    end
   end
 end
-

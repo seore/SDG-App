@@ -68,21 +68,20 @@ class MissionDetailScreen extends StatelessWidget {
             SizedBox(
               width: double.infinity,
               child: ElevatedButton.icon(
-                onPressed: () {
-                  // Fake username for now, later from auth/profile
-                  LiveDataService.instance.addCompletion(
-                    LiveMissionCompletion(
-                      userName: 'You',
-                      missionTitle: mission.title,
-                      sdgNumber: sdgNumber ?? 0,
-                      timestamp: DateTime.now(),
-                    ),
+                onPressed: () async {
+                  final sdgNumber = _extractSdgNumber(mission.sdg) ?? 0;
+
+                  await LiveDataService.instance.addCompletion(
+                    userName: 'You', 
+                    missionTitle: mission.title, 
+                    sdgNumber: sdgNumber, 
+                    xp: mission.xp
                   );
 
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text(
-                        'Mission completed! You earned ${mission.xp} XP (demo).',
+                        'Mission completed! You earned ${mission.xp} XP.',
                       ),
                     ),
                   );

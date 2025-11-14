@@ -85,13 +85,10 @@ class CommunityScreen extends StatelessWidget {
                 // simple demo input
                 final message = await _showStoryDialog(context);
                 if (message != null && message.trim().isNotEmpty) {
-                  liveData.addStory(
-                    CommunityStory(
-                      userName: 'You',
-                      message: message.trim(),
-                      sdgNumber: null,
-                      createdAt: DateTime.now(),
-                    ),
+                  await liveData.addStory(
+                    userName: 'You', 
+                    message: message.trim(),
+                    sdgNumber: null,
                   );
                 }
               },

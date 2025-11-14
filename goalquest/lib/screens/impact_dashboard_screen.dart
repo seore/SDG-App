@@ -16,16 +16,13 @@ class ImpactDashboardScreen extends StatelessWidget {
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Top: some static summary for now
-            Align(
-              alignment: Alignment.centerLeft,
-              child: Text(
-                'Live Impact Feed',
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
+            Text(
+              'Live Impact Feed',
+              style: Theme.of(context).textTheme.titleMedium,
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 12),
             Expanded(
               child: StreamBuilder<List<LiveMissionCompletion>>(
                 stream: liveData.completionsStream,
@@ -52,7 +49,9 @@ class ImpactDashboardScreen extends StatelessWidget {
                             style: const TextStyle(color: Colors.white),
                           ),
                         ),
-                        title: Text('${c.userName} completed "${c.missionTitle}"'),
+                        title: Text(
+                          '${c.userName} completed "${c.missionTitle}"',
+                        ),
                         subtitle: Text(
                           sdg != null
                               ? 'SDG ${sdg.number}: ${sdg.shortTitle}'

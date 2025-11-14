@@ -1,16 +1,21 @@
 import 'dart:async';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class LiveMissionCompletion {
   final String userName;
   final String missionTitle;
   final int sdgNumber;
   final DateTime timestamp;
+  final double? lat;
+  final double? lng;
 
   LiveMissionCompletion({
     required this.userName,
     required this.missionTitle,
     required this.sdgNumber,
     required this.timestamp,
+    this.lat,
+    this.lng,
   });
 }
 
@@ -29,9 +34,13 @@ class CommunityStory {
 }
 
 class LiveDataService {
-  // Singleton
   static final LiveDataService instance = LiveDataService._internal();
-  LiveDataService._internal();
+  LiveDataService._internal() {
+    _listenToCompletions();
+    _listenToStories();
+  }
+
+  final _supabase = Supabase.instance.client;
 
   final _completionsController =
       StreamController<List<LiveMissionCompletion>>.broadcast();
@@ -47,50 +56,106 @@ class LiveDataService {
   Stream<List<CommunityStory>> get storiesStream =>
       _storiesController.stream;
 
-  void addCompletion(LiveMissionCompletion completion) {
-    _completions.insert(0, completion); 
+  // Called when user completes a mission
+  Future<void> addCompletion({
+    required String userName,
+    required String missionTitle,
+    required int sdgNumber,
+    required int xp,
+    double? lat,
+    double? lng,
+  }) async {
+    await _supabase.from('mission_completions').insert({
+      'user_id': null, // later: real auth user id
+      'mission_id': null, // optional for now
+      'sdg_number': sdgNumber,
+      'xp': xp,
+      'lat': lat,
+      'lng': lng,
+      'city': null,
+      'country': null,
+    });
+
+    // Local optimistic update (shows instantly)
+    final completion = LiveMissionCompletion(
+      userName: userName,
+      missionTitle: missionTitle,
+      sdgNumber: sdgNumber,
+      timestamp: DateTime.now(),
+      lat: lat,
+      lng: lng,
+    );
+    _completions.insert(0, completion);
     _completionsController.add(List.unmodifiable(_completions));
   }
 
-  void addStory(CommunityStory story) {
+  Future<void> addStory({
+    required String userName,
+    required String message,
+    int? sdgNumber,
+  }) async {
+    await _supabase.from('stories').insert({
+      'user_name': userName,
+      'message': message,
+      'sdg_number': sdgNumber,
+    });
+
+    final story = CommunityStory(
+      userName: userName,
+      message: message,
+      sdgNumber: sdgNumber,
+      createdAt: DateTime.now(),
+    );
     _stories.insert(0, story);
     _storiesController.add(List.unmodifiable(_stories));
   }
 
-  void seedDemoData() {
-    addCompletion(
-      LiveMissionCompletion(
-        userName: 'Amina',
-        missionTitle: 'Plastic-Free Day',
-        sdgNumber: 12,
-        timestamp: DateTime.now().subtract(const Duration(minutes: 5)),
-      ),
-    );
-    addCompletion(
-      LiveMissionCompletion(
-        userName: 'Leo',
-        missionTitle: 'Unplug devices for 1 hour',
-        sdgNumber: 7,
-        timestamp: DateTime.now().subtract(const Duration(minutes: 12)),
-      ),
-    );
-    addStory(
-      CommunityStory(
-        userName: 'Amina',
-        message:
-            'Our class cleaned up the school playground and sorted all the trash!',
-        sdgNumber: 12,
-        createdAt: DateTime.now().subtract(const Duration(hours: 3)),
-      ),
-    );
-    addStory(
-      CommunityStory(
-        userName: 'Leo',
-        message:
-            'I convinced my family to switch to reusable water bottles 💧',
-        sdgNumber: 6,
-        createdAt: DateTime.now().subtract(const Duration(hours: 5)),
-      ),
-    );
+  void _listenToCompletions() {
+    _supabase
+        .channel('public:mission_completions')
+        .onPostgresChanges(
+          event: PostgresChangeEvent.insert,
+          schema: 'public',
+          table: 'mission_completions',
+          callback: (payload) async {
+            final record = payload.newRecord;
+            final sdg = record['sdg_number'] as int;
+            final xp = record['xp'] as int;
+            // We don’t have mission title here, so we just show generic text
+            final completion = LiveMissionCompletion(
+              userName: 'Someone',
+              missionTitle: 'Completed a mission (+$xp XP)',
+              sdgNumber: sdg,
+              timestamp: DateTime.parse(record['created_at'] as String),
+              lat: (record['lat'] as num?)?.toDouble(),
+              lng: (record['lng'] as num?)?.toDouble(),
+            );
+            _completions.insert(0, completion);
+            _completionsController.add(List.unmodifiable(_completions));
+          },
+        )
+        .subscribe();
+  }
+
+  void _listenToStories() {
+    _supabase
+        .channel('public:stories')
+        .onPostgresChanges(
+          event: PostgresChangeEvent.insert,
+          schema: 'public',
+          table: 'stories',
+          callback: (payload) {
+            final record = payload.newRecord;
+            final story = CommunityStory(
+              userName: (record['user_name'] as String?) ?? 'Someone',
+              message: record['message'] as String,
+              sdgNumber: record['sdg_number'] as int?,
+              createdAt: DateTime.parse(record['created_at'] as String),
+            );
+            _stories.insert(0, story);
+            _storiesController.add(List.unmodifiable(_stories));
+          },
+        )
+        .subscribe();
   }
 }
