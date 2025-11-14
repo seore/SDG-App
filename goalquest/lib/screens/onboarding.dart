@@ -9,6 +9,10 @@ class OnboardingScreen extends StatelessWidget {
     final size = MediaQuery.of(context).size;
 
     return Scaffold(
+      appBar: AppBar(
+        automaticallyImplyLeading: false,
+        title: const Text('Welcome'),
+      ),
       body: Container(
         width: double.infinity,
         height: double.infinity,
@@ -83,7 +87,7 @@ class OnboardingScreen extends StatelessWidget {
                       ),
                     ),
                     onPressed: () {
-                      Navigator.pushReplacementNamed(context, '/home');
+                      Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
                     },
                     child: Text(
                       'Start your journey',

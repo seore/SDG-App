@@ -262,7 +262,7 @@ class _LoginFormState extends State<_LoginForm> {
         await ProfileService.instance.loadCurrentUserProfile();
 
         if (!mounted) return;
-        Navigator.pushReplacementNamed(context, '/home');
+        Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
       } else {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
@@ -392,7 +392,7 @@ class _SignUpFormState extends State<_SignUpForm> {
         await ProfileService.instance.loadCurrentUserProfile();
 
         if (!mounted) return;
-        Navigator.pushReplacementNamed(context, '/onboarding');
+        Navigator.pushNamedAndRemoveUntil(context, '/onboarding', (route) => false);
       } else {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(

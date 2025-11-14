@@ -30,11 +30,11 @@ class _LiveMapScreenState extends State<LiveMapScreen> {
     final liveData = LiveDataService.instance;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    const mapTilerKey = 'YOUR_MAPTILER_KEY_HERE';
+    const mapTilerKey = '3rVFwyPIYfIsi40EV36l';
 
     final tileUrl = isDark
-        ? 'https://api.maptiler.com/maps/toner-v2/{z}/{x}/{y}.png?key=$mapTilerKey'
-        : 'https://api.maptiler.com/maps/bright-v2/{z}/{x}/{y}.png?key=$mapTilerKey';
+        ? 'https://api.maptiler.com/maps/outdoor-v2/{z}/{x}/{y}.png?key=$mapTilerKey'
+        : 'https://api.maptiler.com/maps/toner-v2/{z}/{x}/{y}.png?key=$mapTilerKey';
 
     return Scaffold(
       appBar: AppBar(
