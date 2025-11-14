@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/mission.dart';
 import '../services/live_data_service.dart';
+import '../services/location_service.dart';
 import '../data/sdg_data.dart';
 
 class MissionDetailScreen extends StatelessWidget {
@@ -71,14 +72,22 @@ class MissionDetailScreen extends StatelessWidget {
                 onPressed: () async {
                   final sdgNumber = _extractSdgNumber(mission.sdg) ?? 0;
 
+                  final position = await LocationService.getCurrentPosition();
+
+                  final lat = position?.latitude;
+                  final lng = position?.longitude;
+
                   await LiveDataService.instance.addCompletion(
                     userName: 'You', 
                     missionTitle: mission.title, 
                     sdgNumber: sdgNumber, 
-                    xp: mission.xp
+                    xp: mission.xp,
+                    lat: lat,
+                    lng: lng,
                   );
 
-                  ScaffoldMessenger.of(context).showSnackBar(
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text(
                         'Mission completed! You earned ${mission.xp} XP.',
@@ -86,6 +95,7 @@ class MissionDetailScreen extends StatelessWidget {
                     ),
                   );
                   Navigator.pop(context);
+                  }
                 },
                 icon: const Icon(Icons.check),
                 label: const Padding(

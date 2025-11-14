@@ -12,8 +12,11 @@ class SdgMapScreen extends StatelessWidget {
       ),
       body: Column(
         children: [
-          // Map / globe placeholder with a nicer style
-          Container(
+          GestureDetector(
+            onTap: () {
+              Navigator.pushNamed(context, '/liveMap');
+            },
+          child: Container(
             margin: const EdgeInsets.all(16),
             height: 180,
             decoration: BoxDecoration(
@@ -39,6 +42,7 @@ class SdgMapScreen extends StatelessWidget {
               ),
             ),
           ),
+        ),
 
           const Padding(
             padding: EdgeInsets.symmetric(horizontal: 16.0),

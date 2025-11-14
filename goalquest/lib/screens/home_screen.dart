@@ -190,9 +190,9 @@ class HomeScreen extends StatelessWidget {
               runSpacing: 12,
               children: [
                 _FeatureChip(
-                  icon: Icons.public,
-                  label: 'SDG Map',
-                  onTap: () => Navigator.pushNamed(context, '/sdgMap'),
+                  icon: Icons.map,
+                  label: 'Live SDG Map',
+                  onTap: () => Navigator.pushNamed(context, '/liveMap'),
                 ),
                 _FeatureChip(
                   icon: Icons.flag,
