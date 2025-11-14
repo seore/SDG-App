@@ -18,6 +18,9 @@ class _AuthScreenState extends State<AuthScreen>
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
+    _tabController.addListener(() {
+      if (mounted) setState(() {});
+    });
   }
 
   @override
@@ -29,50 +32,202 @@ class _AuthScreenState extends State<AuthScreen>
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isLogin = _tabController.index == 0;
 
     return Scaffold(
-      body: SafeArea(
-        child: Column(
-          children: [
-            const SizedBox(height: 32),
-            Text(
-              'SDG Journey',
-              style: theme.textTheme.headlineMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              Color(0xFF32C27C),
+              Color(0xFF2196F3),
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
+        child: SafeArea(
+          child: Center(
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final maxWidth = constraints.maxWidth > 480
+                    ? 420.0
+                    : constraints.maxWidth * 0.9;
+
+                return SingleChildScrollView(
+                  padding: const EdgeInsets.symmetric(vertical: 24),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      // Tiny SDG dots row
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: const [
+                          _SdgDot(color: Color(0xFFE5243B)),
+                          _SdgDot(color: Color(0xFFDDA63A)),
+                          _SdgDot(color: Color(0xFF4C9F38)),
+                          _SdgDot(color: Color(0xFFC5192D)),
+                          _SdgDot(color: Color(0xFFFF3A21)),
+                          _SdgDot(color: Color(0xFF26BDE2)),
+                          _SdgDot(color: Color(0xFFFCC30B)),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Animated title
+                      AnimatedSwitcher(
+                        duration: const Duration(milliseconds: 250),
+                        transitionBuilder: (child, anim) => FadeTransition(
+                          opacity: anim,
+                          child: SlideTransition(
+                            position: Tween<Offset>(
+                              begin: const Offset(0, 0.2),
+                              end: Offset.zero,
+                            ).animate(anim),
+                            child: child,
+                          ),
+                        ),
+                        child: Column(
+                          key: ValueKey(isLogin ? 'loginTitle' : 'signupTitle'),
+                          children: [
+                            Text(
+                              'SDG Journey',
+                              style: theme.textTheme.headlineMedium?.copyWith(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              isLogin
+                                  ? 'Welcome back, changemaker ✨'
+                                  : 'Join the global impact squad 🌍',
+                              textAlign: TextAlign.center,
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                color: Colors.white.withOpacity(0.9),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      const SizedBox(height: 28),
+
+                      // Glass card
+                      Container(
+                        width: maxWidth,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.96),
+                          borderRadius: BorderRadius.circular(24),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.18),
+                              blurRadius: 20,
+                              offset: const Offset(0, 12),
+                            ),
+                          ],
+                        ),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const SizedBox(height: 16),
+                            Padding(
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 20.0),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  TabBar(
+                                    controller: _tabController,
+                                    labelColor: theme.colorScheme.primary,
+                                    unselectedLabelColor: Colors.grey[600],
+                                    indicator: UnderlineTabIndicator(
+                                      borderSide: BorderSide(
+                                        color: theme.colorScheme.primary,
+                                        width: 3,
+                                      ),
+                                      insets: const EdgeInsets.symmetric(
+                                        horizontal: 24,
+                                      ),
+                                    ),
+                                    labelStyle: const TextStyle(
+                                      fontWeight: FontWeight.w700,
+                                      fontSize: 14,
+                                    ),
+                                    unselectedLabelStyle: const TextStyle(
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                    tabs: const [
+                                      Tab(text: 'Log In'),
+                                      Tab(text: 'Sign Up'),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    isLogin
+                                        ? 'Sign in to continue your SDG streak.'
+                                        : 'Create an account to track your impact.',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: const Color.fromARGB(255, 0, 0, 0),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            SizedBox(
+                              height: 360,
+                              child: TabBarView(
+                                controller: _tabController,
+                                children: const [
+                                  _LoginForm(),
+                                  _SignUpForm(),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      const SizedBox(height: 16),
+                      Text(
+                        'Powered by your daily actions 💚',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: Colors.white.withOpacity(0.9),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
             ),
-            const SizedBox(height: 4),
-            Text(
-              'Log in or sign up to start your impact.',
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: Colors.grey[700],
-              ),
-            ),
-            const SizedBox(height: 24),
-            TabBar(
-              controller: _tabController,
-              labelColor: theme.colorScheme.primary,
-              unselectedLabelColor: Colors.grey,
-              tabs: const [
-                Tab(text: 'Log In'),
-                Tab(text: 'Sign Up'),
-              ],
-            ),
-            Expanded(
-              child: TabBarView(
-                controller: _tabController,
-                children: const [
-                  _LoginForm(),
-                  _SignUpForm(),
-                ],
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );
   }
 }
+
+class _SdgDot extends StatelessWidget {
+  final Color color;
+  const _SdgDot({required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 2),
+      width: 8,
+      height: 8,
+      decoration: BoxDecoration(
+        color: color,
+        shape: BoxShape.circle,
+      ),
+    );
+  }
+}
+
+// ───────────────────────────── Login Form ─────────────────────────────
 
 class _LoginForm extends StatefulWidget {
   const _LoginForm();
@@ -86,6 +241,7 @@ class _LoginFormState extends State<_LoginForm> {
   final _emailCtrl = TextEditingController();
   final _passwordCtrl = TextEditingController();
   bool _loading = false;
+  bool _obscure = true;
 
   @override
   void dispose() {
@@ -106,7 +262,6 @@ class _LoginFormState extends State<_LoginForm> {
         await ProfileService.instance.loadCurrentUserProfile();
 
         if (!mounted) return;
-        // 🔥 Login → straight to home
         Navigator.pushReplacementNamed(context, '/home');
       } else {
         if (!mounted) return;
@@ -126,26 +281,55 @@ class _LoginFormState extends State<_LoginForm> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Padding(
-      padding: const EdgeInsets.all(24.0),
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          TextField(
-            controller: _emailCtrl,
-            keyboardType: TextInputType.emailAddress,
-            decoration: const InputDecoration(
-              labelText: 'Email',
+          Text(
+            'Welcome back 👋',
+            style: theme.textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.w700,
             ),
+          ),
+          const SizedBox(height: 16),
+          _AuthTextField(
+            controller: _emailCtrl,
+            label: 'Email',
+            hint: 'you@example.com',
+            keyboardType: TextInputType.emailAddress,
+            prefixIcon: Icons.mail_outline,
           ),
           const SizedBox(height: 12),
-          TextField(
+          _AuthTextField(
             controller: _passwordCtrl,
-            obscureText: true,
-            decoration: const InputDecoration(
-              labelText: 'Password',
+            label: 'Password',
+            hint: '••••••••',
+            obscureText: _obscure,
+            prefixIcon: Icons.lock_outline,
+            suffixIcon: IconButton(
+              icon: Icon(_obscure ? Icons.visibility_off : Icons.visibility),
+              onPressed: () {
+                setState(() {
+                  _obscure = !_obscure;
+                });
+              },
             ),
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 6),
+          Align(
+            alignment: Alignment.centerRight,
+            child: Text(
+              'Forgot password?',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: const Color.fromARGB(255, 109, 108, 108),
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+          ),
+          const Spacer(),
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
@@ -168,6 +352,8 @@ class _LoginFormState extends State<_LoginForm> {
   }
 }
 
+// ───────────────────────────── Sign Up Form ────────────────────────────
+
 class _SignUpForm extends StatefulWidget {
   const _SignUpForm();
 
@@ -181,6 +367,7 @@ class _SignUpFormState extends State<_SignUpForm> {
   final _emailCtrl = TextEditingController();
   final _passwordCtrl = TextEditingController();
   bool _loading = false;
+  bool _obscure = true;
 
   @override
   void dispose() {
@@ -202,11 +389,9 @@ class _SignUpFormState extends State<_SignUpForm> {
       );
 
       if (res.user != null) {
-        // Trigger should create public.users row
         await ProfileService.instance.loadCurrentUserProfile();
 
         if (!mounted) return;
-        // 🔥 Sign up → onboarding first
         Navigator.pushReplacementNamed(context, '/onboarding');
       } else {
         if (!mounted) return;
@@ -226,51 +411,132 @@ class _SignUpFormState extends State<_SignUpForm> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Padding(
-      padding: const EdgeInsets.all(24.0),
-      child: SingleChildScrollView(
-        child: Column(
-          children: [
-            TextField(
-              controller: _usernameCtrl,
-              decoration: const InputDecoration(
-                labelText: 'Username',
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Create your SDG profile ✨',
+            style: theme.textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 16),
+          _AuthTextField(
+            controller: _usernameCtrl,
+            label: 'Username',
+            hint: 'sdg_hero',
+            prefixIcon: Icons.person_outline,
+          ),
+          const SizedBox(height: 12),
+          _AuthTextField(
+            controller: _emailCtrl,
+            label: 'Email',
+            hint: 'you@example.com',
+            keyboardType: TextInputType.emailAddress,
+            prefixIcon: Icons.mail_outline,
+          ),
+          const SizedBox(height: 12),
+          _AuthTextField(
+            controller: _passwordCtrl,
+            label: 'Password',
+            hint: 'At least 6 characters',
+            obscureText: _obscure,
+            prefixIcon: Icons.lock_outline,
+            suffixIcon: IconButton(
+              icon: Icon(_obscure ? Icons.visibility_off : Icons.visibility),
+              onPressed: () {
+                setState(() {
+                  _obscure = !_obscure;
+                });
+              },
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'By joining, you can track XP, streaks, and your global SDG impact.',
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: Colors.grey[600],
+            ),
+          ),
+          const Spacer(),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: _loading ? null : _signUp,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 12.0),
+                child: _loading
+                    ? const SizedBox(
+                        height: 18,
+                        width: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Text('Sign Up'),
               ),
             ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _emailCtrl,
-              keyboardType: TextInputType.emailAddress,
-              decoration: const InputDecoration(
-                labelText: 'Email',
-              ),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _passwordCtrl,
-              obscureText: true,
-              decoration: const InputDecoration(
-                labelText: 'Password (min 6 characters)',
-              ),
-            ),
-            const SizedBox(height: 24),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: _loading ? null : _signUp,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 12.0),
-                  child: _loading
-                      ? const SizedBox(
-                          height: 18,
-                          width: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Text('Sign Up'),
-                ),
-              ),
-            ),
-          ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ───────────────────────── Shared TextField Widget ─────────────────────
+
+class _AuthTextField extends StatelessWidget {
+  final TextEditingController controller;
+  final String label;
+  final String? hint;
+  final bool obscureText;
+  final TextInputType? keyboardType;
+  final IconData? prefixIcon;
+  final Widget? suffixIcon;
+
+  const _AuthTextField({
+    super.key,
+    required this.controller,
+    required this.label,
+    this.hint,
+    this.obscureText = false,
+    this.keyboardType,
+    this.prefixIcon,
+    this.suffixIcon,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return TextField(
+      controller: controller,
+      obscureText: obscureText,
+      keyboardType: keyboardType,
+      decoration: InputDecoration(
+        labelText: label,
+        hintText: hint,
+        prefixIcon: prefixIcon != null ? Icon(prefixIcon, size: 20) : null,
+        suffixIcon: suffixIcon,
+        filled: true,
+        fillColor: const Color(0xFFF5F7FB),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide.none,
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide.none,
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide.none,
+        ),
+        disabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide.none,
         ),
       ),
     );

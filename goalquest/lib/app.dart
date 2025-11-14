@@ -82,7 +82,7 @@ class GoalQuestApp extends StatelessWidget {
           ),
         ),
       ),
-      initialRoute: initialRoute, // 🔹 comes from main.dart
+      initialRoute: initialRoute, 
       onGenerateRoute: (settings) {
         switch (settings.name) {
           case '/auth':
