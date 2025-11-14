@@ -11,11 +11,9 @@ class MissionProgressService {
   static final MissionProgressService instance =
       MissionProgressService._internal();
 
-  // missionId -> status
   final ValueNotifier<Map<String, MissionStatus>> _state =
       ValueNotifier(<String, MissionStatus>{});
 
-  // missionId -> start time
   final Map<String, DateTime> _startTimes = {};
 
   ValueListenable<Map<String, MissionStatus>> get notifier => _state;

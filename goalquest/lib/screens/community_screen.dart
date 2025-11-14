@@ -11,143 +11,78 @@ class CommunityScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Community & Actions'),
+        title: const Text('Community'),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            Align(
-              alignment: Alignment.centerLeft,
-              child: Text(
-                'Community Stories',
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Expanded(
-              child: StreamBuilder<List<CommunityStory>>(
-                stream: liveData.storiesStream,
-                builder: (context, snapshot) {
-                  final stories = snapshot.data ?? [];
+      body: StreamBuilder<List<CommunityStory>>(
+        stream: liveData.storiesStream,
+        builder: (context, snapshot) {
+          final stories = snapshot.data ?? [];
 
-                  if (stories.isEmpty) {
-                    return const Center(
-                      child: Text('No stories yet. Be the first to share!'),
-                    );
-                  }
+          if (stories.isEmpty) {
+            return const Center(
+              child: Text('No stories yet. Complete a mission to share one!'),
+            );
+          }
 
-                  return ListView.builder(
-                    itemCount: stories.length,
-                    itemBuilder: (context, index) {
-                      final story = stories[index];
-                      final sdg = story.sdgNumber != null
-                          ? getSdgByNumber(story.sdgNumber!)
-                          : null;
+          return ListView.builder(
+            padding: const EdgeInsets.all(16),
+            itemCount: stories.length,
+            itemBuilder: (context, index) {
+              final story = stories[index];
+              final sdg =
+                  story.sdgNumber != null ? getSdgByNumber(story.sdgNumber!) : null;
 
-                      return Card(
-                        margin: const EdgeInsets.only(bottom: 8),
-                        child: Padding(
-                          padding: const EdgeInsets.all(12.0),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                story.userName,
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              
-                              if (sdg != null)
-                              Text(
-                                'SDG ${sdg.number}: ${sdg.shortTitle}',
-                                style: const TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                              
-                              Text(story.message),
-                              
-                              const SizedBox(height: 8),
-                              
-                              if (story.photoUrl != null)
-                              ClipRRect(
-                                borderRadius: BorderRadius.circular(12),
-                                child: AspectRatio(
-                                  aspectRatio: 4 / 3,
-                                  child: Image.network(
-                                    story.photoUrl!,
-                                    fit: BoxFit.cover,
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                              
-                              Text(
-                                _timeAgo(story.createdAt),
-                                style: const TextStyle(
-                                  fontSize: 11,
-                                  color: Colors.grey,
-                                ),
-                              ),
-                            ],
+              return Card(
+                margin: const EdgeInsets.only(bottom: 12),
+                child: Padding(
+                  padding: const EdgeInsets.all(12.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        story.userName,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      if (sdg != null)
+                        Text(
+                          'SDG ${sdg.number}: ${sdg.shortTitle}',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
-                      );
-                    },
-                  );
-                },
-              ),
-            ),
-            const SizedBox(height: 8),
-            ElevatedButton.icon(
-              onPressed: () async {
-                // simple demo input
-                final message = await _showStoryDialog(context);
-                if (message != null && message.trim().isNotEmpty) {
-                  await liveData.addStory(
-                    userName: 'You', 
-                    message: message.trim(),
-                    sdgNumber: null,
-                  );
-                }
-              },
-              icon: const Icon(Icons.add),
-              label: const Text('Share your story'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Future<String?> _showStoryDialog(BuildContext context) async {
-    final controller = TextEditingController();
-    return showDialog<String>(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('Share your story'),
-        content: TextField(
-          controller: controller,
-          maxLines: 3,
-          decoration: const InputDecoration(
-            hintText: 'What action did you take today?',
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(context, controller.text),
-            child: const Text('Post'),
-          ),
-        ],
+                      const SizedBox(height: 8),
+                      Text(story.message),
+                      const SizedBox(height: 8),
+                      if (story.photoUrl != null)
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: AspectRatio(
+                            aspectRatio: 4 / 3,
+                            child: Image.network(
+                              story.photoUrl!,
+                              fit: BoxFit.cover,
+                            ),
+                          ),
+                        ),
+                      const SizedBox(height: 8),
+                      Text(
+                        _timeAgo(story.createdAt),
+                        style: const TextStyle(
+                          fontSize: 11,
+                          color: Colors.grey,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          );
+        },
       ),
     );
   }

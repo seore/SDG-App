@@ -27,12 +27,16 @@ class DailyMissionsScreen extends StatelessWidget {
               Widget trailing;
               switch (status) {
                 case MissionStatus.completed:
-                  trailing = const Icon(Icons.check_circle,
-                      color: Colors.green);
+                  trailing = const Icon(
+                    Icons.check_circle,
+                    color: Colors.green,
+                  );
                   break;
                 case MissionStatus.inProgress:
-                  trailing =
-                      const Icon(Icons.timelapse, color: Colors.orange);
+                  trailing = const Icon(
+                    Icons.timelapse,
+                    color: Colors.orange,
+                  );
                   break;
                 case MissionStatus.notStarted:
                 default:

@@ -2,12 +2,12 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/mission.dart';
 import '../services/live_data_service.dart';
 import '../services/location_service.dart';
 import '../services/mission_progress_service.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 class MissionDetailScreen extends StatefulWidget {
   final Mission mission;
@@ -38,6 +38,21 @@ class _MissionDetailScreenState extends State<MissionDetailScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            Text(
+              mission.sdg,
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              '${mission.xp} XP',
+              style: const TextStyle(
+                fontSize: 14,
+                color: Colors.grey,
+              ),
+            ),
             Container(
               width: double.infinity,
               margin: const EdgeInsets.only(top: 16),
@@ -70,9 +85,9 @@ class _MissionDetailScreenState extends State<MissionDetailScreen> {
             ),
             const SizedBox(height: 16),
 
-            // 🔥 Photo evidence section
+            // Photo evidence
             Text(
-              'Photo evidence',
+              'Photo evidence (optional)',
               style: theme.textTheme.titleSmall!
                   .copyWith(fontWeight: FontWeight.w600),
             ),
@@ -80,9 +95,8 @@ class _MissionDetailScreenState extends State<MissionDetailScreen> {
             Row(
               children: [
                 ElevatedButton.icon(
-                  onPressed: _isUploading
-                      ? null
-                      : () => _pickImage(ImageSource.camera),
+                  onPressed:
+                      _isUploading ? null : () => _pickImage(ImageSource.camera),
                   icon: const Icon(Icons.photo_camera),
                   label: const Text('Camera'),
                 ),
@@ -117,7 +131,6 @@ class _MissionDetailScreenState extends State<MissionDetailScreen> {
 
             const Spacer(),
 
-            // Progress-aware buttons (start + complete)
             ValueListenableBuilder<Map<String, MissionStatus>>(
               valueListenable: _progress.notifier,
               builder: (context, state, _) {
@@ -155,7 +168,7 @@ class _MissionDetailScreenState extends State<MissionDetailScreen> {
                 return Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    // Start button
+                    // Start
                     SizedBox(
                       width: double.infinity,
                       child: OutlinedButton(
@@ -165,7 +178,8 @@ class _MissionDetailScreenState extends State<MissionDetailScreen> {
                                 ? null
                                 : () {
                                     _progress.startMission(mission.id);
-                                    ScaffoldMessenger.of(context).showSnackBar(
+                                    ScaffoldMessenger.of(context)
+                                        .showSnackBar(
                                       const SnackBar(
                                         content: Text(
                                           'Mission started! Do the action in real life, then come back to complete it.',
@@ -198,7 +212,7 @@ class _MissionDetailScreenState extends State<MissionDetailScreen> {
                       const SizedBox(height: 8),
                     ],
 
-                    // Complete button
+                    // Complete
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton.icon(
@@ -226,7 +240,8 @@ class _MissionDetailScreenState extends State<MissionDetailScreen> {
   }
 
   Future<void> _pickImage(ImageSource source) async {
-    final picked = await _picker.pickImage(source: source, imageQuality: 75);
+    final picked =
+        await _picker.pickImage(source: source, imageQuality: 75);
     if (picked != null) {
       setState(() {
         _photo = picked;
@@ -244,7 +259,6 @@ class _MissionDetailScreenState extends State<MissionDetailScreen> {
 
     String? photoUrl;
 
-    // If we have a photo, upload to Supabase Storage
     if (_photo != null) {
       try {
         final supabase = Supabase.instance.client;
@@ -260,29 +274,17 @@ class _MissionDetailScreenState extends State<MissionDetailScreen> {
             .from('mission-photos')
             .getPublicUrl(fileName);
       } catch (_) {
-        // if upload fails, just continue without photo
+        // ignore upload errors, continue without photo
       }
     }
 
     final position = await LocationService.getCurrentPosition();
-
-    if (position == null && mission.title.toLowerCase().contains('park')) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Turn on location to complete this outdoor mission.'),
-          ),
-        );
-      }
-      setState(() => _isUploading = false);
-      return;
-    }
-
     final lat = position?.latitude;
     final lng = position?.longitude;
 
     await LiveDataService.instance.addCompletion(
       userName: 'You',
+      missionId: mission.id,
       missionTitle: mission.title,
       sdgNumber: sdgNumber,
       xp: mission.xp,
@@ -290,6 +292,7 @@ class _MissionDetailScreenState extends State<MissionDetailScreen> {
       lng: lng,
     );
 
+    // also create community story
     await LiveDataService.instance.addStory(
       userName: 'You',
       message: 'Completed: ${mission.title}',

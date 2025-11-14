@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 
 import 'screens/onboarding.dart';
 import 'screens/home_screen.dart';
+import 'screens/profile_screen.dart';
 import 'screens/daily_missions_screen.dart';
 import 'screens/mission_detail_screen.dart';
 import 'screens/sdg_map_screen.dart';
@@ -12,11 +13,14 @@ import 'screens/live_map_screen.dart';
 import 'screens/impact_dashboard_screen.dart';
 import 'screens/community_screen.dart';
 import 'screens/learn_sdg.dart';
+import 'screens/auth_screen.dart';
 
 import 'models/mission.dart';
 
 class GoalQuestApp extends StatelessWidget {
-  const GoalQuestApp({super.key});
+  final String initialRoute;
+
+  const GoalQuestApp({super.key, required this.initialRoute});
 
   @override
   Widget build(BuildContext context) {
@@ -28,7 +32,6 @@ class GoalQuestApp extends StatelessWidget {
       useMaterial3: true,
       scaffoldBackgroundColor: const Color(0xFFF4F6FB),
       textTheme: GoogleFonts.poppinsTextTheme(),
-
       appBarTheme: AppBarTheme(
         backgroundColor: Colors.white,
         foregroundColor: Colors.black87,
@@ -40,7 +43,6 @@ class GoalQuestApp extends StatelessWidget {
           color: Colors.black87,
         ),
       ),
-
       cardTheme: const CardThemeData(
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.all(Radius.circular(18)),
@@ -48,7 +50,6 @@ class GoalQuestApp extends StatelessWidget {
         elevation: 3,
         margin: EdgeInsets.symmetric(vertical: 8),
       ),
-
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           backgroundColor: const Color(0xFF32C27C),
@@ -80,11 +81,12 @@ class GoalQuestApp extends StatelessWidget {
             color: Colors.black87,
           ),
         ),
-        
       ),
-      initialRoute: '/onboarding',
+      initialRoute: initialRoute, // 🔹 comes from main.dart
       onGenerateRoute: (settings) {
         switch (settings.name) {
+          case '/auth':
+            return MaterialPageRoute(builder: (_) => const AuthScreen());
           case '/onboarding':
             return MaterialPageRoute(builder: (_) => const OnboardingScreen());
           case '/home':
@@ -109,6 +111,8 @@ class GoalQuestApp extends StatelessWidget {
                 ),
               );
             }
+          case '/profile':
+            return MaterialPageRoute(builder: (_) => const ProfileScreen());
           case '/sdgMap':
             return MaterialPageRoute(builder: (_) => const SdgMapScreen());
           case '/liveMap':
@@ -129,7 +133,8 @@ class GoalQuestApp extends StatelessWidget {
               builder: (_) => LearnSdgScreen(sdgNumber: sdgNumber),
             );
           default:
-            return MaterialPageRoute(builder: (_) => const OnboardingScreen());
+            // If somehow an unknown route, go to auth
+            return MaterialPageRoute(builder: (_) => const AuthScreen());
         }
       },
     );

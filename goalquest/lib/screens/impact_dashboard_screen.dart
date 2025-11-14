@@ -58,7 +58,7 @@ class ImpactDashboardScreen extends StatelessWidget {
                               : 'SDG',
                         ),
                         trailing: Text(
-                          _timeAgo(c.timestamp),
+                          _timeAgo(c.createdAt),
                           style: const TextStyle(fontSize: 11),
                         ),
                       );

@@ -1,25 +1,33 @@
 import 'dart:async';
+
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class LiveMissionCompletion {
+  final String id;
   final String userName;
+  final String missionId;
   final String missionTitle;
   final int sdgNumber;
-  final DateTime timestamp;
+  final int xp;
+  final DateTime createdAt;
   final double? lat;
   final double? lng;
 
   LiveMissionCompletion({
+    required this.id,
     required this.userName,
+    required this.missionId,
     required this.missionTitle,
     required this.sdgNumber,
-    required this.timestamp,
+    required this.xp,
+    required this.createdAt,
     this.lat,
     this.lng,
   });
 }
 
 class CommunityStory {
+  final String id;
   final String userName;
   final String message;
   final int? sdgNumber;
@@ -27,6 +35,7 @@ class CommunityStory {
   final String? photoUrl;
 
   CommunityStory({
+    required this.id,
     required this.userName,
     required this.message,
     this.sdgNumber,
@@ -36,82 +45,69 @@ class CommunityStory {
 }
 
 class LiveDataService {
+  LiveDataService._internal();
   static final LiveDataService instance = LiveDataService._internal();
-  LiveDataService._internal() {
-    _listenToCompletions();
-    _listenToStories();
-  }
 
-  final _supabase = Supabase.instance.client;
+  final SupabaseClient _supabase = Supabase.instance.client;
 
   final _completionsController =
       StreamController<List<LiveMissionCompletion>>.broadcast();
   final _storiesController =
       StreamController<List<CommunityStory>>.broadcast();
 
-  final List<LiveMissionCompletion> _completions = [];
-  final List<CommunityStory> _stories = [];
+  List<LiveMissionCompletion> _completions = [];
+  List<CommunityStory> _stories = [];
 
   Stream<List<LiveMissionCompletion>> get completionsStream =>
       _completionsController.stream;
-
   Stream<List<CommunityStory>> get storiesStream =>
       _storiesController.stream;
 
-  // Called when user completes a mission
-  Future<void> addCompletion({
-    required String userName,
-    required String missionTitle,
-    required int sdgNumber,
-    required int xp,
-    double? lat,
-    double? lng,
-  }) async {
-    await _supabase.from('mission_completions').insert({
-      'user_id': null, // later: real auth user id
-      'mission_id': null, // optional for now
-      'sdg_number': sdgNumber,
-      'xp': xp,
-      'lat': lat,
-      'lng': lng,
-      'city': null,
-      'country': null,
-    });
-
-    // Local optimistic update (shows instantly)
-    final completion = LiveMissionCompletion(
-      userName: userName,
-      missionTitle: missionTitle,
-      sdgNumber: sdgNumber,
-      timestamp: DateTime.now(),
-      lat: lat,
-      lng: lng,
-    );
-    _completions.insert(0, completion);
-    _completionsController.add(List.unmodifiable(_completions));
+  Future<void> init() async {
+    await _loadInitialData();
+    _listenToCompletions();
+    _listenToStories();
   }
 
-  Future<void> addStory({
-    required String userName,
-    required String message,
-    int? sdgNumber,
-    String? photoUrl,
-  }) async {
-    await _supabase.from('stories').insert({
-      'user_name': userName,
-      'message': message,
-      'sdg_number': sdgNumber,
-      'photo_url': photoUrl,
-    });
+  Future<void> _loadInitialData() async {
+    final completionsData = await _supabase
+        .from('mission_completions')
+        .select()
+        .order('created_at', ascending: false)
+        .limit(100);
 
-    final story = CommunityStory(
-      userName: userName,
-      message: message,
-      sdgNumber: sdgNumber,
-      createdAt: DateTime.now(),
-      photoUrl: photoUrl,
-    );
-    _stories.insert(0, story);
+    _completions = (completionsData as List)
+        .map((row) => LiveMissionCompletion(
+              id: row['id'].toString(),
+              userName: row['user_name'] as String? ?? 'Someone',
+              missionId: row['mission_id'] as String? ?? '',
+              missionTitle: row['mission_title'] as String,
+              sdgNumber: row['sdg_number'] as int? ?? 0,
+              xp: row['xp'] as int? ?? 0,
+              createdAt: DateTime.parse(row['created_at'] as String),
+              lat: (row['lat'] as num?)?.toDouble(),
+              lng: (row['lng'] as num?)?.toDouble(),
+            ))
+        .toList();
+
+    final storiesData = await _supabase
+        .from('stories')
+        .select()
+        .order('created_at', ascending: false)
+        .limit(100);
+
+    _stories = (storiesData as List)
+        .map((row) => CommunityStory(
+              id: row['id'].toString(),
+              userName: row['user_name'] as String? ?? 'Someone',
+              message: row['message'] as String,
+              sdgNumber: row['sdg_number'] as int?,
+              createdAt: DateTime.parse(row['created_at'] as String),
+              photoUrl: row['photo_url'] as String?,
+            ))
+        .toList();
+
+    _completionsController.add(List.unmodifiable(_completions));
     _storiesController.add(List.unmodifiable(_stories));
   }
 
@@ -122,18 +118,18 @@ class LiveDataService {
           event: PostgresChangeEvent.insert,
           schema: 'public',
           table: 'mission_completions',
-          callback: (payload) async {
-            final record = payload.newRecord;
-            final sdg = record['sdg_number'] as int;
-            final xp = record['xp'] as int;
-            // We don’t have mission title here, so we just show generic text
+          callback: (payload) {
+            final row = payload.newRecord;
             final completion = LiveMissionCompletion(
-              userName: 'Someone',
-              missionTitle: 'Completed a mission (+$xp XP)',
-              sdgNumber: sdg,
-              timestamp: DateTime.parse(record['created_at'] as String),
-              lat: (record['lat'] as num?)?.toDouble(),
-              lng: (record['lng'] as num?)?.toDouble(),
+              id: row['id'].toString(),
+              userName: row['user_name'] as String? ?? 'Someone',
+              missionId: row['mission_id'] as String? ?? '',
+              missionTitle: row['mission_title'] as String,
+              sdgNumber: row['sdg_number'] as int? ?? 0,
+              xp: row['xp'] as int? ?? 0,
+              createdAt: DateTime.parse(row['created_at'] as String),
+              lat: (row['lat'] as num?)?.toDouble(),
+              lng: (row['lng'] as num?)?.toDouble(),
             );
             _completions.insert(0, completion);
             _completionsController.add(List.unmodifiable(_completions));
@@ -150,18 +146,90 @@ class LiveDataService {
           schema: 'public',
           table: 'stories',
           callback: (payload) {
-            final record = payload.newRecord;
+            final row = payload.newRecord;
             final story = CommunityStory(
-              userName: (record['user_name'] as String?) ?? 'Someone',
-              message: record['message'] as String,
-              sdgNumber: record['sdg_number'] as int?,
-              createdAt: DateTime.parse(record['created_at'] as String),
-              photoUrl: record['photo_url'] as String?,
+              id: row['id'].toString(),
+              userName: row['user_name'] as String? ?? 'Someone',
+              message: row['message'] as String,
+              sdgNumber: row['sdg_number'] as int?,
+              createdAt: DateTime.parse(row['created_at'] as String),
+              photoUrl: row['photo_url'] as String?,
             );
             _stories.insert(0, story);
             _storiesController.add(List.unmodifiable(_stories));
           },
         )
         .subscribe();
+  }
+
+  Future<void> addCompletion({
+    required String userName,
+    required String missionId,
+    required String missionTitle,
+    required int sdgNumber,
+    required int xp,
+    double? lat,
+    double? lng,
+  }) async {
+    final row = await _supabase
+        .from('mission_completions')
+        .insert({
+          'user_name': userName,
+          'mission_id': missionId,
+          'mission_title': missionTitle,
+          'sdg_number': sdgNumber,
+          'xp': xp,
+          'lat': lat,
+          'lng': lng,
+        })
+        .select()
+        .maybeSingle();
+
+    if (row != null) {
+      final completion = LiveMissionCompletion(
+        id: row['id'].toString(),
+        userName: row['user_name'] as String? ?? 'Someone',
+        missionId: row['mission_id'] as String? ?? '',
+        missionTitle: row['mission_title'] as String,
+        sdgNumber: row['sdg_number'] as int? ?? 0,
+        xp: row['xp'] as int? ?? 0,
+        createdAt: DateTime.parse(row['created_at'] as String),
+        lat: (row['lat'] as num?)?.toDouble(),
+        lng: (row['lng'] as num?)?.toDouble(),
+      );
+      _completions.insert(0, completion);
+      _completionsController.add(List.unmodifiable(_completions));
+    }
+  }
+
+  Future<void> addStory({
+    required String userName,
+    required String message,
+    int? sdgNumber,
+    String? photoUrl,
+  }) async {
+    final row = await _supabase
+        .from('stories')
+        .insert({
+          'user_name': userName,
+          'message': message,
+          'sdg_number': sdgNumber,
+          'photo_url': photoUrl,
+        })
+        .select()
+        .maybeSingle();
+
+    if (row != null) {
+      final story = CommunityStory(
+        id: row['id'].toString(),
+        userName: row['user_name'] as String? ?? 'Someone',
+        message: row['message'] as String,
+        sdgNumber: row['sdg_number'] as int?,
+        createdAt: DateTime.parse(row['created_at'] as String),
+        photoUrl: row['photo_url'] as String?,
+      );
+      _stories.insert(0, story);
+      _storiesController.add(List.unmodifiable(_stories));
+    }
   }
 }
