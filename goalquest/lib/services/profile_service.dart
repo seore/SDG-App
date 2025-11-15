@@ -8,6 +8,7 @@ class UserProfile {
   final int xp;
   final int streak;
   final String? avatarUrl;
+  final DateTime? lastActive;
 
   const UserProfile({
     required this.id,
@@ -16,12 +17,22 @@ class UserProfile {
     required this.xp,
     required this.streak,
     this.avatarUrl,
+    this.lastActive,
   });
 
   factory UserProfile.fromMap(
     Map<String, dynamic> map, {
     required String email,
   }) {
+    DateTime? lastActive;
+
+    final rawLastActive = map['last_active_at'];
+    if (rawLastActive is String) {
+      lastActive = DateTime.tryParse(rawLastActive);
+    } else if (rawLastActive is DateTime) {
+      lastActive = rawLastActive;
+    }
+
     return UserProfile(
       id: map['id'] as String,
       email: email,
@@ -29,6 +40,7 @@ class UserProfile {
       xp: (map['xp'] ?? 0) as int,
       streak: (map['streak'] ?? 0) as int,
       avatarUrl: map['avatar_url'] as String?,
+      lastActive: lastActive,
     );
   }
 
@@ -37,6 +49,7 @@ class UserProfile {
     int? xp,
     int? streak,
     String? avatarUrl,
+    DateTime? lastActive,
   }) {
     return UserProfile(
       id: id,
@@ -45,6 +58,7 @@ class UserProfile {
       xp: xp ?? this.xp,
       streak: streak ?? this.streak,
       avatarUrl: avatarUrl ?? this.avatarUrl,
+      lastActive: lastActive ?? this.lastActive,
     );
   }
 }
@@ -58,10 +72,14 @@ class ProfileService {
   final ValueNotifier<UserProfile?> profileListenable =
       ValueNotifier<UserProfile?>(null);
 
+  /// Local cached profile (convenience)
+  UserProfile? _profile;
+
   Future<void> loadCurrentUserProfile() async {
     final session = _client.auth.currentSession;
 
     if (session == null) {
+      _profile = null;
       profileListenable.value = null;
       return;
     }
@@ -69,6 +87,7 @@ class ProfileService {
     final authUser = session.user;
     final email = authUser.email ?? '';
 
+    // Fetch existing user row
     final rows = await _client
         .from('users')
         .select()
@@ -78,47 +97,92 @@ class ProfileService {
     Map<String, dynamic> row;
 
     if (rows.isEmpty) {
-      final metadata = authUser.userMetadata ?? {}; 
+      // If no row, create one using metadata or email prefix as username
+      final metadata = authUser.userMetadata ?? {};
       final defaultUsername = (metadata['username'] ??
-        (email.isNotEmpty ? email.split('@').first : 'Explorer'))
-      .toString();
-      
-      final inserted = await _client.from('users').insert({
-        'id': authUser.id,
-        'username': defaultUsername,
-        'xp': 0,
-        'streak': 0,
-      })
-      .select()
-      .single() as Map<String, dynamic>;
-      
+              (email.isNotEmpty ? email.split('@').first : 'Explorer'))
+          .toString();
+
+      final inserted = await _client
+          .from('users')
+          .insert({
+            'id': authUser.id,
+            'username': defaultUsername,
+            'xp': 0,
+            'streak': 0,
+          })
+          .select()
+          .single() as Map<String, dynamic>;
+
       row = inserted;
     } else {
       row = rows.first as Map<String, dynamic>;
     }
-    profileListenable.value = UserProfile.fromMap(row, email: email);
+
+    final profile = UserProfile.fromMap(row, email: email);
+    _profile = profile;
+    profileListenable.value = profile;
   }
 
   Future<void> addXp(int amount) async {
-    final current = profileListenable.value;
-    final session = _client.auth.currentSession;
-    if (current == null || session == null) return;
+    final client = _client;
+    final profile = _profile ?? profileListenable.value;
 
-    final newXp = (current.xp + amount).clamp(0, 9999999);
+    if (profile == null) return;
 
-    final updated = await _client
+    final now = DateTime.now();
+    final lastActive = profile.lastActive;
+    int newStreak = profile.streak;
+
+    if (lastActive == null) {
+      newStreak = 1;
+    } else {
+      final lastDate =
+          DateTime(lastActive.year, lastActive.month, lastActive.day);
+      final today = DateTime(now.year, now.month, now.day);
+      final diffDays = today.difference(lastDate).inDays;
+
+      if (diffDays == 1) {
+        newStreak += 1; 
+      } else if (diffDays > 1) {
+        newStreak = 1;
+      }
+    }
+
+    // Streak bonus
+    int bonus = 0;
+    if (newStreak >= 3 && newStreak < 7) {
+      bonus = 5;
+    } else if (newStreak >= 7 && newStreak < 14) {
+      bonus = 10;
+    } else if (newStreak >= 14) {
+      bonus = 20;
+    }
+
+    final totalToAdd = amount + bonus;
+    final updatedXp = profile.xp + totalToAdd;
+
+    final res = await client
         .from('users')
-        .update({'xp': newXp})
-        .eq('id', session.user.id)
+        .update({
+          'xp': updatedXp,
+          'streak': newStreak,
+          'last_active_at': now.toIso8601String(),
+        })
+        .eq('id', profile.id)
         .select()
-        .single() as Map<String, dynamic>;
+        .maybeSingle();
 
-    profileListenable.value =
-        UserProfile.fromMap(updated, email: current.email);
+    if (res != null) {
+      final updatedProfile =
+          UserProfile.fromMap(res as Map<String, dynamic>, email: profile.email);
+      _profile = updatedProfile;
+      profileListenable.value = updatedProfile;
+    }
   }
 
   Future<void> setStreak(int newStreak) async {
-    final current = profileListenable.value;
+    final current = _profile ?? profileListenable.value;
     final session = _client.auth.currentSession;
     if (current == null || session == null) return;
 
@@ -129,15 +193,17 @@ class ProfileService {
         .select()
         .single() as Map<String, dynamic>;
 
-    profileListenable.value =
+    final profile =
         UserProfile.fromMap(updated, email: current.email);
+    _profile = profile;
+    profileListenable.value = profile;
   }
 
   Future<void> updateProfile({
     String? username,
     String? avatarUrl,
   }) async {
-    final current = profileListenable.value;
+    final current = _profile ?? profileListenable.value;
     final session = _client.auth.currentSession;
     if (current == null || session == null) return;
 
@@ -154,13 +220,16 @@ class ProfileService {
         .select()
         .single() as Map<String, dynamic>;
 
-    profileListenable.value =
+    final profile =
         UserProfile.fromMap(updated, email: current.email);
+    _profile = profile;
+    profileListenable.value = profile;
   }
 
-  /// Sign out and clear local profiles.
+  /// Sign out and clear local profile.
   Future<void> signOut() async {
     await _client.auth.signOut();
+    _profile = null;
     profileListenable.value = null;
   }
 }

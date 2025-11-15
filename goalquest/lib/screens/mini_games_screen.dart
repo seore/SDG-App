@@ -87,7 +87,9 @@ class MiniGamesScreen extends StatelessWidget {
           child: AppBar(
             backgroundColor: Colors.transparent,
             elevation: 0,
-            automaticallyImplyLeading: false,
+            automaticallyImplyLeading: true,
+            iconTheme: const IconThemeData(color: Colors.white),
+            /*
             leading: Container(
               margin: const EdgeInsets.only(left: 15),
               child: CircleAvatar(
@@ -103,7 +105,7 @@ class MiniGamesScreen extends StatelessWidget {
                   },
                 ),
               ),
-            ),
+            ),*/
             title: const Text(
               "Mini Games",
               style: TextStyle(

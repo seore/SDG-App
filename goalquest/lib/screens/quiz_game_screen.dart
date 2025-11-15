@@ -209,7 +209,9 @@ class _QuizGameScreenState extends State<QuizGameScreen> {
           child: AppBar(
             backgroundColor: Colors.transparent,
             elevation: 0,
-            automaticallyImplyLeading: false,
+            automaticallyImplyLeading: true,
+            iconTheme: const IconThemeData(color: Colors.white),
+            /*
             leading: Container(
               margin: const EdgeInsets.only(left: 8),
               child: CircleAvatar(
@@ -225,7 +227,7 @@ class _QuizGameScreenState extends State<QuizGameScreen> {
                   },
                 ),
               ),
-            ),
+            ),*/
             title: const Text(
               'SDG Quiz',
               style: TextStyle(

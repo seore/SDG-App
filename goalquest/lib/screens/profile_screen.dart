@@ -136,6 +136,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
           child: AppBar(
             backgroundColor: Colors.transparent,
             elevation: 0,
+            automaticallyImplyLeading: true,
+            iconTheme: const IconThemeData(color: Colors.white),
+            /*
             automaticallyImplyLeading: false,
             leading: Container(
               margin: const EdgeInsets.only(left: 15),
@@ -152,7 +155,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   },
                 ),
               ),
-            ),
+            ),*/
             title: const Text(
               "My SDG Profile",
               style: TextStyle(
