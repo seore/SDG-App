@@ -3,7 +3,6 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 class UserProfile {
   final String id;          
-  //final String authUserId; 
   final String email;
   final String username;
   final int xp;
@@ -12,7 +11,6 @@ class UserProfile {
 
   const UserProfile({
     required this.id,
-    //required this.authUserId,
     required this.email,
     required this.username,
     required this.xp,
@@ -26,7 +24,6 @@ class UserProfile {
   }) {
     return UserProfile(
       id: map['id'] as String,
-      //authUserId: map['auth_user_id'] as String,
       email: email,
       username: (map['username'] ?? '') as String,
       xp: (map['xp'] ?? 0) as int,
@@ -43,7 +40,6 @@ class UserProfile {
   }) {
     return UserProfile(
       id: id,
-      //authUserId: authUserId,
       email: email,
       username: username ?? this.username,
       xp: xp ?? this.xp,
@@ -73,7 +69,6 @@ class ProfileService {
     final authUser = session.user;
     final email = authUser.email ?? '';
 
-    // Try to get existing row
     final rows = await _client
         .from('users')
         .select()
@@ -104,7 +99,6 @@ class ProfileService {
     profileListenable.value = UserProfile.fromMap(row, email: email);
   }
 
-  /// Add XP to the current user and persist to Supabase.
   Future<void> addXp(int amount) async {
     final current = profileListenable.value;
     final session = _client.auth.currentSession;
@@ -123,7 +117,6 @@ class ProfileService {
         UserProfile.fromMap(updated, email: current.email);
   }
 
-  /// Set streak (you can call this from your streak logic later).
   Future<void> setStreak(int newStreak) async {
     final current = profileListenable.value;
     final session = _client.auth.currentSession;
@@ -140,7 +133,6 @@ class ProfileService {
         UserProfile.fromMap(updated, email: current.email);
   }
 
-  /// Optionally update username or avatar.
   Future<void> updateProfile({
     String? username,
     String? avatarUrl,
@@ -166,7 +158,7 @@ class ProfileService {
         UserProfile.fromMap(updated, email: current.email);
   }
 
-  /// Sign out and clear local profile.
+  /// Sign out and clear local profiles.
   Future<void> signOut() async {
     await _client.auth.signOut();
     profileListenable.value = null;

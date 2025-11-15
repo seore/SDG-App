@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../services/profile_service.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -8,13 +9,33 @@ class ProfileScreen extends StatefulWidget {
   State<ProfileScreen> createState() => _ProfileScreenState();
 }
 
+class _QuizSummary {
+  final int attempts;
+  final double averagePercent;
+  final int totalXp;
+
+  const _QuizSummary({
+    required this.attempts,
+    required this.averagePercent,
+    required this.totalXp,
+  });
+
+  static const empty = _QuizSummary(
+    attempts: 0, 
+    averagePercent: 0, 
+    totalXp: 0,
+  );
+}
+
 class _ProfileScreenState extends State<ProfileScreen> {
   final _profileService = ProfileService.instance;
   bool _loading = true;
+  late Future<_QuizSummary> _quizSummaryFuture;
 
   @override
   void initState() {
     super.initState();
+    _quizSummaryFuture = _getQuizSummary();
     _load();
   }
 
@@ -24,6 +45,50 @@ class _ProfileScreenState extends State<ProfileScreen> {
       setState(() {
         _loading = false;
       });
+    }
+  }
+
+  Future<_QuizSummary> _getQuizSummary() async {
+    final client = Supabase.instance.client;
+    final session = client.auth.currentSession;
+
+    if (session == null) {
+      return _QuizSummary.empty;
+    }
+
+    try {
+      final res = await client.from('quiz_attempts')
+      .select('score, total_questions, xp_earned')
+      .eq('user_id', session.user.id);
+
+      if (res is! List || res.isEmpty) {
+        return _QuizSummary.empty;
+      }
+
+      int attempts = res.length;
+      double totalPercent = 0;
+      int totalXp = 0;
+
+      for (final row in res) {
+        final score = (row['score'] ?? 0) as int;
+        final totalQuestions = (row['total_questions'] ?? 0) as int;
+        final xpEarned = (row['xp_earned'] ?? 0) as int;
+
+        if (totalQuestions > 0) {
+          totalPercent += (score / totalQuestions) * 100.0;
+        }
+        totalXp += xpEarned;
+      }
+
+      final avgPercent = totalPercent / attempts;
+
+      return _QuizSummary(
+        attempts: attempts, 
+        averagePercent: avgPercent, 
+        totalXp: totalXp,
+      );
+    } catch (_) {
+      return _QuizSummary.empty;
     }
   }
 
@@ -323,6 +388,60 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                       ),
                                     ],
                                   ),
+                                  const SizedBox(height: 16),
+
+                                  FutureBuilder<_QuizSummary>(
+                                    future: _quizSummaryFuture, 
+                                    builder: (context, snapshot) {
+                                      final data = snapshot.data ?? _QuizSummary.empty;
+
+                                      return Container(
+                                        width: double.infinity,
+                                        padding: const EdgeInsets.all(16),
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFFF5F7FB),
+                                          borderRadius: BorderRadius.circular(18),
+                                        ),
+                                        child: Row(
+                                          children: [
+                                            CircleAvatar(
+                                              radius: 18,
+                                              backgroundColor: const Color(0xFF6366F1).withOpacity(0.12),
+                                              child: const Icon(Icons.quiz_outlined, color: Color(0xFF6366F1)
+                                              ),
+                                            ),
+                                            const SizedBox(width: 12),
+                                            Expanded(
+                                              child: Column(
+                                                crossAxisAlignment: CrossAxisAlignment.start,
+                                                children: [
+                                                  const Text(
+                                                    'Quiz History',
+                                                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                                                  ),
+                                                  const SizedBox(height: 4),
+                                                  if (!snapshot.hasData)
+                                                  const Text(
+                                                    'Loading your quiz stats...',
+                                                    style: TextStyle(fontSize: 12, color: Colors.grey),
+                                                  )
+                                                  else if (data.attempts == 0)
+                                                  const Text(
+                                                    'No quizzes played yet.',
+                                                    style: TextStyle(fontSize: 12, color: Colors.grey),
+                                                  )
+                                                  else 
+                                                  Text(
+                                                    '${data.attempts} quiz attempt(s)• avg score ${data.averagePercent.toStringAsFixed(0)}% • ${data.totalXp} XP earned',
+                                                    style: TextStyle(fontSize: 12, color: Colors.grey),
+                                                  )
+                                                ],
+                                              )
+                                            )
+                                          ],
+                                        )
+                                      );
+                                    }),
 
                                   const SizedBox(height: 16),
 

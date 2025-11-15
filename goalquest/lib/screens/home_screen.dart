@@ -15,6 +15,7 @@ class HomeScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
+        automaticallyImplyLeading: false,
         title: const Text('Your Journey'),
         actions: [
           IconButton(
@@ -212,6 +213,11 @@ class HomeScreen extends StatelessWidget {
                   icon: Icons.videogame_asset,
                   label: 'Mini-games',
                   onTap: () => Navigator.pushNamed(context, '/miniGames'),
+                ),
+                _FeatureChip(
+                  icon: Icons.videogame_asset,
+                  label: 'SDG Quizzes',
+                  onTap: () => Navigator.pushNamed(context, '/quizGame'),
                 ),
                 _FeatureChip(
                   icon: Icons.insights,
