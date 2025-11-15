@@ -144,7 +144,7 @@ class _MissionDetailScreenState extends State<MissionDetailScreen> {
                                       child: Text(
                                         mission.sdg,
                                         style: const TextStyle(
-                                          fontSize: 11,
+                                          fontSize: 9,
                                           fontWeight: FontWeight.w600,
                                           color: Color(0xFF32C27C),
                                         ),
@@ -153,7 +153,7 @@ class _MissionDetailScreenState extends State<MissionDetailScreen> {
                                     const SizedBox(width: 8),
                                     Container(
                                       padding: const EdgeInsets.symmetric(
-                                        horizontal: 10,
+                                        horizontal: 7,
                                         vertical: 4,
                                       ),
                                       decoration: BoxDecoration(
@@ -165,7 +165,7 @@ class _MissionDetailScreenState extends State<MissionDetailScreen> {
                                       child: Text(
                                         '${mission.xp} XP',
                                         style: const TextStyle(
-                                          fontSize: 11,
+                                          fontSize: 9,
                                           fontWeight: FontWeight.w600,
                                           color: Color(0xFFF97316),
                                         ),
