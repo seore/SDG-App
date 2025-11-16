@@ -26,11 +26,12 @@ const List<MiniGameConfig> _miniGames = [
     id: 'sdg_quiz',
     title: 'SDG Quiz Challenge',
     subtitle: 'Test your knowledge of the global goals.',
-    sdgNumber: 4, // Quality Education
+    sdgNumber: 4,
     icon: Icons.quiz_outlined,
     available: true,
     routeName: '/quizGame',
   ),
+
   MiniGameConfig(
     id: 'trash_sort',
     title: 'Trash Sorter',
@@ -40,12 +41,93 @@ const List<MiniGameConfig> _miniGames = [
     available: false,
     routeName: null,
   ),
+
   MiniGameConfig(
     id: 'city_fix',
     title: 'Fix the City',
     subtitle: 'Build a greener, fairer city. (Coming soon)',
     sdgNumber: 11,
     icon: Icons.location_city,
+    available: false,
+    routeName: null,
+  ),
+
+  MiniGameConfig(
+    id: 'sdg_match',
+    title: 'SDG Match-Up',
+    subtitle: 'Match each SDG to its correct description. (Coming soon)',
+    sdgNumber: 4, 
+    icon: Icons.view_module_rounded,
+    available: false,
+    routeName: '/sdgMatchGame',
+  ),
+
+  MiniGameConfig(
+    id: 'water_guardian',
+    title: 'Water Guardian',
+    subtitle: 'Choose water-saving actions in everyday scenes. (Coming soon)',
+    sdgNumber: 6,
+    icon: Icons.water_drop_outlined,
+    available: false,
+    routeName: null,
+  ),
+
+  MiniGameConfig(
+    id: 'energy_rush',
+    title: 'Energy Rush',
+    subtitle: 'Beat the clock by turning off wasting devices. (Coming soon)',
+    sdgNumber: 7, 
+    icon: Icons.bolt_outlined,
+    available: false,
+    routeName: null,
+  ),
+
+  MiniGameConfig(
+    id: 'climate_hero',
+    title: 'Climate Hero Choices',
+    subtitle: 'Pick the climate-friendly option in everyday scenarios. (Coming soon)',
+    sdgNumber: 13, 
+    icon: Icons.eco_outlined,
+    available: false,
+    routeName: null,
+  ),
+
+  MiniGameConfig(
+    id: 'food_rescue',
+    title: 'Food Rescue',
+    subtitle: 'Save good food from the bin and plan meals. (Coming soon)',
+    sdgNumber: 2,
+    icon: Icons.restaurant_outlined,
+    available: false,
+    routeName: null,
+  ),
+
+  MiniGameConfig(
+    id: 'peace_builder',
+    title: 'Peace Builder',
+    subtitle: 'Solve conflicts with kind and fair choices. (Coming soon)',
+    sdgNumber: 16, 
+    icon: Icons.handshake_outlined,
+    available: false,
+    routeName: null,
+  ),
+
+  MiniGameConfig(
+    id: 'green_journey',
+    title: 'Green Journey',
+    subtitle: 'Plan the most eco-friendly journey across the city. (Coming soon)',
+    sdgNumber: 11, 
+    icon: Icons.directions_walk,
+    available: false,
+    routeName: null,
+  ),
+
+  MiniGameConfig(
+    id: 'tiny_forest',
+    title: 'My Tiny Forest',
+    subtitle: 'Plant trees and grow a healthy ecosystem. (Coming soon)',
+    sdgNumber: 15, 
+    icon: Icons.park_outlined,
     available: false,
     routeName: null,
   ),
@@ -59,7 +141,6 @@ class MiniGamesScreen extends StatelessWidget {
     final theme = Theme.of(context);
 
     return Scaffold(
-      // Fancy gradient app bar like your profile screen
       appBar: PreferredSize(
         preferredSize: const Size.fromHeight(70),
         child: Container(
@@ -89,23 +170,6 @@ class MiniGamesScreen extends StatelessWidget {
             elevation: 0,
             automaticallyImplyLeading: true,
             iconTheme: const IconThemeData(color: Colors.white),
-            /*
-            leading: Container(
-              margin: const EdgeInsets.only(left: 15),
-              child: CircleAvatar(
-                backgroundColor: Colors.white.withOpacity(0.1),
-                child: IconButton(
-                  icon: const Icon(Icons.arrow_back, color: Colors.white),
-                  onPressed: () {
-                    Navigator.pushNamedAndRemoveUntil(
-                      context,
-                      '/home',
-                      (route) => false,
-                    );
-                  },
-                ),
-              ),
-            ),*/
             title: const Text(
               "Mini Games",
               style: TextStyle(

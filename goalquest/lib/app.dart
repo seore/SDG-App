@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:goalquest/screens/sdg_match_game.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import 'screens/onboarding.dart';
@@ -8,6 +9,7 @@ import 'screens/daily_missions_screen.dart';
 import 'screens/mission_detail_screen.dart';
 import 'screens/sdg_map_screen.dart';
 import 'screens/mini_games_screen.dart';
+import 'screens/sdg_match_game.dart';
 import 'screens/quiz_game_screen.dart';
 import 'screens/live_map_screen.dart';
 import 'screens/impact_dashboard_screen.dart';
@@ -119,6 +121,8 @@ class GoalQuestApp extends StatelessWidget {
             return MaterialPageRoute(builder: (_) => const LiveMapScreen());
           case '/miniGames':
             return MaterialPageRoute(builder: (_) => const MiniGamesScreen());
+          case '/sdgMatchGame':
+            return MaterialPageRoute(builder: (_) => const SdgMatchGameScreen());
           case '/quizGame':
             return MaterialPageRoute(builder: (_) => const QuizGameScreen());
           case '/impactDashboard':

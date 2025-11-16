@@ -1,5 +1,4 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
-
 import 'profile_service.dart';
 
 class GameSessionService {
@@ -14,12 +13,8 @@ class GameSessionService {
     required int xpEarned,
   }) async {
     final user = _client.auth.currentUser;
-    if (user == null) {
-      // Not logged in, skip
-      return;
-    }
-
-    // Insert into public.game_sessions with user_id referencing public.users(id)
+    if (user == null) return;
+    
     await _client.from('game_sessions').insert({
       'user_id': user.id,
       'game_id': gameId,
@@ -27,11 +22,9 @@ class GameSessionService {
       'xp_earned': xpEarned,
     });
 
-    // Update profile XP + streak
     await ProfileService.instance.addXp(xpEarned);
   }
 
-  /// Optional helper: fetch all game sessions for current user.
   Future<List<Map<String, dynamic>>> getMyGameSessions() async {
     final user = _client.auth.currentUser;
     if (user == null) return [];
