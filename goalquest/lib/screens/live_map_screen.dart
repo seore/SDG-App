@@ -32,6 +32,7 @@ class _LiveMapScreenState extends State<LiveMapScreen> {
   @override
   void initState() {
     super.initState();
+    // Try to get user location once when opening the map
     _ensureUserLocation();
   }
 
@@ -47,336 +48,390 @@ class _LiveMapScreenState extends State<LiveMapScreen> {
         : 'https://api.maptiler.com/maps/toner-v2/{z}/{x}/{y}.png?key=$mapTilerKey';
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Live Impact Map'),
+      // Fancy gradient app bar
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(70),
+        child: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                Color(0xFF32C27C),
+                Color(0xFF2196F3),
+              ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.only(
+              bottomLeft: Radius.circular(2),
+              bottomRight: Radius.circular(2),
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black26,
+                blurRadius: 8,
+                offset: Offset(0, 3),
+              ),
+            ],
+          ),
+          child: AppBar(
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+            automaticallyImplyLeading: true,
+            iconTheme: const IconThemeData(color: Colors.white),
+            title: const Text(
+              'Live Impact Map',
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w600,
+                fontSize: 20,
+              ),
+            ),
+            centerTitle: true,
+          ),
+        ),
       ),
-      body: Column(
-        children: [
-          _buildFilterRow(),
-          Expanded(
-            child: StreamBuilder<List<LiveMissionCompletion>>(
-              stream: liveData.completionsStream,
-              builder: (context, snapshot) {
-                var completions = (snapshot.data ?? [])
-                    .where((c) => c.lat != null && c.lng != null)
-                    .toList();
+      body: StreamBuilder<List<LiveMissionCompletion>>(
+        stream: liveData.completionsStream,
+        builder: (context, snapshot) {
+          var completions =
+              (snapshot.data ?? []).where((c) => c.lat != null && c.lng != null).toList();
 
-                // SDG filter
-                if (selectedSdg != null) {
-                  completions = completions
-                      .where((c) => c.sdgNumber == selectedSdg)
-                      .toList();
-                }
+          // SDG filter
+          if (selectedSdg != null) {
+            completions =
+                completions.where((c) => c.sdgNumber == selectedSdg).toList();
+          }
 
-                // Time filter
-                completions = completions.where(_matchesTimeFilter).toList();
+          // Time filter
+          completions = completions.where(_matchesTimeFilter).toList();
 
-                // Area filter (Nearby uses user's location)
-                if (_areaFilter == AreaFilter.nearby && _userLocation != null) {
-                  completions = _filterNearby(completions, _userLocation!);
-                }
+          // Area filter
+          if (_areaFilter == AreaFilter.nearby && _userLocation != null) {
+            completions = _filterNearby(completions, _userLocation!);
+          }
 
-                final mapCenter = completions.isNotEmpty
-                    ? LatLng(completions.first.lat!, completions.first.lng!)
-                    : const LatLng(10.0, 0.0);
+          final mapCenter = completions.isNotEmpty
+              ? LatLng(completions.first.lat!, completions.first.lng!)
+              : const LatLng(10.0, 0.0);
 
-                // Heat circles for "hot spots"
-                final heatCircles = completions.map((c) {
-                  final sdg = getSdgByNumber(c.sdgNumber);
-                  return CircleMarker(
-                    point: LatLng(c.lat!, c.lng!),
-                    radius: 40,
-                    color: (sdg?.color ?? Colors.green).withOpacity(0.2),
-                    useRadiusInMeter: false,
+          // Heat circles
+          final heatCircles = completions.map((c) {
+            final sdg = getSdgByNumber(c.sdgNumber);
+            return CircleMarker(
+              point: LatLng(c.lat!, c.lng!),
+              radius: 25,
+              color: (sdg?.color ?? Colors.green).withOpacity(0.2),
+              useRadiusInMeter: false,
+            );
+          }).toList();
+
+          // Markers
+          final markers = completions.map((c) {
+            final sdg = getSdgByNumber(c.sdgNumber);
+            final isMine = c.userName == 'You';
+
+            return Marker(
+              point: LatLng(c.lat!, c.lng!),
+              width: isMine ? 48 : 40,
+              height: isMine ? 48 : 40,
+              child: TweenAnimationBuilder<double>(
+                tween: Tween(begin: 0.0, end: 1.0),
+                duration: const Duration(milliseconds: 500),
+                curve: Curves.easeOutBack,
+                builder: (context, scale, child) {
+                  return Transform.scale(
+                    scale: scale,
+                    child: child,
                   );
-                }).toList();
-
-                // Markers (highlight current user's missions)
-                final markers = completions.map((c) {
-                  final sdg = getSdgByNumber(c.sdgNumber);
-                  final isMine = c.userName == 'You';
-
-                  return Marker(
-                    point: LatLng(c.lat!, c.lng!),
-                    width: isMine ? 48 : 40,
-                    height: isMine ? 48 : 40,
-                    child: TweenAnimationBuilder<double>(
-                      tween: Tween(begin: 0.0, end: 1.0),
-                      duration: const Duration(milliseconds: 500),
-                      curve: Curves.easeOutBack,
-                      builder: (context, scale, child) {
-                        return Transform.scale(
-                          scale: scale,
-                          child: child,
-                        );
-                      },
-                      child: GestureDetector(
-                        onTap: () => _showCompletionDetails(context, c),
-                        child: Container(
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            boxShadow: [
-                              BoxShadow(
-                                color: (sdg?.color ?? Colors.green)
-                                    .withOpacity(isMine ? 0.8 : 0.5),
-                                blurRadius: isMine ? 10 : 8,
-                                offset: const Offset(0, 3),
+                },
+                child: GestureDetector(
+                  onTap: () => _showCompletionDetails(context, c),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: (sdg?.color ?? Colors.green)
+                              .withOpacity(isMine ? 0.8 : 0.5),
+                          blurRadius: isMine ? 10 : 8,
+                          offset: const Offset(0, 3),
+                        ),
+                      ],
+                      border: isMine
+                          ? Border.all(
+                              color: Colors.white,
+                              width: 2,
+                            )
+                          : null,
+                    ),
+                    child: CircleAvatar(
+                      radius: isMine ? 22 : 18,
+                      backgroundColor: Colors.white,
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          CircleAvatar(
+                            radius: isMine ? 19 : 15,
+                            backgroundColor: sdg?.color ?? Colors.green,
+                            child: Text(
+                              '${c.sdgNumber}',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 12,
                               ),
-                            ],
-                            border: isMine
-                                ? Border.all(
-                                    color: Colors.white,
-                                    width: 2,
-                                  )
-                                : null,
-                          ),
-                          child: CircleAvatar(
-                            radius: isMine ? 22 : 18,
-                            backgroundColor: Colors.white,
-                            child: Stack(
-                              alignment: Alignment.center,
-                              children: [
-                                CircleAvatar(
-                                  radius: isMine ? 19 : 15,
-                                  backgroundColor: sdg?.color ?? Colors.green,
-                                  child: Text(
-                                    '${c.sdgNumber}',
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 12,
-                                    ),
-                                  ),
-                                ),
-                                if (isMine)
-                                  const Positioned(
-                                    bottom: -1,
-                                    right: -1,
-                                    child: Icon(
-                                      Icons.star,
-                                      size: 14,
-                                      color: Colors.amber,
-                                    ),
-                                  ),
-                              ],
                             ),
                           ),
-                        ),
-                      ),
-                    ),
-                  );
-                }).toList();
-
-                return Stack(
-                  children: [
-                    FlutterMap(
-                      mapController: _mapController, 
-                      options: MapOptions(
-                        initialCenter: mapCenter,
-                        initialZoom: 5,
-                      ),
-                      children: [
-                        TileLayer(
-                          urlTemplate: tileUrl,
-                          userAgentPackageName: 'com.example.goalquest',
-                          retinaMode: true,
-                        ),
-                        if (heatCircles.isNotEmpty)
-                          CircleLayer(circles: heatCircles),
-                        MarkerLayer(markers: markers),
-                      ],
-                    ),
-
-                    // SDG info banner
-                    Positioned(
-                      top: 12,
-                      left: 12,
-                      right: 12,
-                      child: _buildSdgInfoBanner(),
-                    ),
-
-                    // Summary card
-                    Positioned(
-                      left: 16,
-                      right: 16,
-                      bottom: 16,
-                      child: Card(
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(18),
-                        ),
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 12,
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              if (_areaFilter == AreaFilter.nearby)
-                                Row(
-                                  children: [
-                                    const Icon(Icons.location_on, size: 18),
-                                    const SizedBox(width: 6),
-                                    Expanded(
-                                      child: Text(
-                                        _userLocation == null
-                                            ? (_isLocLoading
-                                                ? 'Getting your location...'
-                                                : _locError ??
-                                                    'Turn on location to see missions near you.')
-                                            : 'Showing missions near your location.',
-                                        style: const TextStyle(fontSize: 12),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              if (_areaFilter == AreaFilter.nearby)
-                                const SizedBox(height: 8),
-                              Row(
-                                children: [
-                                  const Icon(Icons.public, size: 20),
-                                  const SizedBox(width: 8),
-                                  Expanded(
-                                    child: Text(
-                                      completions.isEmpty
-                                          ? 'No missions matching these filters yet.'
-                                          : '${completions.length} mission(s) '
-                                            '${_areaFilter == AreaFilter.nearby ? "near you " : ""}'
-                                            'in the selected time & SDG filter.',
-                                      style: const TextStyle(fontSize: 13),
-                                    ),
-                                  ),
-                                ],
+                          if (isMine)
+                            const Positioned(
+                              bottom: -1,
+                              right: -1,
+                              child: Icon(
+                                Icons.star,
+                                size: 14,
+                                color: Color.fromARGB(255, 230, 230, 28),
                               ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-
-                    // Zoom & location controls
-                    Positioned(
-                      right: 16,
-                      bottom: 100,
-                      child: Column(
-                        children: [
-                          FloatingActionButton.small(
-                            heroTag: 'zoomIn',
-                            onPressed: _zoomIn,
-                            child: const Icon(Icons.add),
-                          ),
-                          const SizedBox(height: 8),
-                          FloatingActionButton.small(
-                            heroTag: 'zoomOut',
-                            onPressed: _zoomOut,
-                            child: const Icon(Icons.remove),
-                          ),
-                          const SizedBox(height: 8),
-                          if (_userLocation != null)
-                            FloatingActionButton.small(
-                              heroTag: 'centerOnMe',
-                              onPressed: () {
-                                if (_userLocation == null) {
-                                  _ensureUserLocation();
-                                } else {
-                                  _centerOnUser();
-                                }
-                              },
-                              backgroundColor: _userLocation == null ? Colors.grey.shade400
-                              : Theme.of(context).colorScheme.primary,
-                              child: Icon(Icons.my_location, color: _userLocation == null ? Colors.white70 : Colors.white),
                             ),
                         ],
                       ),
                     ),
+                  ),
+                ),
+              ),
+            );
+          }).toList();
+
+          return Stack(
+            children: [
+              // MAP
+              FlutterMap(
+                mapController: _mapController,
+                options: MapOptions(
+                  initialCenter: mapCenter,
+                  initialZoom: 3.5,
+                ),
+                children: [
+                  TileLayer(
+                    urlTemplate: tileUrl,
+                    userAgentPackageName: 'com.example.goalquest',
+                    retinaMode: true,
+                  ),
+                  if (heatCircles.isNotEmpty) CircleLayer(circles: heatCircles),
+                  MarkerLayer(markers: markers),
+                ],
+              ),
+
+              // FILTER CARD (top)
+              Positioned(
+                left: 12,
+                right: 12,
+                top: 12,
+                child: _buildFilterCard(),
+              ),
+
+              // SDG info pill (under filter)
+              Positioned(
+                left: 12,
+                right: 12,
+                top: 170,
+                child: _buildSdgInfoBanner(),
+              ),
+
+              // SUMMARY CARD (bottom)
+              Positioned(
+                left: 16,
+                right: 16,
+                bottom: 16,
+                child: _buildSummaryCard(completions),
+              ),
+
+              // ZOOM + LOCATION BUTTONS
+              Positioned(
+                right: 16,
+                bottom: 110,
+                child: Column(
+                  children: [
+                    FloatingActionButton.small(
+                      heroTag: 'zoomIn',
+                      onPressed: _zoomIn,
+                      child: const Icon(Icons.add),
+                    ),
+                    const SizedBox(height: 8),
+                    FloatingActionButton.small(
+                      heroTag: 'zoomOut',
+                      onPressed: _zoomOut,
+                      child: const Icon(Icons.remove),
+                    ),
+                    const SizedBox(height: 8),
+                    FloatingActionButton.small(
+                      heroTag: 'centerOnMe',
+                      onPressed: () {
+                        if (_userLocation == null) {
+                          _ensureUserLocation();
+                        } else {
+                          _centerOnUser();
+                        }
+                      },
+                      backgroundColor: _userLocation == null
+                          ? Colors.grey.shade400
+                          : Theme.of(context).colorScheme.primary,
+                      child: Icon(
+                        Icons.my_location,
+                        color: _userLocation == null
+                            ? Colors.white70
+                            : Colors.white,
+                      ),
+                    ),
                   ],
-                );
-              },
-            ),
-          ),
-        ],
+                ),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
 
-  Widget _buildFilterRow() {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
-      child: Column(
-        children: [
-          Row(
-            children: [
-              const Icon(Icons.filter_list, size: 18),
-              const SizedBox(width: 8),
-              const Text(
-                'SDG:',
-                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
-              ),
-              const SizedBox(width: 8),
-              DropdownButton<int?>(
-                value: selectedSdg,
-                hint: const Text('All'),
-                items: [
-                  const DropdownMenuItem<int?>(
-                    value: null,
-                    child: Text('All'),
-                  ),
-                  ...sdgGoals.map(
-                    (g) => DropdownMenuItem<int?>(
-                      value: g.number,
-                      child: Text('SDG ${g.number}'),
+  // ---------- UI BUILDERS ----------
+
+  Widget _buildFilterCard() {
+    return Card(
+      elevation: 6,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+      color: Colors.white.withOpacity(0.96),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+        child: Column(
+          children: [
+            // Row 1: SDG dropdown
+            Row(
+              children: [
+                const Icon(Icons.filter_list, size: 18),
+                const SizedBox(width: 8),
+                const Text(
+                  'SDG:',
+                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                ),
+                const SizedBox(width: 8),
+                DropdownButton<int?>(
+                  value: selectedSdg,
+                  hint: const Text('All', style: TextStyle(fontSize: 10)),
+                  underline: const SizedBox.shrink(),
+                  items: [
+                    const DropdownMenuItem<int?>(
+                      value: null,
+                      child: Text('All goals', style: TextStyle(fontSize: 15)),
+                    ),
+                    ...sdgGoals.map(
+                      (g) => DropdownMenuItem<int?>(
+                        value: g.number,
+                        child: Text('SDG ${g.number}', style: TextStyle(fontSize: 10)),
+                      ),
+                    ),
+                  ],
+                  onChanged: (value) {
+                    setState(() {
+                      selectedSdg = value;
+                    });
+                  },
+                ),
+              ],
+            ),
+            const SizedBox(height: 4),
+
+            // Row 2: Time filter chips
+            Row(
+              children: [
+                const Text(
+                  'Time:',
+                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                ),
+                const SizedBox(width: 8),
+                Wrap(
+                  spacing: 6,
+                  children: [
+                    _timeChip('Today', TimeFilter.today,),
+                    _timeChip('Week', TimeFilter.week),
+                    _timeChip('Month', TimeFilter.month),
+                    _timeChip('All', TimeFilter.all),
+                  ],
+                ),
+              ],
+            ),
+            const SizedBox(height: 4),
+
+            // Row 3: Area filter chips
+            Row(
+              children: [
+                const Text(
+                  'Area:',
+                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                ),
+                const SizedBox(width: 8),
+                Wrap(
+                  spacing: 6,
+                  children: [
+                    _areaChip('World', AreaFilter.world),
+                    _areaChip('Nearby', AreaFilter.nearby),
+                  ],
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSummaryCard(List<LiveMissionCompletion> completions) {
+    final isNearby = _areaFilter == AreaFilter.nearby;
+
+    return Card(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+      color: Colors.white.withOpacity(0.97),
+      elevation: 8,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (isNearby)
+              Row(
+                children: [
+                  const Icon(Icons.location_on, size: 18),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      _userLocation == null
+                          ? (_isLocLoading
+                              ? 'Getting your location...'
+                              : _locError ??
+                                  'Turn on location to see missions near you.')
+                          : 'Showing missions within ~50km of you.',
+                      style: const TextStyle(fontSize: 10),
                     ),
                   ),
                 ],
-                onChanged: (value) {
-                  setState(() {
-                    selectedSdg = value;
-                  });
-                },
               ),
-            ],
-          ),
-          const SizedBox(height: 4),
-
-          // Row 2: Time filter chips
-          Row(
-            children: [
-              const Text(
-                'Time:',
-                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
-              ),
-              const SizedBox(width: 8),
-              Wrap(
-                spacing: 6,
-                children: [
-                  _timeChip('Today', TimeFilter.today),
-                  _timeChip('Week', TimeFilter.week),
-                  _timeChip('Month', TimeFilter.month),
-                  _timeChip('All', TimeFilter.all),
-                ],
-              ),
-            ],
-          ),
-          const SizedBox(height: 4),
-
-          // Row 3: Area filter chips
-          Row(
-            children: [
-              const Text(
-                'Area:',
-                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
-              ),
-              const SizedBox(width: 8),
-              Wrap(
-                spacing: 6,
-                children: [
-                  _areaChip('World', AreaFilter.world),
-                  _areaChip('Nearby', AreaFilter.nearby),
-                ],
-              ),
-            ],
-          ),
-        ],
+            if (isNearby) const SizedBox(height: 8),
+            Row(
+              children: [
+                const Icon(Icons.public, size: 20),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    completions.isEmpty
+                        ? 'No missions matching these filters yet.'
+                        : '${completions.length} mission(s) '
+                            '${isNearby ? "near you " : ""}'
+                            'in the selected filters.',
+                    style: const TextStyle(fontSize: 13),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -384,7 +439,7 @@ class _LiveMapScreenState extends State<LiveMapScreen> {
   Widget _timeChip(String label, TimeFilter filter) {
     final isSelected = _timeFilter == filter;
     return ChoiceChip(
-      label: Text(label),
+      label: Text(label, style: TextStyle(fontSize: 10)),
       selected: isSelected,
       onSelected: (_) {
         setState(() {
@@ -398,7 +453,7 @@ class _LiveMapScreenState extends State<LiveMapScreen> {
   Widget _areaChip(String label, AreaFilter filter) {
     final isSelected = _areaFilter == filter;
     return ChoiceChip(
-      label: Text(label),
+      label: Text(label, style: TextStyle(fontSize: 10)),
       selected: isSelected,
       onSelected: (_) async {
         if (filter == AreaFilter.nearby && _userLocation == null) {
@@ -411,6 +466,50 @@ class _LiveMapScreenState extends State<LiveMapScreen> {
       visualDensity: VisualDensity.compact,
     );
   }
+
+  // ---------- SDG INFO BANNER ----------
+
+  Widget _buildSdgInfoBanner() {
+    if (selectedSdg == null) {
+      return Card(
+        color: Colors.white.withOpacity(0.92),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+          child: Text(
+            'Each colored circle is a real SDG action. '
+            'Use the filters to explore different goals, dates and areas.',
+            style: TextStyle(fontSize: 12),
+          ),
+        ),
+      );
+    }
+
+    final sdg = getSdgByNumber(selectedSdg!);
+    if (sdg == null) return const SizedBox.shrink();
+
+    return Card(
+      color: sdg.color.withOpacity(0.9),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+        child: Text(
+          'SDG ${sdg.number}: ${sdg.shortTitle}\n${sdg.fullTitle}',
+          style: const TextStyle(
+            fontSize: 11,
+            color: Colors.white,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ---------- MAP LOGIC ----------
 
   bool _matchesTimeFilter(LiveMissionCompletion c) {
     final now = DateTime.now();
@@ -460,7 +559,7 @@ class _LiveMapScreenState extends State<LiveMapScreen> {
       } else {
         _locError = 'Location not available.';
       }
-    } catch (e) {
+    } catch (_) {
       _locError = 'Error getting location.';
     } finally {
       if (mounted) {
@@ -471,44 +570,21 @@ class _LiveMapScreenState extends State<LiveMapScreen> {
     }
   }
 
-  Widget _buildSdgInfoBanner() {
-    if (selectedSdg == null) {
-      return Card(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: const Padding(
-          padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-          child: Text(
-            'Each colored circle shows a real SDG action. '
-            'Filter by goal, time or area to explore global impact.',
-            style: TextStyle(fontSize: 12),
-          ),
-        ),
-      );
-    }
+  void _centerOnUser() {
+    if (_userLocation == null) return;
+    final camera = _mapController.camera;
+    final targetZoom = camera.zoom < 10 ? 10.0 : camera.zoom;
+    _mapController.move(_userLocation!, targetZoom);
+  }
 
-    final sdg = getSdgByNumber(selectedSdg!);
-    if (sdg == null) return const SizedBox.shrink();
+  void _zoomIn() {
+    final camera = _mapController.camera;
+    _mapController.move(camera.center, camera.zoom + 1);
+  }
 
-    return Card(
-      color: sdg.color.withOpacity(0.9),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-        child: Text(
-          'SDG ${sdg.number}: ${sdg.shortTitle}\n'
-          '${sdg.fullTitle}',
-          style: const TextStyle(
-            fontSize: 11,
-            color: Colors.white,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-      ),
-    );
+  void _zoomOut() {
+    final camera = _mapController.camera;
+    _mapController.move(camera.center, camera.zoom - 1);
   }
 
   void _showCompletionDetails(
@@ -611,22 +687,5 @@ class _LiveMapScreenState extends State<LiveMapScreen> {
     if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
     if (diff.inHours < 24) return '${diff.inHours}h ago';
     return '${diff.inDays}d ago';
-  }
-
-  void _zoomIn() {
-    final camera = _mapController.camera;
-    _mapController.move(camera.center, camera.zoom + 1);
-  }
-
-  void _zoomOut() {
-    final camera = _mapController.camera;
-    _mapController.move(camera.center, camera.zoom - 1);
-  }
-
-  void _centerOnUser() {
-    if (_userLocation == null) return;
-    final camera = _mapController.camera;
-    final targetZoom = camera.zoom < 10 ? 10.0 : camera.zoom;
-    _mapController.move(_userLocation!, targetZoom);
   }
 }

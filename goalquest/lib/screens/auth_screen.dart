@@ -2,7 +2,6 @@
 
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-
 import '../services/profile_service.dart';
 
 class AuthScreen extends StatefulWidget {
@@ -61,7 +60,6 @@ class _AuthScreenState extends State<AuthScreen>
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      // Tiny SDG dots row
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: const [
