@@ -10,6 +10,7 @@ import 'screens/mission_detail_screen.dart';
 import 'screens/sdg_map_screen.dart';
 import 'screens/mini_games_screen.dart';
 import 'screens/trash_sort_game.dart';
+import 'screens/city_fix_game.dart';
 import 'screens/quiz_game_screen.dart';
 import 'screens/live_map_screen.dart';
 import 'screens/impact_dashboard_screen.dart';
@@ -123,6 +124,8 @@ class GoalQuestApp extends StatelessWidget {
             return MaterialPageRoute(builder: (_) => const MiniGamesScreen());
           case '/trashSortGame':
             return MaterialPageRoute(builder: (_) => const TrashSortGameScreen());
+          case '/cityFixGame':
+            return MaterialPageRoute(builder: (_) => CityFixGameScreen());
           case '/sdgMatchGame':
             return MaterialPageRoute(builder: (_) => const SdgMatchGameScreen());
           case '/quizGame':

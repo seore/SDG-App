@@ -47,11 +47,11 @@ const List<MiniGameConfig> _miniGames = [
   MiniGameConfig(
     id: 'city_fix',
     title: 'Fix the City',
-    subtitle: 'Build a greener, fairer city. (Coming soon)',
+    subtitle: 'Upgrade roads & parks for a greener, fairer city',
     sdgNumber: 11,
     icon: Icons.location_city,
-    available: false,
-    routeName: null,
+    available: true,
+    routeName: '/cityFixGame',
   ),
 
   MiniGameConfig(
