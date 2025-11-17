@@ -1,6 +1,9 @@
+// ignore_for_file: deprecated_member_use
+
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:goalquest/services/profile_service.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -431,6 +434,8 @@ class _MissionDetailScreenState extends State<MissionDetailScreen> {
       lat: lat,
       lng: lng,
     );
+
+    await ProfileService.instance.addXp(mission.xp);
 
     // also create community story
     await LiveDataService.instance.addStory(

@@ -1,3 +1,5 @@
+// ignore_for_file: unreachable_switch_default, deprecated_member_use
+
 import 'package:flutter/material.dart';
 import '../models/mission.dart';
 import '../services/mission_progress_service.dart';

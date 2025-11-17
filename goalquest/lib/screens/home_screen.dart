@@ -1,242 +1,484 @@
-import 'package:flutter/material.dart';
-import '../data/dummy_missions.dart';
-import '../models/mission.dart';
-import '../data/sdg_data.dart';
+// ignore_for_file: deprecated_member_use
 
-class HomeScreen extends StatelessWidget {
+import 'package:flutter/material.dart';
+import '../services/profile_service.dart';
+
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
-  Mission get _dailyMission => dummyMissions.first;
-  SdgGoal get _featuredSdg => getSdgByNumber(13) ?? sdgGoals.first;
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  final _profileService = ProfileService.instance;
+
+  @override
+  void initState() {
+    super.initState();
+    _profileService.loadCurrentUserProfile();
+  }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
     return Scaffold(
-      appBar: AppBar(
-        automaticallyImplyLeading: false,
-        title: const Text('Your Journey'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.person),
-            onPressed: () {
-              Navigator.pushNamed(context, '/profile');
-            },
+      // ===== APP BAR WITH PROFILE ICON =====
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(70),
+        child: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                Color(0xFF32C27C),
+                Color(0xFF2196F3),
+              ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black26,
+                blurRadius: 8,
+                offset: Offset(0, 3),
+              ),
+            ],
           ),
-        ],
-
-      ),
-      body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          children: [
-            // Level + XP
-            Text(
-              'Hi Trailblazer 👋',
-              style: theme.textTheme.titleMedium!.copyWith(
+          child: AppBar(
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+            automaticallyImplyLeading: false,
+            title: const Text(
+              "Home",
+              style: TextStyle(
+                color: Colors.white,
                 fontWeight: FontWeight.w700,
+                fontSize: 20,
               ),
             ),
-            const SizedBox(height: 4),
-            Text(
-              'Ready for today’s impact?',
-              style: theme.textTheme.bodyMedium!
-                  .copyWith(color: Colors.grey[700]),
-            ),
-            const SizedBox(height: 16),
-            Card(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Level 1 • Trailblazer',
-                      style: theme.textTheme.bodyMedium!.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
+            centerTitle: true,
+            actions: [
+              Padding(
+                padding: const EdgeInsets.only(right: 12.0),
+                child: GestureDetector(
+                  onTap: () {
+                    Navigator.pushNamed(context, '/profile');
+                  },
+                  child: CircleAvatar(
+                    radius: 18,
+                    backgroundColor: Colors.white.withOpacity(0),
+                    child: const Icon(
+                      Icons.person,
+                      color: Colors.white,
                     ),
-                    const SizedBox(height: 8),
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(20),
-                      child: const LinearProgressIndicator(
-                        value: 0.0,
-                        minHeight: 10,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      '0 / 100 XP to next level',
-                      style: theme.textTheme.labelSmall!
-                          .copyWith(color: Colors.grey[600]),
-                    ),
-                  ],
+                  ),
                 ),
               ),
-            ),
+            ],
+          ),
+        ),
+      ),
 
-            const SizedBox(height: 16),
+      // ===== BODY =====
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              Color(0xFF32C27C),
+              Color(0xFF2196F3),
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
+        child: SafeArea(
+          child: ValueListenableBuilder<UserProfile?>(
+            valueListenable: _profileService.profileListenable,
+            builder: (context, profile, _) {
+              if (profile == null) {
+                return _buildLoggedOutState(theme);
+              }
 
-            // Featured SDG
-            Container(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(20),
-                gradient: LinearGradient(
-                  colors: [
-                    _featuredSdg.color.withOpacity(0.95),
-                    _featuredSdg.color.withOpacity(0.7),
-                  ],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-              ),
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
-              child: Row(
-                children: [
-                  CircleAvatar(
-                    backgroundColor: Colors.white,
-                    child: Text(
-                      '${_featuredSdg.number}',
-                      style: const TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      'Featured SDG: ${_featuredSdg.shortTitle}',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                  IconButton(
-                    onPressed: () {
-                      Navigator.pushNamed(
-                        context,
-                        '/learnSdg',
-                        arguments: _featuredSdg.number,
-                      );
-                    },
-                    icon: const Icon(Icons.arrow_forward, color: Colors.white),
-                  ),
-                ],
-              ),
-            ),
+              final xp = profile.xp;
+              const xpPerLevel = 100;
+              final level = xp ~/ xpPerLevel;
+              final xpInLevel = xp % xpPerLevel;
+              final progress = xpInLevel / xpPerLevel;
+              final streak = profile.streak;
 
-            const SizedBox(height: 20),
+              return LayoutBuilder(
+                builder: (context, constraints) {
+                  final maxWidth = constraints.maxWidth > 480
+                      ? 480.0
+                      : constraints.maxWidth * 0.95;
 
-            // Daily mission
-            Text(
-              'Today’s mission',
-              style: theme.textTheme.titleMedium!
-                  .copyWith(fontWeight: FontWeight.w600),
-            ),
-            const SizedBox(height: 8),
-            Card(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(18),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Row(
-                  children: [
-                    const CircleAvatar(
-                      radius: 25,
-                      child: Text('🔥'),
-                    ),
-                    const SizedBox(width: 14),
-                    Expanded(
+                  return Center(
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.symmetric(vertical: 24),
                       child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
+                          // ===== HEADER =====
+                          /*
                           Text(
-                            _dailyMission.title,
-                            style: theme.textTheme.bodyMedium!.copyWith(
-                              fontWeight: FontWeight.w600,
+                            'Your SDG Journey',
+                            style: theme.textTheme.headlineSmall?.copyWith(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w800,
                             ),
                           ),
-                          const SizedBox(height: 4),
-                          Text(
-                            '${_dailyMission.sdg} • ${_dailyMission.xp} XP',
-                            style: theme.textTheme.bodySmall!
-                                .copyWith(color: Colors.grey[600]),
+                          const SizedBox(height: 24),
+                          */
+
+                          // ===== XP + STREAK CARD =====
+                          Container(
+                            width: maxWidth,
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.97),
+                              borderRadius: BorderRadius.circular(24),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0),
+                                  blurRadius: 20,
+                                  offset: const Offset(0, 12),
+                                ),
+                              ],
+                            ),
+                            child: Padding(
+                              padding: const EdgeInsets.all(18.0),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      CircleAvatar(
+                                        radius: 26,
+                                        backgroundColor:
+                                            const Color(0xFF32C27C)
+                                                .withOpacity(0.12),
+                                        child: const Text(
+                                          '🌍',
+                                          style: TextStyle(fontSize: 26),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              'Welcome back,',
+                                              style: theme
+                                                  .textTheme.bodySmall
+                                                  ?.copyWith(
+                                                color: Colors.grey[600],
+                                              ),
+                                            ),
+                                            Text(
+                                              profile.username.isNotEmpty
+                                                  ? profile.username
+                                                  : 'Explorer',
+                                              style: theme
+                                                  .textTheme.titleMedium
+                                                  ?.copyWith(
+                                                fontWeight: FontWeight.w700,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 10,
+                                          vertical: 6,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFF32C27C)
+                                              .withOpacity(0.08),
+                                          borderRadius:
+                                              BorderRadius.circular(999),
+                                        ),
+                                        child: Row(
+                                          children: const [
+                                            Icon(
+                                              Icons.stars_rounded,
+                                              size: 16,
+                                              color: Color(0xFF32C27C),
+                                            ),
+                                            SizedBox(width: 4),
+                                            Text(
+                                              'Level',
+                                              style: TextStyle(
+                                                fontSize: 12,
+                                                fontWeight: FontWeight.w600,
+                                                color: Color(0xFF32C27C),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        '$level',
+                                        style: const TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w700,
+                                          color: Color(0xFF32C27C),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+
+                                  const SizedBox(height: 16),
+
+                                  Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      const Text(
+                                        'Impact XP',
+                                        style: TextStyle(
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                      AnimatedSwitcher(
+                                        duration: const Duration(
+                                            milliseconds: 400),
+                                        transitionBuilder: (child, anim) =>
+                                            ScaleTransition(
+                                          scale: anim,
+                                          child: child,
+                                        ),
+                                        child: Text(
+                                          '$xp XP',
+                                          key: ValueKey<int>(xp),
+                                          style: const TextStyle(
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w700,
+                                            color: Color(0xFF32C27C),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 8),
+
+                                  // Animated XP bar
+                                  TweenAnimationBuilder<double>(
+                                    tween: Tween<double>(
+                                      begin: 0,
+                                      end: progress.clamp(0.0, 1.0),
+                                    ),
+                                    duration:
+                                        const Duration(milliseconds: 600),
+                                    builder: (context, value, _) {
+                                      return ClipRRect(
+                                        borderRadius:
+                                            BorderRadius.circular(999),
+                                        child: LinearProgressIndicator(
+                                          value: value,
+                                          minHeight: 8,
+                                          backgroundColor:
+                                              Colors.grey.shade300,
+                                          valueColor:
+                                              const AlwaysStoppedAnimation(
+                                            Color(0xFF32C27C),
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                  const SizedBox(height: 6),
+                                  Text(
+                                    '$xpInLevel / $xpPerLevel XP to next level',
+                                    style: const TextStyle(
+                                      fontSize: 11,
+                                      color: Colors.grey,
+                                    ),
+                                  ),
+
+                                  const SizedBox(height: 16),
+
+                                  // Streak + quick actions
+                                  Row(
+                                    children: [
+                                      // Streak chip
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 10,
+                                          vertical: 6,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: Colors.orange
+                                              .withOpacity(0.08),
+                                          borderRadius:
+                                              BorderRadius.circular(999),
+                                        ),
+                                        child: Row(
+                                          children: [
+                                            const Icon(
+                                              Icons.local_fire_department,
+                                              size: 16,
+                                              color: Colors.orange,
+                                            ),
+                                            const SizedBox(width: 4),
+                                            Text(
+                                              '$streak day streak',
+                                              style: const TextStyle(
+                                                fontSize: 12,
+                                                fontWeight: FontWeight.w600,
+                                                color: Colors.orange,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      const Spacer(),
+                                      TextButton.icon(
+                                        onPressed: () {
+                                          Navigator.pushNamed(
+                                              context, '/impactDashboard');
+                                        },
+                                        icon: const Icon(
+                                          Icons.auto_graph,
+                                          size: 16,
+                                        ),
+                                        label: const Text(
+                                          'View impact',
+                                          style: TextStyle(fontSize: 12),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+
+                          const SizedBox(height: 24),
+
+                          // ===== QUICK NAV CARDS =====
+                          Container(
+                            width: maxWidth,
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.97),
+                              borderRadius: BorderRadius.circular(24),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0),
+                                  blurRadius: 18,
+                                  offset: const Offset(0, 10),
+                                ),
+                              ],
+                            ),
+                            child: Column(
+                              children: [
+                                _HomeNavTile(
+                                  icon: Icons.flag_rounded,
+                                  iconColor: const Color(0xFF32C27C),
+                                  title: 'Daily Missions',
+                                  subtitle:
+                                      'Small real-world actions you can do today.',
+                                  onTap: () => Navigator.pushNamed(
+                                      context, '/dailyMissions'),
+                                ),
+                                const Divider(
+                                    height: 1, color: Color(0xFFE2E8F0)),
+                                _HomeNavTile(
+                                  icon: Icons.videogame_asset_rounded,
+                                  iconColor: const Color(0xFF6366F1),
+                                  title: 'Mini Games & Quizzes',
+                                  subtitle:
+                                      'Play to learn about the SDGs and earn XP.',
+                                  onTap: () => Navigator.pushNamed(
+                                      context, '/miniGames'),
+                                ),
+                                 const Divider(
+                                    height: 1, color: Color(0xFFE2E8F0)),
+                                _HomeNavTile(
+                                  icon: Icons.menu_book_rounded,
+                                  iconColor: const Color(0xFF14B8A6),
+                                  title: 'Learn the SDGs',
+                                  subtitle:
+                                      'Explore topics, cases & real global challenges.',
+                                  onTap: () =>
+                                      Navigator.pushNamed(context, '/learnSdg'),
+                                ),
+                               
+                                const Divider(
+                                    height: 1, color: Color(0xFFE2E8F0)),
+                                _HomeNavTile(
+                                  icon: Icons.public,
+                                  iconColor: const Color(0xFF0EA5E9),
+                                  title: 'Live Impact Map',
+                                  subtitle:
+                                      'See where other young changemakers are acting.',
+                                  onTap: () =>
+                                      Navigator.pushNamed(context, '/liveMap'),
+                                ),
+                                const Divider(
+                                    height: 1, color: Color(0xFFE2E8F0)),
+                                _HomeNavTile(
+                                  icon: Icons.groups_rounded,
+                                  iconColor: const Color(0xFFEC4899),
+                                  title: 'Community Stories',
+                                  subtitle:
+                                      'Share your wins and see what others are doing.',
+                                  onTap: () => Navigator.pushNamed(
+                                      context, '/community'),
+                                ),
+                              ],
+                            ),
                           ),
                         ],
                       ),
                     ),
-                    ElevatedButton(
-                      onPressed: () {
-                        Navigator.pushNamed(
-                          context,
-                          '/missionDetail',
-                          arguments: _dailyMission,
-                        );
-                      },
-                      child: const Text('Start'),
-                    ),
-                  ],
-                ),
+                  );
+                },
+              );
+            },
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLoggedOutState(ThemeData theme) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              'You\'re not signed in',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                color: Colors.white,
               ),
             ),
-
-            const SizedBox(height: 20),
-
-            // Explore section
+            const SizedBox(height: 8),
             Text(
-              'Explore',
-              style: theme.textTheme.titleMedium!
-                  .copyWith(fontWeight: FontWeight.w600),
+              'Log in or sign up to start earning XP and tracking your SDG impact.',
+              textAlign: TextAlign.center,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: Colors.white.withOpacity(0.9),
+              ),
             ),
-            const SizedBox(height: 10),
-            Wrap(
-              spacing: 12,
-              runSpacing: 12,
-              children: [
-                _FeatureChip(
-                  icon: Icons.map,
-                  label: 'Live SDG Map',
-                  onTap: () => Navigator.pushNamed(context, '/liveMap'),
-                ),
-                _FeatureChip(
-                  icon: Icons.flag,
-                  label: 'All missions',
-                  onTap: () => Navigator.pushNamed(context, '/dailyMissions'),
-                ),
-                _FeatureChip(
-                  icon: Icons.videogame_asset,
-                  label: 'Mini-games',
-                  onTap: () => Navigator.pushNamed(context, '/miniGames'),
-                ),
-                _FeatureChip(
-                  icon: Icons.videogame_asset,
-                  label: 'SDG Quizzes',
-                  onTap: () => Navigator.pushNamed(context, '/quizGame'),
-                ),
-                _FeatureChip(
-                  icon: Icons.insights,
-                  label: 'Impact',
-                  onTap: () =>
-                      Navigator.pushNamed(context, '/impactDashboard'),
-                ),
-                _FeatureChip(
-                  icon: Icons.groups,
-                  label: 'Community',
-                  onTap: () => Navigator.pushNamed(context, '/community'),
-                ),
-                _FeatureChip(
-                  icon: Icons.menu_book,
-                  label: 'Learn SDGs',
-                  onTap: () =>
-                      Navigator.pushNamed(context, '/learnSdg', arguments: 1),
-                ),
-              ],
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pushNamedAndRemoveUntil(
+                    context, '/auth', (route) => false);
+              },
+              child: const Padding(
+                padding:
+                    EdgeInsets.symmetric(horizontal: 24.0, vertical: 10),
+                child: Text('Go to login'),
+              ),
             ),
           ],
         ),
@@ -245,51 +487,63 @@ class HomeScreen extends StatelessWidget {
   }
 }
 
-class _FeatureChip extends StatelessWidget {
+class _HomeNavTile extends StatelessWidget {
   final IconData icon;
-  final String label;
+  final Color iconColor;
+  final String title;
+  final String subtitle;
   final VoidCallback onTap;
 
-  const _FeatureChip({
+  const _HomeNavTile({
     required this.icon,
-    required this.label,
+    required this.iconColor,
+    required this.title,
+    required this.subtitle,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    final width =
-        (MediaQuery.of(context).size.width - 16 * 2 - 12) / 2; 
+    final theme = Theme.of(context);
     return InkWell(
-      borderRadius: BorderRadius.circular(18),
       onTap: onTap,
-      child: Container(
-        width: width,
-        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 10),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(18),
-          boxShadow: const [
-            BoxShadow(
-              offset: Offset(0, 3),
-              blurRadius: 6,
-              color: Colors.black12,
-            ),
-          ],
-        ),
+      borderRadius: BorderRadius.circular(24),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
         child: Row(
           children: [
-            Icon(icon, size: 22),
-            const SizedBox(width: 8),
+            Container(
+              width: 42,
+              height: 42,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: iconColor.withOpacity(0.12),
+              ),
+              child: Icon(icon, color: iconColor),
+            ),
+            const SizedBox(width: 12),
             Expanded(
-              child: Text(
-                label,
-                style: const TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    subtitle,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: Colors.grey[600],
+                    ),
+                  ),
+                ],
               ),
             ),
+            const SizedBox(width: 8),
+            const Icon(Icons.chevron_right, color: Colors.black45),
           ],
         ),
       ),

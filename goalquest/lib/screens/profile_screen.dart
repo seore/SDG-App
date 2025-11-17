@@ -1,3 +1,5 @@
+// ignore_for_file: unnecessary_type_check, deprecated_member_use
+
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../services/profile_service.dart';
@@ -116,7 +118,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             gradient: LinearGradient(
               colors: [
                 Color(0xFF32C27C),
-                Color(0xFF2FA8A0),
+                Color(0xFF2196F3),
               ],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
@@ -203,14 +205,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       padding: const EdgeInsets.symmetric(vertical: 24),
                       child: Column(
                         children: [
-                          const SizedBox(height: 8),
-                          Text(
-                            'See your XP, streaks, and impact.',
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              color: Colors.white.withOpacity(0.9),
-                            ),
-                          ),
-                          const SizedBox(height: 24),
+                          //const SizedBox(height: 5),
                           Container(
                             width: maxWidth,
                             decoration: BoxDecoration(
@@ -286,7 +281,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                     ],
                                   ),
 
-                                  const SizedBox(height: 20),
+                                  const SizedBox(height: 12),
 
                                   // Level + XP progress
                                   Container(
@@ -458,15 +453,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   ),
                                   const SizedBox(height: 8),
                                   Wrap(
-                                    spacing: 8,
-                                    runSpacing: 8,
+                                    spacing: 5,
+                                    runSpacing: 5,
                                     children: const [
                                       _SdgChip(
                                           label: 'No Poverty',
                                           color: 0xFFE5243B),
-                                      _SdgChip(
-                                          label: 'Quality Education',
-                                          color: 0xFFC5192D),
                                       _SdgChip(
                                           label: 'Climate Action',
                                           color: 0xFF3F7E44),

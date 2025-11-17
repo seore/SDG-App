@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../data/sdg_data.dart';
+//import '../data/sdg_data.dart';
 
 int? extractSdgNumber(String sdgLabel) {
   final match = RegExp(r'SDG\s+(\d+)').firstMatch(sdgLabel);

@@ -1,3 +1,5 @@
+// ignore_for_file: unnecessary_cast
+
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -24,6 +26,7 @@ class UserProfile {
     Map<String, dynamic> map, {
     required String email,
   }) {
+    /*
     DateTime? lastActive;
 
     final rawLastActive = map['last_active_at'];
@@ -32,6 +35,7 @@ class UserProfile {
     } else if (rawLastActive is DateTime) {
       lastActive = rawLastActive;
     }
+    */
 
     return UserProfile(
       id: map['id'] as String,
@@ -40,7 +44,7 @@ class UserProfile {
       xp: (map['xp'] ?? 0) as int,
       streak: (map['streak'] ?? 0) as int,
       avatarUrl: map['avatar_url'] as String?,
-      lastActive: lastActive,
+      lastActive: map['last_active_at'] != null ? DateTime.parse(map['last_active_at'] as String) : null,
     );
   }
 
@@ -72,7 +76,6 @@ class ProfileService {
   final ValueNotifier<UserProfile?> profileListenable =
       ValueNotifier<UserProfile?>(null);
 
-  /// Local cached profile (convenience)
   UserProfile? _profile;
 
   Future<void> loadCurrentUserProfile() async {
@@ -87,7 +90,6 @@ class ProfileService {
     final authUser = session.user;
     final email = authUser.email ?? '';
 
-    // Fetch existing user row
     final rows = await _client
         .from('users')
         .select()
@@ -97,7 +99,6 @@ class ProfileService {
     Map<String, dynamic> row;
 
     if (rows.isEmpty) {
-      // If no row, create one using metadata or email prefix as username
       final metadata = authUser.userMetadata ?? {};
       final defaultUsername = (metadata['username'] ??
               (email.isNotEmpty ? email.split('@').first : 'Explorer'))
@@ -119,15 +120,22 @@ class ProfileService {
       row = rows.first as Map<String, dynamic>;
     }
 
-    final profile = UserProfile.fromMap(row, email: email);
-    _profile = profile;
-    profileListenable.value = profile;
+    //final profile = UserProfile.fromMap(row, email: email);
+    _profile = UserProfile.fromMap(row, email: email);
+    profileListenable.value = _profile;
   }
 
   Future<void> addXp(int amount) async {
-    final client = _client;
-    final profile = _profile ?? profileListenable.value;
+    final session = _client.auth.currentSession;
+    //final profile = _profile ?? profileListenable.value;
 
+    if (session == null) return;
+
+    if (_profile == null) {
+      await loadCurrentUserProfile();
+    }
+
+    final profile = _profile;
     if (profile == null) return;
 
     final now = DateTime.now();
@@ -147,6 +155,7 @@ class ProfileService {
       } else if (diffDays > 1) {
         newStreak = 1;
       }
+      // if diffDays == 0
     }
 
     // Streak bonus
@@ -162,7 +171,7 @@ class ProfileService {
     final totalToAdd = amount + bonus;
     final updatedXp = profile.xp + totalToAdd;
 
-    final res = await client
+    final updated = await _client
         .from('users')
         .update({
           'xp': updatedXp,
@@ -172,17 +181,20 @@ class ProfileService {
         .eq('id', profile.id)
         .select()
         .maybeSingle();
-
-    if (res != null) {
-      final updatedProfile =
-          UserProfile.fromMap(res as Map<String, dynamic>, email: profile.email);
-      _profile = updatedProfile;
-      profileListenable.value = updatedProfile;
+    
+    if (updated == null) {
+      throw Exception("Supabase update returned null – check RLS or update query.");
     }
+
+    final updatedMap = Map<String, dynamic>.from(updated as Map);
+    final newProfile = UserProfile.fromMap(updatedMap, email: profile.email);
+
+    _profile = newProfile;
+    profileListenable.value = newProfile;
   }
 
   Future<void> setStreak(int newStreak) async {
-    final current = _profile ?? profileListenable.value;
+    final current = profileListenable.value;
     final session = _client.auth.currentSession;
     if (current == null || session == null) return;
 
@@ -193,17 +205,17 @@ class ProfileService {
         .select()
         .single() as Map<String, dynamic>;
 
-    final profile =
+    final newProfile =
         UserProfile.fromMap(updated, email: current.email);
-    _profile = profile;
-    profileListenable.value = profile;
+    _profile = newProfile;
+    profileListenable.value = newProfile;
   }
 
   Future<void> updateProfile({
     String? username,
     String? avatarUrl,
   }) async {
-    final current = _profile ?? profileListenable.value;
+    final current = profileListenable.value;
     final session = _client.auth.currentSession;
     if (current == null || session == null) return;
 
@@ -220,10 +232,10 @@ class ProfileService {
         .select()
         .single() as Map<String, dynamic>;
 
-    final profile =
+    final newProfile =
         UserProfile.fromMap(updated, email: current.email);
-    _profile = profile;
-    profileListenable.value = profile;
+    _profile = newProfile;
+    profileListenable.value = newProfile;
   }
 
   /// Sign out and clear local profile.

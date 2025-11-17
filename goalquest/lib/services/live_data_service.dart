@@ -171,65 +171,44 @@ class LiveDataService {
     double? lat,
     double? lng,
   }) async {
-    final row = await _supabase
-        .from('mission_completions')
-        .insert({
-          'user_name': userName,
-          'mission_id': missionId,
-          'mission_title': missionTitle,
-          'sdg_number': sdgNumber,
-          'xp': xp,
-          'lat': lat,
-          'lng': lng,
-        })
-        .select()
-        .maybeSingle();
+    final user = _supabase.auth.currentUser;
 
-    if (row != null) {
-      final completion = LiveMissionCompletion(
-        id: row['id'].toString(),
-        userName: row['user_name'] as String? ?? 'Someone',
-        missionId: row['mission_id'] as String? ?? '',
-        missionTitle: row['mission_title'] as String,
-        sdgNumber: row['sdg_number'] as int? ?? 0,
-        xp: row['xp'] as int? ?? 0,
-        createdAt: DateTime.parse(row['created_at'] as String),
-        lat: (row['lat'] as num?)?.toDouble(),
-        lng: (row['lng'] as num?)?.toDouble(),
-      );
-      _completions.insert(0, completion);
-      _completionsController.add(List.unmodifiable(_completions));
+    if (user == null) {
+      // No logged-in user = RLS will always fail.
+      throw Exception('You must be logged in to complete missions.');
     }
+
+    await _supabase.from('mission_completions').insert({
+      'user_id': user.id,          // ✅ MUST be set for RLS policy
+      'user_name': userName,
+      'mission_id': missionId,
+      'mission_title': missionTitle,
+      'sdg_number': sdgNumber,
+      'xp': xp,
+      'lat': lat,
+      'lng': lng,
+    });
   }
 
+  /// 🔹 Add a community story (photo + short message)
   Future<void> addStory({
     required String userName,
     required String message,
-    int? sdgNumber,
+    required int sdgNumber,
     String? photoUrl,
   }) async {
-    final row = await _supabase
-        .from('stories')
-        .insert({
-          'user_name': userName,
-          'message': message,
-          'sdg_number': sdgNumber,
-          'photo_url': photoUrl,
-        })
-        .select()
-        .maybeSingle();
+    final user = _supabase.auth.currentUser;
 
-    if (row != null) {
-      final story = CommunityStory(
-        id: row['id'].toString(),
-        userName: row['user_name'] as String? ?? 'Someone',
-        message: row['message'] as String,
-        sdgNumber: row['sdg_number'] as int?,
-        createdAt: DateTime.parse(row['created_at'] as String),
-        photoUrl: row['photo_url'] as String?,
-      );
-      _stories.insert(0, story);
-      _storiesController.add(List.unmodifiable(_stories));
+    if (user == null) {
+      throw Exception('You must be logged in to post stories.');
     }
+
+    await _supabase.from('stories').insert({
+      'user_id': user.id,
+      'user_name': userName,
+      'message': message,
+      'sdg_number': sdgNumber,
+      'photo_url': photoUrl,
+    });
   }
 }
