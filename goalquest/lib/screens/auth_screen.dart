@@ -295,6 +295,47 @@ class _LoginFormState extends State<_LoginForm> {
     }
   }
 
+  Future<void> _onForgotPassword() async {
+    final email = _emailCtrl.text.trim();
+
+    if (email.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please enter your email first.'),
+        ),
+      );
+      return;
+    }
+
+    setState(() => _loading = true);
+
+    try {
+      await _supabase.auth.resetPasswordForEmail(
+        email,
+        redirectTo: 'sdgjourney://password-reset',
+      );
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Password reset email sent. Check your inbox.',
+          ),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to send reset email: $e'),
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -337,11 +378,20 @@ class _LoginFormState extends State<_LoginForm> {
           const SizedBox(height: 6),
           Align(
             alignment: Alignment.centerRight,
-            child: Text(
-              'Forgot password?',
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: const Color(0xFF94A3B8),
-                fontStyle: FontStyle.italic,
+            child: TextButton(
+              onPressed: _loading ? null : _onForgotPassword,
+              style: TextButton.styleFrom(
+                padding: EdgeInsets.zero,
+                minimumSize: const Size(0, 0),
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
+              child: Text(
+                'Forgot password?',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: const Color.fromARGB(255, 109, 108, 108),
+                  fontStyle: FontStyle.italic,
+                  decoration: TextDecoration.underline,
+                ),
               ),
             ),
           ),
@@ -367,6 +417,7 @@ class _LoginFormState extends State<_LoginForm> {
     );
   }
 }
+
 
 // ───────────────────────────── Sign Up Form ────────────────────────────
 
