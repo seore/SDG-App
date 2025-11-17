@@ -131,7 +131,11 @@ class GoalQuestApp extends StatelessWidget {
           case '/community':
             return MaterialPageRoute(builder: (_) => const CommunityScreen());
           case '/learnSdg':
-            final sdgNumber = settings.arguments as int;
+            //final sdgNumber = settings.arguments as int;
+            int sdgNumber = 1;
+            if (settings.arguments is int) {
+              sdgNumber = settings.arguments as int;
+            }
             return MaterialPageRoute(
               builder: (_) => LearnSdgScreen(sdgNumber: sdgNumber),
             );

@@ -3,13 +3,13 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:goalquest/services/profile_service.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/mission.dart';
 import '../services/live_data_service.dart';
 import '../services/location_service.dart';
+import '../services/profile_service.dart';
 import '../services/mission_progress_service.dart';
 
 class MissionDetailScreen extends StatefulWidget {
@@ -40,7 +40,7 @@ class _MissionDetailScreenState extends State<MissionDetailScreen> {
             gradient: LinearGradient(
               colors: [
                 Color(0xFF32C27C),
-                Color(0xFF2FA8A0),
+                Color(0xFF2196F3),
               ],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
@@ -437,7 +437,6 @@ class _MissionDetailScreenState extends State<MissionDetailScreen> {
 
     await ProfileService.instance.addXp(mission.xp);
 
-    // also create community story
     await LiveDataService.instance.addStory(
       userName: 'You',
       message: 'Completed: ${mission.title}',

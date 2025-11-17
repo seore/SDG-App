@@ -406,7 +406,6 @@ class _HomeScreenState extends State<HomeScreen> {
                                   onTap: () =>
                                       Navigator.pushNamed(context, '/learnSdg'),
                                 ),
-                               
                                 const Divider(
                                     height: 1, color: Color(0xFFE2E8F0)),
                                 _HomeNavTile(

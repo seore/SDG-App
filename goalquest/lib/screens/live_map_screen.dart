@@ -19,13 +19,21 @@ class LiveMapScreen extends StatefulWidget {
 }
 
 class _LiveMapScreenState extends State<LiveMapScreen> {
-  int? selectedSdg; 
+  int? selectedSdg;
   TimeFilter _timeFilter = TimeFilter.all;
   AreaFilter _areaFilter = AreaFilter.world;
 
   LatLng? _userLocation;
   bool _isLocLoading = false;
   String? _locError;
+
+  final MapController _mapController = MapController();
+
+  @override
+  void initState() {
+    super.initState();
+    _ensureUserLocation();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -45,7 +53,6 @@ class _LiveMapScreenState extends State<LiveMapScreen> {
       body: Column(
         children: [
           _buildFilterRow(),
-
           Expanded(
             child: StreamBuilder<List<LiveMissionCompletion>>(
               stream: liveData.completionsStream,
@@ -87,7 +94,7 @@ class _LiveMapScreenState extends State<LiveMapScreen> {
                 // Markers (highlight current user's missions)
                 final markers = completions.map((c) {
                   final sdg = getSdgByNumber(c.sdgNumber);
-                  final isMine = c.userName == 'You'; 
+                  final isMine = c.userName == 'You';
 
                   return Marker(
                     point: LatLng(c.lat!, c.lng!),
@@ -163,9 +170,10 @@ class _LiveMapScreenState extends State<LiveMapScreen> {
                 return Stack(
                   children: [
                     FlutterMap(
+                      mapController: _mapController, 
                       options: MapOptions(
                         initialCenter: mapCenter,
-                        initialZoom: 2.5,
+                        initialZoom: 5,
                       ),
                       children: [
                         TileLayer(
@@ -246,19 +254,41 @@ class _LiveMapScreenState extends State<LiveMapScreen> {
                       ),
                     ),
 
-                    // Center-on-me FAB (only if we have user location)
-                    if (_userLocation != null)
-                      Positioned(
-                        right: 16,
-                        bottom: 100,
-                        child: FloatingActionButton.small(
-                          heroTag: 'centerOnMe',
-                          onPressed: () {
-                            setState(() {});
-                          },
-                          child: const Icon(Icons.my_location),
-                        ),
+                    // Zoom & location controls
+                    Positioned(
+                      right: 16,
+                      bottom: 100,
+                      child: Column(
+                        children: [
+                          FloatingActionButton.small(
+                            heroTag: 'zoomIn',
+                            onPressed: _zoomIn,
+                            child: const Icon(Icons.add),
+                          ),
+                          const SizedBox(height: 8),
+                          FloatingActionButton.small(
+                            heroTag: 'zoomOut',
+                            onPressed: _zoomOut,
+                            child: const Icon(Icons.remove),
+                          ),
+                          const SizedBox(height: 8),
+                          if (_userLocation != null)
+                            FloatingActionButton.small(
+                              heroTag: 'centerOnMe',
+                              onPressed: () {
+                                if (_userLocation == null) {
+                                  _ensureUserLocation();
+                                } else {
+                                  _centerOnUser();
+                                }
+                              },
+                              backgroundColor: _userLocation == null ? Colors.grey.shade400
+                              : Theme.of(context).colorScheme.primary,
+                              child: Icon(Icons.my_location, color: _userLocation == null ? Colors.white70 : Colors.white),
+                            ),
+                        ],
                       ),
+                    ),
                   ],
                 );
               },
@@ -269,7 +299,6 @@ class _LiveMapScreenState extends State<LiveMapScreen> {
     );
   }
 
-  /// Filter row at the top: SDG dropdown + time chips + area chips
   Widget _buildFilterRow() {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
@@ -308,6 +337,7 @@ class _LiveMapScreenState extends State<LiveMapScreen> {
             ],
           ),
           const SizedBox(height: 4),
+
           // Row 2: Time filter chips
           Row(
             children: [
@@ -328,6 +358,7 @@ class _LiveMapScreenState extends State<LiveMapScreen> {
             ],
           ),
           const SizedBox(height: 4),
+
           // Row 3: Area filter chips
           Row(
             children: [
@@ -580,5 +611,22 @@ class _LiveMapScreenState extends State<LiveMapScreen> {
     if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
     if (diff.inHours < 24) return '${diff.inHours}h ago';
     return '${diff.inDays}d ago';
+  }
+
+  void _zoomIn() {
+    final camera = _mapController.camera;
+    _mapController.move(camera.center, camera.zoom + 1);
+  }
+
+  void _zoomOut() {
+    final camera = _mapController.camera;
+    _mapController.move(camera.center, camera.zoom - 1);
+  }
+
+  void _centerOnUser() {
+    if (_userLocation == null) return;
+    final camera = _mapController.camera;
+    final targetZoom = camera.zoom < 10 ? 10.0 : camera.zoom;
+    _mapController.move(_userLocation!, targetZoom);
   }
 }

@@ -150,7 +150,7 @@ class MiniGamesScreen extends StatelessWidget {
             gradient: LinearGradient(
               colors: [
                 Color(0xFF32C27C),
-                Color(0xFF2FA8A0),
+                Color(0xFF2196F3),
               ],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,

@@ -76,7 +76,6 @@ class _LearnSdgScreenState extends State<LearnSdgScreen> {
         child: SafeArea(
           child: Column(
             children: [
-              // Horizontal list of all 17 SDGs
               SizedBox(
                 height: 80,
                 child: ListView.separated(
@@ -228,7 +227,7 @@ class _LearnSdgScreenState extends State<LearnSdgScreen> {
                 ),
               ),
 
-              // Previous / Next UI buttons
+              // UI buttons
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
                 child: Row(

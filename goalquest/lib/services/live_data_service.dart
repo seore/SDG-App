@@ -1,5 +1,4 @@
 import 'dart:async';
-
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class LiveMissionCompletion {
@@ -24,24 +23,71 @@ class LiveMissionCompletion {
     this.lat,
     this.lng,
   });
+
+  factory LiveMissionCompletion.fromMap(Map<String, dynamic> map) {
+    final createdRaw = map['created_at'];
+
+    DateTime createdAt;
+    if (createdRaw is String) {
+      createdAt = DateTime.parse(createdRaw);
+    } else if (createdRaw is DateTime) {
+      createdAt = createdRaw;
+    } else {
+      createdAt = DateTime.now();
+    }
+
+    return LiveMissionCompletion(
+      id: map['id'].toString(),
+      userName: (map['user_name'] ?? 'Someone').toString(),
+      missionId: (map['mission_id'] ?? '').toString(),
+      missionTitle: (map['mission_title'] ?? '').toString(),
+      sdgNumber: (map['sdg_number'] ?? 0) as int,
+      xp: (map['xp'] ?? 0) as int,
+      lat: map['lat'] != null ? (map['lat'] as num).toDouble() : null,
+      lng: map['lng'] != null ? (map['lng'] as num).toDouble() : null,
+      createdAt: createdAt,
+    );
+  }
 }
 
-class CommunityStory {
+class LiveStory {
   final String id;
   final String userName;
   final String message;
   final int? sdgNumber;
-  final DateTime createdAt;
   final String? photoUrl;
+  final DateTime createdAt;
 
-  CommunityStory({
+  LiveStory({
     required this.id,
     required this.userName,
     required this.message,
     this.sdgNumber,
-    required this.createdAt,
     this.photoUrl,
+    required this.createdAt,
   });
+
+  factory LiveStory.fromMap(Map<String, dynamic> map) {
+    final createdRaw = map['created_at'];
+
+    DateTime createdAt;
+    if (createdRaw is String) {
+      createdAt = DateTime.parse(createdRaw);
+    } else if (createdRaw is DateTime) {
+      createdAt = createdRaw;
+    } else {
+      createdAt = DateTime.now();
+    }
+
+    return LiveStory(
+      id: map['id'].toString(),
+      userName: (map['user_name'] ?? 'Someone').toString(),
+      message: (map['message'] ?? '').toString(),
+      sdgNumber: map['sdg_number'] as int?,
+      photoUrl: map['photo_url'] as String?,
+      createdAt: createdAt,
+    );
+  }
 }
 
 class LiveDataService {
@@ -50,116 +96,29 @@ class LiveDataService {
 
   final SupabaseClient _supabase = Supabase.instance.client;
 
-  final _completionsController =
-      StreamController<List<LiveMissionCompletion>>.broadcast();
-  final _storiesController =
-      StreamController<List<CommunityStory>>.broadcast();
-
-  List<LiveMissionCompletion> _completions = [];
-  List<CommunityStory> _stories = [];
-
-  Stream<List<LiveMissionCompletion>> get completionsStream =>
-      _completionsController.stream;
-  Stream<List<CommunityStory>> get storiesStream =>
-      _storiesController.stream;
-
-  Future<void> init() async {
-    await _loadInitialData();
-    _listenToCompletions();
-    _listenToStories();
-  }
-
-  Future<void> _loadInitialData() async {
-    final completionsData = await _supabase
+  Stream<List<LiveMissionCompletion>> get completionsStream {
+    return _supabase
         .from('mission_completions')
-        .select()
-        .order('created_at', ascending: false)
-        .limit(100);
+        .stream(primaryKey: ['id'])
+        .order('created_at')
+        .map(
+          (rows) => rows
+              .map((row) =>
+                  LiveMissionCompletion.fromMap(row as Map<String, dynamic>))
+              .toList(),
+        );
+  }
 
-    _completions = (completionsData as List)
-        .map((row) => LiveMissionCompletion(
-              id: row['id'].toString(),
-              userName: row['user_name'] as String? ?? 'Someone',
-              missionId: row['mission_id'] as String? ?? '',
-              missionTitle: row['mission_title'] as String,
-              sdgNumber: row['sdg_number'] as int? ?? 0,
-              xp: row['xp'] as int? ?? 0,
-              createdAt: DateTime.parse(row['created_at'] as String),
-              lat: (row['lat'] as num?)?.toDouble(),
-              lng: (row['lng'] as num?)?.toDouble(),
-            ))
-        .toList();
-
-    final storiesData = await _supabase
+  Stream<List<LiveStory>> get storiesStream {
+    return _supabase
         .from('stories')
-        .select()
-        .order('created_at', ascending: false)
-        .limit(100);
-
-    _stories = (storiesData as List)
-        .map((row) => CommunityStory(
-              id: row['id'].toString(),
-              userName: row['user_name'] as String? ?? 'Someone',
-              message: row['message'] as String,
-              sdgNumber: row['sdg_number'] as int?,
-              createdAt: DateTime.parse(row['created_at'] as String),
-              photoUrl: row['photo_url'] as String?,
-            ))
-        .toList();
-
-    _completionsController.add(List.unmodifiable(_completions));
-    _storiesController.add(List.unmodifiable(_stories));
-  }
-
-  void _listenToCompletions() {
-    _supabase
-        .channel('public:mission_completions')
-        .onPostgresChanges(
-          event: PostgresChangeEvent.insert,
-          schema: 'public',
-          table: 'mission_completions',
-          callback: (payload) {
-            final row = payload.newRecord;
-            final completion = LiveMissionCompletion(
-              id: row['id'].toString(),
-              userName: row['user_name'] as String? ?? 'Someone',
-              missionId: row['mission_id'] as String? ?? '',
-              missionTitle: row['mission_title'] as String,
-              sdgNumber: row['sdg_number'] as int? ?? 0,
-              xp: row['xp'] as int? ?? 0,
-              createdAt: DateTime.parse(row['created_at'] as String),
-              lat: (row['lat'] as num?)?.toDouble(),
-              lng: (row['lng'] as num?)?.toDouble(),
-            );
-            _completions.insert(0, completion);
-            _completionsController.add(List.unmodifiable(_completions));
-          },
-        )
-        .subscribe();
-  }
-
-  void _listenToStories() {
-    _supabase
-        .channel('public:stories')
-        .onPostgresChanges(
-          event: PostgresChangeEvent.insert,
-          schema: 'public',
-          table: 'stories',
-          callback: (payload) {
-            final row = payload.newRecord;
-            final story = CommunityStory(
-              id: row['id'].toString(),
-              userName: row['user_name'] as String? ?? 'Someone',
-              message: row['message'] as String,
-              sdgNumber: row['sdg_number'] as int?,
-              createdAt: DateTime.parse(row['created_at'] as String),
-              photoUrl: row['photo_url'] as String?,
-            );
-            _stories.insert(0, story);
-            _storiesController.add(List.unmodifiable(_stories));
-          },
-        )
-        .subscribe();
+        .stream(primaryKey: ['id'])
+        .order('created_at')
+        .map(
+          (rows) =>
+              rows.map((row) => LiveStory.fromMap(row as Map<String, dynamic>))
+                  .toList(),
+        );
   }
 
   Future<void> addCompletion({
@@ -174,12 +133,11 @@ class LiveDataService {
     final user = _supabase.auth.currentUser;
 
     if (user == null) {
-      // No logged-in user = RLS will always fail.
       throw Exception('You must be logged in to complete missions.');
     }
 
     await _supabase.from('mission_completions').insert({
-      'user_id': user.id,          // ✅ MUST be set for RLS policy
+      'user_id': user.id, 
       'user_name': userName,
       'mission_id': missionId,
       'mission_title': missionTitle,
@@ -190,11 +148,10 @@ class LiveDataService {
     });
   }
 
-  /// 🔹 Add a community story (photo + short message)
   Future<void> addStory({
     required String userName,
     required String message,
-    required int sdgNumber,
+    int? sdgNumber,
     String? photoUrl,
   }) async {
     final user = _supabase.auth.currentUser;
@@ -204,7 +161,7 @@ class LiveDataService {
     }
 
     await _supabase.from('stories').insert({
-      'user_id': user.id,
+      'user_id': user.id, 
       'user_name': userName,
       'message': message,
       'sdg_number': sdgNumber,
