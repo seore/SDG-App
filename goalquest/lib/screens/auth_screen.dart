@@ -37,6 +37,8 @@ class _AuthScreenState extends State<AuthScreen>
 
     return Scaffold(
       body: Container(
+        width: double.infinity,
+        height: double.infinity,
         decoration: const BoxDecoration(
           gradient: LinearGradient(
             colors: [
@@ -51,12 +53,12 @@ class _AuthScreenState extends State<AuthScreen>
           child: Center(
             child: LayoutBuilder(
               builder: (context, constraints) {
-                final maxWidth = constraints.maxWidth > 480
-                    ? 420.0
-                    : constraints.maxWidth * 0.9;
+                final maxWidth = constraints.maxWidth > 520
+                    ? 440.0
+                    : constraints.maxWidth * 0.92;
 
                 return SingleChildScrollView(
-                  padding: const EdgeInsets.symmetric(vertical: 24),
+                  padding: const EdgeInsets.symmetric(vertical: 28),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
@@ -72,16 +74,15 @@ class _AuthScreenState extends State<AuthScreen>
                           _SdgDot(color: Color(0xFFFCC30B)),
                         ],
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 18),
 
-                      // Animated title
                       AnimatedSwitcher(
                         duration: const Duration(milliseconds: 250),
                         transitionBuilder: (child, anim) => FadeTransition(
                           opacity: anim,
                           child: SlideTransition(
                             position: Tween<Offset>(
-                              begin: const Offset(0, 0.2),
+                              begin: const Offset(0, 0.15),
                               end: Offset.zero,
                             ).animate(anim),
                             child: child,
@@ -95,9 +96,10 @@ class _AuthScreenState extends State<AuthScreen>
                               style: theme.textTheme.headlineMedium?.copyWith(
                                 color: Colors.white,
                                 fontWeight: FontWeight.w800,
+                                letterSpacing: 0.3,
                               ),
                             ),
-                            const SizedBox(height: 4),
+                            const SizedBox(height: 6),
                             Text(
                               isLogin
                                   ? 'Welcome back, changemaker ✨'
@@ -111,18 +113,18 @@ class _AuthScreenState extends State<AuthScreen>
                         ),
                       ),
 
-                      const SizedBox(height: 28),
+                      const SizedBox(height: 30),
 
-                      // Glass card
+                      // Main card
                       Container(
                         width: maxWidth,
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.96),
-                          borderRadius: BorderRadius.circular(24),
+                          color: Colors.white.withOpacity(0.97),
+                          borderRadius: BorderRadius.circular(28),
                           boxShadow: [
                             BoxShadow(
                               color: Colors.black.withOpacity(0.18),
-                              blurRadius: 20,
+                              blurRadius: 22,
                               offset: const Offset(0, 12),
                             ),
                           ],
@@ -130,54 +132,65 @@ class _AuthScreenState extends State<AuthScreen>
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            const SizedBox(height: 16),
+                            const SizedBox(height: 18),
+
                             Padding(
                               padding:
                                   const EdgeInsets.symmetric(horizontal: 20.0),
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  TabBar(
-                                    controller: _tabController,
-                                    labelColor: theme.colorScheme.primary,
-                                    unselectedLabelColor: Colors.grey[600],
-                                    indicator: UnderlineTabIndicator(
-                                      borderSide: BorderSide(
-                                        color: theme.colorScheme.primary,
-                                        width: 3,
+                                  Container(
+                                    padding: const EdgeInsets.all(4),
+                                    decoration: BoxDecoration(
+                                      color: const Color.fromARGB(31, 163, 165, 164),
+                                      borderRadius: BorderRadius.circular(999),
+                                    ),
+                                    child: TabBar(
+                                      controller: _tabController,
+                                      labelColor: theme.colorScheme.primary,
+                                      unselectedLabelColor: Colors.grey[600],
+                                      dividerColor: Colors.transparent,
+                                      indicator: UnderlineTabIndicator(
+                                        borderSide: BorderSide(
+                                          color: theme.colorScheme.primary,
+                                          width: 3,
+                                        ),
+                                        insets: const EdgeInsets.symmetric(horizontal: 24),
                                       ),
-                                      insets: const EdgeInsets.symmetric(
-                                        horizontal: 24,
+                                      labelStyle: const TextStyle(
+                                        fontWeight: FontWeight.w700,
+                                        fontSize: 16,
                                       ),
-                                    ),
-                                    labelStyle: const TextStyle(
-                                      fontWeight: FontWeight.w700,
-                                      fontSize: 14,
-                                    ),
-                                    unselectedLabelStyle: const TextStyle(
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                    tabs: const [
-                                      Tab(text: 'Log In'),
-                                      Tab(text: 'Sign Up'),
-                                    ],
+                                      unselectedLabelStyle: const TextStyle(
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                      tabs: const [
+                                        Tab(text: 'Log In'),
+                                        Tab(text: 'Sign Up'),
+                                      ],
+                                    )
                                   ),
-                                  const SizedBox(height: 8),
+                                  /*
+                                  const SizedBox(height: 10),
                                   Text(
-                                    isLogin
-                                        ? 'Sign in to continue your SDG streak.'
+                                    isLogin ? 'Sign in to continue your SDG streak.'
                                         : 'Create an account to track your impact.',
-                                    style: TextStyle(
+                                    style: const TextStyle(
                                       fontSize: 12,
-                                      color: const Color.fromARGB(255, 0, 0, 0),
+                                      color: Color(0xFF64748B),
                                     ),
                                   ),
+                                  */
                                 ],
                               ),
                             ),
+
                             const SizedBox(height: 8),
+
+                            // Forms
                             SizedBox(
-                              height: 360,
+                              height: 400,
                               child: TabBarView(
                                 controller: _tabController,
                                 children: const [
@@ -189,14 +202,15 @@ class _AuthScreenState extends State<AuthScreen>
                           ],
                         ),
                       ),
-
-                      const SizedBox(height: 16),
+                      /*
+                      const SizedBox(height: 18),
                       Text(
                         'Powered by your daily actions 💚',
                         style: theme.textTheme.bodySmall?.copyWith(
                           color: Colors.white.withOpacity(0.9),
                         ),
                       ),
+                      */
                     ],
                   ),
                 );
@@ -208,6 +222,8 @@ class _AuthScreenState extends State<AuthScreen>
     );
   }
 }
+
+// ───────────────────────── Small SDG dot row ─────────────────────────
 
 class _SdgDot extends StatelessWidget {
   final Color color;
@@ -324,7 +340,7 @@ class _LoginFormState extends State<_LoginForm> {
             child: Text(
               'Forgot password?',
               style: theme.textTheme.bodySmall?.copyWith(
-                color: const Color.fromARGB(255, 109, 108, 108),
+                color: const Color(0xFF94A3B8),
                 fontStyle: FontStyle.italic,
               ),
             ),
@@ -392,7 +408,8 @@ class _SignUpFormState extends State<_SignUpForm> {
         await ProfileService.instance.loadCurrentUserProfile();
 
         if (!mounted) return;
-        Navigator.pushNamedAndRemoveUntil(context, '/onboarding', (route) => false);
+        Navigator.pushNamedAndRemoveUntil(
+            context, '/onboarding', (route) => false);
       } else {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
