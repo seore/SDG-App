@@ -37,11 +37,11 @@ const List<MiniGameConfig> _miniGames = [
   MiniGameConfig(
     id: 'trash_sort',
     title: 'Trash Sorter',
-    subtitle: 'Drag and drop items into the right bins. (Coming soon)',
+    subtitle: 'Drag and drop items into the right bins.',
     sdgNumber: 12,
     icon: Icons.recycling,
-    available: false,
-    routeName: null,
+    available: true,
+    routeName: '/trashSortGame',
   ),
 
   MiniGameConfig(
