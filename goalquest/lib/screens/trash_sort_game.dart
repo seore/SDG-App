@@ -355,7 +355,7 @@ class _TrashSortGameScreenState extends State<TrashSortGameScreen> {
                           ),
                           const SizedBox(height: 8),
                           Text(
-                            'SDG 12 · Responsible Consumption & Production',
+                            'SDG 12: Responsible Consumption & Production',
                             style: theme.textTheme.bodyMedium?.copyWith(
                               color: Colors.white.withOpacity(0.9),
                             ),
@@ -567,27 +567,30 @@ class _TrashChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Chip(
-      labelPadding: const EdgeInsets.symmetric(horizontal: 8),
-      avatar: Icon(
-        item.icon,
-        size: 18,
-        color: isDragging ? Colors.white : Colors.black87,
-      ),
-      label: Text(
-        item.name,
-        style: TextStyle(
-          fontSize: 13,
-          fontWeight: FontWeight.w500,
+    return Material(
+      type: MaterialType.transparency,
+      child: Chip(
+        labelPadding: const EdgeInsets.symmetric(horizontal: 8),
+        avatar: Icon(
+          item.icon,
+          size: 18,
           color: isDragging ? Colors.white : Colors.black87,
         ),
-      ),
-      backgroundColor:
+        label: Text(
+          item.name,
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w500,
+            color: isDragging ? Colors.white : Colors.black87,
+          ),
+        ),
+        backgroundColor:
           isDragging ? const Color(0xFF22C55E) : const Color(0xFFF5F7FB),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(999),
-        side: BorderSide(
-          color: Colors.grey.withOpacity(0.3),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(999),
+          side: BorderSide(
+            color: Colors.grey.withOpacity(0.3),
+          ),
         ),
       ),
     );
