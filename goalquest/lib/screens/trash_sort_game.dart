@@ -78,6 +78,24 @@ const List<TrashItem> _allTrashItems = [
     category: TrashCategory.landfill,
     icon: Icons.toys,
   ),
+  TrashItem(
+    id: 't10',
+    name: 'Aluminium can',
+    category: TrashCategory.recycle,
+    icon: Icons.sports_bar,
+  ),
+  TrashItem(
+    id: 't11',
+    name: 'Eggshells',
+    category: TrashCategory.compost,
+    icon: Icons.egg,
+  ),
+  TrashItem(
+    id: 't12',
+    name: 'Chewing gum',
+    category: TrashCategory.landfill,
+    icon: Icons.circle,
+  ),
 ];
 
 class TrashSortGameScreen extends StatefulWidget {
