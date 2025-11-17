@@ -57,21 +57,21 @@ const List<MiniGameConfig> _miniGames = [
   MiniGameConfig(
     id: 'sdg_match',
     title: 'SDG Match-Up',
-    subtitle: 'Match each SDG to its correct description. (Coming soon)',
+    subtitle: 'Match each SDG to its correct description.',
     sdgNumber: 4, 
     icon: Icons.view_module_rounded,
-    available: false,
+    available: true,
     routeName: '/sdgMatchGame',
   ),
 
   MiniGameConfig(
     id: 'water_guardian',
     title: 'Water Guardian',
-    subtitle: 'Choose water-saving actions in everyday scenes. (Coming soon)',
+    subtitle: 'Choose water-saving actions in everyday scenes.',
     sdgNumber: 6,
     icon: Icons.water_drop_outlined,
-    available: false,
-    routeName: null,
+    available: true,
+    routeName: '/waterGuardianGame',
   ),
 
   MiniGameConfig(
