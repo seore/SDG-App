@@ -2,7 +2,7 @@
 
 import 'package:flutter/material.dart';
 import '../services/profile_service.dart';
-import '../services/owned_pack_service.dart';
+import '../services/owned_pack_service.dart'; 
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -18,6 +18,7 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     _profileService.loadCurrentUserProfile();
+    OwnedPackService.instance.loadOwnedPacks();
   }
 
   @override
@@ -25,7 +26,6 @@ class _HomeScreenState extends State<HomeScreen> {
     final theme = Theme.of(context);
 
     return Scaffold(
-      // ===== APP BAR WITH PROFILE ICON =====
       appBar: PreferredSize(
         preferredSize: const Size.fromHeight(70),
         child: Container(
@@ -68,7 +68,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   },
                   child: CircleAvatar(
                     radius: 18,
-                    backgroundColor: Colors.white.withOpacity(0),
+                    backgroundColor: Colors.white.withOpacity(0.15),
                     child: const Icon(
                       Icons.person,
                       color: Colors.white,
@@ -80,8 +80,6 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
       ),
-
-      // ===== BODY =====
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
@@ -123,7 +121,6 @@ class _HomeScreenState extends State<HomeScreen> {
                       child: Column(
                         children: [
                           // ===== HEADER =====
-                          /*
                           Text(
                             'Your SDG Journey',
                             style: theme.textTheme.headlineSmall?.copyWith(
@@ -132,7 +129,6 @@ class _HomeScreenState extends State<HomeScreen> {
                             ),
                           ),
                           const SizedBox(height: 24),
-                          */
 
                           // ===== XP + STREAK CARD =====
                           Container(
@@ -142,7 +138,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               borderRadius: BorderRadius.circular(24),
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.black.withOpacity(0),
+                                  color: Colors.black.withOpacity(0.18),
                                   blurRadius: 20,
                                   offset: const Offset(0, 12),
                                 ),
@@ -153,17 +149,37 @@ class _HomeScreenState extends State<HomeScreen> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
+                                  // Top row: avatar-ish circle + greeting + level
                                   Row(
                                     children: [
-                                      CircleAvatar(
-                                        radius: 26,
-                                        backgroundColor: hasEcoFrame ?
-                                            const Color(0xFF22C55E)
-                                                .withOpacity(0.35) : const Color(0xFF32C27C)
-                                                .withOpacity(0.12),
-                                        child: const Text(
-                                          '🌍',
-                                          style: TextStyle(fontSize: 26),
+                                      // 👇 UPDATED AVATAR WITH ECO FRAME
+                                      Container(
+                                        padding: hasEcoFrame
+                                            ? const EdgeInsets.all(3)
+                                            : EdgeInsets.zero,
+                                        decoration: hasEcoFrame
+                                            ? BoxDecoration(
+                                                shape: BoxShape.circle,
+                                                gradient: const LinearGradient(
+                                                  colors: [
+                                                    Color(0xFF22C55E),
+                                                    Color(0xFF4ADE80),
+                                                  ],
+                                                  begin: Alignment.topLeft,
+                                                  end: Alignment.bottomRight,
+                                                ),
+                                              )
+                                            : null,
+                                        child: CircleAvatar(
+                                          radius: 26,
+                                          backgroundColor: hasEcoFrame
+                                              ? Colors.white
+                                              : const Color(0xFF32C27C)
+                                                  .withOpacity(0.12),
+                                          child: const Text(
+                                            '🌍',
+                                            style: TextStyle(fontSize: 26),
+                                          ),
                                         ),
                                       ),
                                       const SizedBox(width: 12),
@@ -174,8 +190,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                           children: [
                                             Text(
                                               'Welcome back,',
-                                              style: theme
-                                                  .textTheme.bodySmall
+                                              style: theme.textTheme.bodySmall
                                                   ?.copyWith(
                                                 color: Colors.grey[600],
                                               ),
@@ -205,16 +220,16 @@ class _HomeScreenState extends State<HomeScreen> {
                                               BorderRadius.circular(999),
                                         ),
                                         child: Row(
-                                          children: const [
-                                            Icon(
+                                          children: [
+                                            const Icon(
                                               Icons.stars_rounded,
                                               size: 16,
                                               color: Color(0xFF32C27C),
                                             ),
-                                            SizedBox(width: 4),
+                                            const SizedBox(width: 4),
                                             Text(
-                                              'Level',
-                                              style: TextStyle(
+                                              'Level $level',
+                                              style: const TextStyle(
                                                 fontSize: 12,
                                                 fontWeight: FontWeight.w600,
                                                 color: Color(0xFF32C27C),
@@ -223,20 +238,12 @@ class _HomeScreenState extends State<HomeScreen> {
                                           ],
                                         ),
                                       ),
-                                      const SizedBox(width: 4),
-                                      Text(
-                                        '$level',
-                                        style: const TextStyle(
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.w700,
-                                          color: Color(0xFF32C27C),
-                                        ),
-                                      ),
                                     ],
                                   ),
 
                                   const SizedBox(height: 16),
 
+                                  // XP label with animation
                                   Row(
                                     mainAxisAlignment:
                                         MainAxisAlignment.spaceBetween,
@@ -249,8 +256,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                         ),
                                       ),
                                       AnimatedSwitcher(
-                                        duration: const Duration(
-                                            milliseconds: 400),
+                                        duration:
+                                            const Duration(milliseconds: 400),
                                         transitionBuilder: (child, anim) =>
                                             ScaleTransition(
                                           scale: anim,
@@ -309,15 +316,15 @@ class _HomeScreenState extends State<HomeScreen> {
                                   // Streak + quick actions
                                   Row(
                                     children: [
-                                      // Streak chips
+                                      // Streak chip
                                       Container(
                                         padding: const EdgeInsets.symmetric(
                                           horizontal: 10,
                                           vertical: 6,
                                         ),
                                         decoration: BoxDecoration(
-                                          color: Colors.orange
-                                              .withOpacity(0.08),
+                                          color:
+                                              Colors.orange.withOpacity(0.08),
                                           borderRadius:
                                               BorderRadius.circular(999),
                                         ),
@@ -372,7 +379,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               borderRadius: BorderRadius.circular(24),
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.black.withOpacity(0),
+                                  color: Colors.black.withOpacity(0.15),
                                   blurRadius: 18,
                                   offset: const Offset(0, 10),
                                 ),
@@ -391,39 +398,32 @@ class _HomeScreenState extends State<HomeScreen> {
                                 ),
                                 const Divider(
                                     height: 1, color: Color(0xFFE2E8F0)),
+
                                 _HomeNavTile(
                                   icon: Icons.videogame_asset_rounded,
                                   iconColor: const Color(0xFF6366F1),
                                   title: 'Mini Games & Quizzes',
                                   subtitle:
                                       'Play to learn about the SDGs and earn XP.',
-                                  onTap: () => Navigator.pushNamed(
-                                      context, '/miniGames'),
+                                  onTap: () =>
+                                      Navigator.pushNamed(context, '/miniGames'),
                                 ),
-                                 const Divider(
+                                const Divider(
                                     height: 1, color: Color(0xFFE2E8F0)),
+
+                                // 👇 NEW SHOP TILE
                                 _HomeNavTile(
                                   icon: Icons.shopping_bag_outlined,
-                                  iconColor: const Color(0xFF6366F1),
+                                  iconColor: const Color(0xFF8B5CF6),
                                   title: 'Shop & Customize',
                                   subtitle:
-                                      'Unlock themes, game packs & more.',
+                                      'Unlock themes, avatar frames & bonus packs.',
                                   onTap: () =>
                                       Navigator.pushNamed(context, '/shop'),
                                 ),
                                 const Divider(
                                     height: 1, color: Color(0xFFE2E8F0)),
-                                _HomeNavTile(
-                                  icon: Icons.menu_book_rounded,
-                                  iconColor: const Color(0xFF14B8A6),
-                                  title: 'Learn the SDGs',
-                                  subtitle:
-                                      'Explore topics, cases & real global challenges.',
-                                  onTap: () =>
-                                      Navigator.pushNamed(context, '/learnSdg'),
-                                ),
-                                const Divider(
-                                    height: 1, color: Color(0xFFE2E8F0)),
+
                                 _HomeNavTile(
                                   icon: Icons.public,
                                   iconColor: const Color(0xFF0EA5E9),
@@ -435,14 +435,27 @@ class _HomeScreenState extends State<HomeScreen> {
                                 ),
                                 const Divider(
                                     height: 1, color: Color(0xFFE2E8F0)),
+
                                 _HomeNavTile(
                                   icon: Icons.groups_rounded,
                                   iconColor: const Color(0xFFEC4899),
                                   title: 'Community Stories',
                                   subtitle:
                                       'Share your wins and see what others are doing.',
-                                  onTap: () => Navigator.pushNamed(
-                                      context, '/community'),
+                                  onTap: () =>
+                                      Navigator.pushNamed(context, '/community'),
+                                ),
+                                const Divider(
+                                    height: 1, color: Color(0xFFE2E8F0)),
+
+                                _HomeNavTile(
+                                  icon: Icons.menu_book_rounded,
+                                  iconColor: const Color(0xFFF97316),
+                                  title: 'Learn the SDGs',
+                                  subtitle:
+                                      'Explore each goal with bite-sized lessons.',
+                                  onTap: () =>
+                                      Navigator.pushNamed(context, '/learnSdg'),
                                 ),
                               ],
                             ),
@@ -490,8 +503,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     context, '/auth', (route) => false);
               },
               child: const Padding(
-                padding:
-                    EdgeInsets.symmetric(horizontal: 24.0, vertical: 10),
+                padding: EdgeInsets.symmetric(horizontal: 24.0, vertical: 10),
                 child: Text('Go to login'),
               ),
             ),
