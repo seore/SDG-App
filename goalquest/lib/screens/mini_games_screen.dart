@@ -2,6 +2,8 @@
 
 import 'package:flutter/material.dart';
 import '../data/sdg_data.dart';
+import '../data/shop_packs.dart';
+import '../services/owned_pack_service.dart';
 
 class MiniGameConfig {
   final String id;
@@ -12,6 +14,9 @@ class MiniGameConfig {
   final bool available;
   final String? routeName;
 
+  final String? requiredPackId;
+  final bool isPremium;
+
   const MiniGameConfig({
     required this.id,
     required this.title,
@@ -20,6 +25,8 @@ class MiniGameConfig {
     required this.icon,
     required this.available,
     this.routeName,
+    this.requiredPackId,
+    this.isPremium = false,
   });
 }
 
@@ -42,6 +49,18 @@ const List<MiniGameConfig> _miniGames = [
     icon: Icons.recycling,
     available: true,
     routeName: '/trashSortGame',
+  ),
+
+  MiniGameConfig(
+    id: 'trash_sort_advanced',
+    title: 'Trash Sorter: Advanced Pack',
+    subtitle: 'More items & bins (premium).',
+    sdgNumber: 12,
+    icon: Icons.recycling_outlined,
+    available: true,
+    routeName: '/trashSortGameAdvanced', // could reuse or new advanced route
+    requiredPackId: 'dlc_trash_advanced',
+    isPremium: true,
   ),
 
   MiniGameConfig(
@@ -172,6 +191,24 @@ class MiniGamesScreen extends StatelessWidget {
             elevation: 0,
             automaticallyImplyLeading: true,
             iconTheme: const IconThemeData(color: Colors.white),
+            /*
+            automaticallyImplyLeading: false,
+            leading: Container(
+              margin: const EdgeInsets.only(left: 15),
+              child: CircleAvatar(
+                backgroundColor: Colors.white.withOpacity(0.1),
+                child: IconButton(
+                  icon: const Icon(Icons.arrow_back, color: Colors.white),
+                  onPressed: () {
+                    Navigator.pushNamedAndRemoveUntil(
+                      context,
+                      '/home',
+                      (route) => false,
+                    );
+                  },
+                ),
+              ),
+            ),*/
             title: const Text(
               "Mini Games",
               style: TextStyle(
@@ -184,7 +221,6 @@ class MiniGamesScreen extends StatelessWidget {
           ),
         ),
       ),
-
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
@@ -199,22 +235,14 @@ class MiniGamesScreen extends StatelessWidget {
         child: SafeArea(
           child: LayoutBuilder(
             builder: (context, constraints) {
-              final maxWidth = constraints.maxWidth > 480
-                  ? 480.0
-                  : constraints.maxWidth * 0.95;
+              final maxWidth =
+                  constraints.maxWidth > 480 ? 480.0 : constraints.maxWidth * 0.95;
 
               return Center(
                 child: SingleChildScrollView(
                   padding: const EdgeInsets.symmetric(vertical: 24),
                   child: Column(
                     children: [
-                      Text(
-                        'Play to power up your impact',
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          color: Colors.white.withOpacity(0.9),
-                        ),
-                      ),
-                      const SizedBox(height: 24),
                       Container(
                         width: maxWidth,
                         decoration: BoxDecoration(
@@ -228,141 +256,193 @@ class MiniGamesScreen extends StatelessWidget {
                             ),
                           ],
                         ),
-                        child: ListView.separated(
-                          physics: const NeverScrollableScrollPhysics(),
-                          shrinkWrap: true,
-                          itemCount: _miniGames.length,
-                          separatorBuilder: (_, __) => const Divider(
-                            height: 1,
-                            color: Color(0xFFE2E8F0),
-                          ),
-                          itemBuilder: (context, index) {
-                            final game = _miniGames[index];
-                            final sdg = getSdgByNumber(game.sdgNumber);
+                        child: ValueListenableBuilder<Set<String>>(
+                          valueListenable:
+                              OwnedPackService.instance.ownedPackIds,
+                          builder: (context, owned, _) {
+                            return ListView.separated(
+                              physics: const NeverScrollableScrollPhysics(),
+                              shrinkWrap: true,
+                              itemCount: _miniGames.length,
+                              separatorBuilder: (_, __) => const Divider(
+                                height: 1,
+                                color: Color(0xFFE2E8F0),
+                              ),
+                              itemBuilder: (context, index) {
+                                final game = _miniGames[index];
+                                final sdg = getSdgByNumber(game.sdgNumber);
 
-                            return InkWell(
-                              borderRadius: index == 0
-                                  ? const BorderRadius.vertical(
-                                      top: Radius.circular(24),
-                                    )
-                                  : index == _miniGames.length - 1
+                                final isLocked = game.requiredPackId != null &&
+                                    !owned.contains(game.requiredPackId);
+
+                                return InkWell(
+                                  borderRadius: index == 0
                                       ? const BorderRadius.vertical(
-                                          bottom: Radius.circular(24),
+                                          top: Radius.circular(24),
                                         )
-                                      : BorderRadius.zero,
-                              onTap: game.available && game.routeName != null
-                                  ? () {
-                                      Navigator.pushNamed(
-                                        context,
-                                        game.routeName!,
-                                      );
-                                    }
-                                  : null,
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 18,
-                                  vertical: 16,
-                                ),
-                                child: Row(
-                                  children: [
-                                    Container(
-                                      width: 48,
-                                      height: 48,
-                                      decoration: BoxDecoration(
-                                        shape: BoxShape.circle,
-                                        gradient: LinearGradient(
-                                          colors: [
-                                            (sdg?.color ??
-                                                    const Color(0xFF32C27C))
-                                                .withOpacity(0.9),
-                                            (sdg?.color ??
-                                                    const Color(0xFF2196F3))
-                                                .withOpacity(0.7),
-                                          ],
-                                          begin: Alignment.topLeft,
-                                          end: Alignment.bottomRight,
-                                        ),
-                                      ),
-                                      child: Icon(
-                                        game.icon,
-                                        color: Colors.white,
-                                      ),
+                                      : index == _miniGames.length - 1
+                                          ? const BorderRadius.vertical(
+                                              bottom: Radius.circular(24),
+                                            )
+                                          : BorderRadius.zero,
+                                  onTap: game.available && game.routeName != null
+                                      ? () {
+                                          if (isLocked) {
+                                            Navigator.pushNamed(context, '/shop');
+                                          } else {
+                                            Navigator.pushNamed(
+                                                context, game.routeName!);
+                                          }
+                                        }
+                                      : null,
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 18,
+                                      vertical: 16,
                                     ),
-                                    const SizedBox(width: 14),
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            game.title,
-                                            style: theme.textTheme.titleSmall
-                                                ?.copyWith(
-                                              fontWeight: FontWeight.w700,
+                                    child: Row(
+                                      children: [
+                                        Container(
+                                          width: 48,
+                                          height: 48,
+                                          decoration: BoxDecoration(
+                                            shape: BoxShape.circle,
+                                            gradient: LinearGradient(
+                                              colors: [
+                                                (sdg?.color ??
+                                                        const Color(0xFF32C27C))
+                                                    .withOpacity(0.9),
+                                                (sdg?.color ??
+                                                        const Color(0xFF2196F3))
+                                                    .withOpacity(0.7),
+                                              ],
+                                              begin: Alignment.topLeft,
+                                              end: Alignment.bottomRight,
                                             ),
                                           ),
-                                          const SizedBox(height: 4),
-                                          Text(
-                                            game.subtitle,
-                                            style: theme.textTheme.bodySmall
-                                                ?.copyWith(
-                                              color: Colors.grey[600],
-                                            ),
+                                          child: Icon(
+                                            game.icon,
+                                            color: Colors.white,
                                           ),
-                                          const SizedBox(height: 6),
-                                          if (sdg != null)
-                                            Container(
-                                              padding:
-                                                  const EdgeInsets.symmetric(
-                                                horizontal: 8,
-                                                vertical: 2,
+                                        ),
+                                        const SizedBox(width: 14),
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Row(
+                                                children: [
+                                                  Expanded(
+                                                    child: Text(
+                                                      game.title,
+                                                      style: theme
+                                                          .textTheme.titleSmall
+                                                          ?.copyWith(
+                                                        fontWeight:
+                                                            FontWeight.w700,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                  if (game.isPremium)
+                                                    Container(
+                                                      padding:
+                                                          const EdgeInsets
+                                                              .symmetric(
+                                                        horizontal: 8,
+                                                        vertical: 2,
+                                                      ),
+                                                      decoration: BoxDecoration(
+                                                        color: Colors.amber
+                                                            .withOpacity(0.12),
+                                                        borderRadius:
+                                                            BorderRadius
+                                                                .circular(999),
+                                                      ),
+                                                      child: const Text(
+                                                        'Premium',
+                                                        style: TextStyle(
+                                                          fontSize: 10,
+                                                          fontWeight:
+                                                              FontWeight.w600,
+                                                          color: Colors.amber,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                ],
                                               ),
-                                              decoration: BoxDecoration(
-                                                color: sdg.color
-                                                    .withOpacity(0.1),
-                                                borderRadius:
-                                                    BorderRadius.circular(999),
-                                              ),
-                                              child: Text(
-                                                'SDG ${sdg.number}: ${sdg.shortTitle}',
-                                                style: const TextStyle(
-                                                  fontSize: 11,
-                                                  fontWeight: FontWeight.w600,
+                                              const SizedBox(height: 4),
+                                              Text(
+                                                game.subtitle,
+                                                style: theme
+                                                    .textTheme.bodySmall
+                                                    ?.copyWith(
+                                                  color: Colors.grey[600],
                                                 ),
                                               ),
-                                            ),
-                                        ],
-                                      ),
-                                    ),
-                                    const SizedBox(width: 8),
-                                    if (game.available)
-                                      const Icon(
-                                        Icons.play_arrow_rounded,
-                                        color: Colors.black54,
-                                      )
-                                    else
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 8,
-                                          vertical: 4,
-                                        ),
-                                        decoration: BoxDecoration(
-                                          color: Colors.grey.shade200,
-                                          borderRadius:
-                                              BorderRadius.circular(999),
-                                        ),
-                                        child: const Text(
-                                          'Soon',
-                                          style: TextStyle(
-                                            fontSize: 11,
-                                            color: Colors.grey,
-                                            fontWeight: FontWeight.w600,
+                                              const SizedBox(height: 6),
+                                              if (sdg != null)
+                                                Container(
+                                                  padding: const EdgeInsets
+                                                      .symmetric(
+                                                    horizontal: 8,
+                                                    vertical: 2,
+                                                  ),
+                                                  decoration: BoxDecoration(
+                                                    color: sdg.color
+                                                        .withOpacity(0.1),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            999),
+                                                  ),
+                                                  child: Text(
+                                                    'SDG ${sdg.number}: ${sdg.shortTitle}',
+                                                    style: const TextStyle(
+                                                      fontSize: 11,
+                                                      fontWeight:
+                                                          FontWeight.w600,
+                                                    ),
+                                                  ),
+                                                ),
+                                            ],
                                           ),
                                         ),
-                                      ),
-                                  ],
-                                ),
-                              ),
+                                        const SizedBox(width: 8),
+                                        if (!game.available)
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 8,
+                                              vertical: 4,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              color: Colors.grey.shade200,
+                                              borderRadius:
+                                                  BorderRadius.circular(999),
+                                            ),
+                                            child: const Text(
+                                              'Soon',
+                                              style: TextStyle(
+                                                fontSize: 11,
+                                                color: Colors.grey,
+                                                fontWeight: FontWeight.w600,
+                                              ),
+                                            ),
+                                          )
+                                        else if (isLocked)
+                                          const Icon(
+                                            Icons.lock,
+                                            color: Colors.black45,
+                                          )
+                                        else
+                                          const Icon(
+                                            Icons.play_arrow_rounded,
+                                            color: Colors.black54,
+                                          ),
+                                      ],
+                                    ),
+                                  ),
+                                );
+                              },
                             );
                           },
                         ),

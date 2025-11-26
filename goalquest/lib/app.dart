@@ -16,6 +16,7 @@ import 'screens/trash_sort_game.dart';
 import 'screens/city_fix_game.dart';
 import 'screens/quiz_game_screen.dart';
 import 'screens/live_map_screen.dart';
+import 'screens/shop_screen.dart';
 import 'screens/impact_dashboard_screen.dart';
 import 'screens/community_screen.dart';
 import 'screens/learn_sdg.dart';
@@ -111,6 +112,8 @@ class _GoalQuestAppState extends State<GoalQuestApp> {
             return MaterialPageRoute(builder: (_) => const MiniGamesScreen());
           case '/trashSortGame':
             return MaterialPageRoute(builder: (_) => const TrashSortGameScreen());
+          case '/trashSortGameAdvanced':
+            return MaterialPageRoute(builder: (_) => const TrashSortGameScreen());
           case '/cityFixGame':
             return MaterialPageRoute(builder: (_) => CityFixGameScreen());
           case '/sdgMatchGame':
@@ -119,6 +122,8 @@ class _GoalQuestAppState extends State<GoalQuestApp> {
             return MaterialPageRoute(builder: (_) => const WaterGuardianGameScreen());
           case '/quizGame':
             return MaterialPageRoute(builder: (_) => const QuizGameScreen());
+          case '/shop':
+            return MaterialPageRoute(builder: (_) => const ShopScreen());
           case '/impactDashboard':
             return MaterialPageRoute(builder: (_) => const ImpactDashboardScreen());
           case '/community':

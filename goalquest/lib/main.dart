@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:goalquest/services/owned_pack_service.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uni_links/uni_links.dart';
 import 'services/profile_service.dart';
@@ -33,6 +34,7 @@ Future<void> main() async {
 
   if (session != null) {
     await ProfileService.instance.loadCurrentUserProfile();
+    await OwnedPackService.instance.loadOwnedPacks();
   }
 
   final String startRoute;

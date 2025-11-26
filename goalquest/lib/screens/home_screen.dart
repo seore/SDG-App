@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import '../services/profile_service.dart';
+import '../services/owned_pack_service.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -107,6 +108,9 @@ class _HomeScreenState extends State<HomeScreen> {
               final progress = xpInLevel / xpPerLevel;
               final streak = profile.streak;
 
+              final owned = OwnedPackService.instance.ownedPackIds.value;
+              final hasEcoFrame = owned.contains('cosmetic_eco_frame');
+
               return LayoutBuilder(
                 builder: (context, constraints) {
                   final maxWidth = constraints.maxWidth > 480
@@ -153,8 +157,9 @@ class _HomeScreenState extends State<HomeScreen> {
                                     children: [
                                       CircleAvatar(
                                         radius: 26,
-                                        backgroundColor:
-                                            const Color(0xFF32C27C)
+                                        backgroundColor: hasEcoFrame ?
+                                            const Color(0xFF22C55E)
+                                                .withOpacity(0.35) : const Color(0xFF32C27C)
                                                 .withOpacity(0.12),
                                         child: const Text(
                                           '🌍',
@@ -304,7 +309,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                   // Streak + quick actions
                                   Row(
                                     children: [
-                                      // Streak chip
+                                      // Streak chips
                                       Container(
                                         padding: const EdgeInsets.symmetric(
                                           horizontal: 10,
@@ -396,6 +401,17 @@ class _HomeScreenState extends State<HomeScreen> {
                                       context, '/miniGames'),
                                 ),
                                  const Divider(
+                                    height: 1, color: Color(0xFFE2E8F0)),
+                                _HomeNavTile(
+                                  icon: Icons.shopping_bag_outlined,
+                                  iconColor: const Color(0xFF6366F1),
+                                  title: 'Shop & Customize',
+                                  subtitle:
+                                      'Unlock themes, game packs & more.',
+                                  onTap: () =>
+                                      Navigator.pushNamed(context, '/shop'),
+                                ),
+                                const Divider(
                                     height: 1, color: Color(0xFFE2E8F0)),
                                 _HomeNavTile(
                                   icon: Icons.menu_book_rounded,
