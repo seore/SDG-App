@@ -332,7 +332,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                               ownedIds.contains(frame.id);
                                           final active =
                                               profile.activeAvatarFrame ==
-                                                  frame.id &&
+                                                      frame.id &&
                                                   owned;
 
                                           return _FrameChip(
@@ -395,8 +395,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                             Row(
                                               children: [
                                                 Container(
-                                                  padding: const EdgeInsets
-                                                      .symmetric(
+                                                  padding:
+                                                      const EdgeInsets.symmetric(
                                                     horizontal: 10,
                                                     vertical: 6,
                                                   ),
@@ -606,10 +606,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                           borderRadius:
                                               BorderRadius.circular(18),
                                         ),
-                                        child: Column(
+                                        child: const Column(
                                           crossAxisAlignment:
                                               CrossAxisAlignment.start,
-                                          children: const [
+                                          children: [
                                             Text(
                                               'Badges & Achievements',
                                               style: TextStyle(
@@ -796,10 +796,9 @@ class _AvatarPreview extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final initials = profile.username.isNotEmpty
-        ? profile.username.trim()[0].toUpperCase()
-        : '🌍';
-
+    final hasUsername = profile.username.trim().isNotEmpty;
+    final initials =
+        hasUsername ? profile.username.trim()[0].toUpperCase() : null;
     final hasFrame = frame != null;
 
     return Container(
@@ -818,17 +817,23 @@ class _AvatarPreview extends StatelessWidget {
         radius: 32,
         backgroundImage:
             profile.avatarUrl != null ? NetworkImage(profile.avatarUrl!) : null,
-        backgroundColor: hasFrame
-            ? Colors.white
-            : const Color(0xFF32C27C).withOpacity(0.1),
-        child: profile.avatarUrl == null
-            ? Text(
-                initials,
-                style: const TextStyle(
-                  fontSize: 26,
-                ),
-              )
-            : null,
+        backgroundColor:
+            hasFrame ? Colors.white : const Color(0xFF32C27C).withOpacity(0.1),
+        child: profile.avatarUrl != null
+            ? null
+            : (hasUsername
+                ? Text(
+                    initials!,
+                    style: const TextStyle(
+                      fontSize: 26,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  )
+                : const Icon(
+                    Icons.person,
+                    size: 28,
+                    color: Color(0xFF32C27C),
+                  )),
       ),
     );
   }
@@ -881,7 +886,11 @@ class _FrameChip extends StatelessWidget {
               child: const CircleAvatar(
                 radius: 14,
                 backgroundColor: Colors.white,
-                child: Text('🙂', style: TextStyle(fontSize: 14)),
+                child: Icon(
+                  Icons.person,
+                  size: 14,
+                  color: Colors.black87,
+                ),
               ),
             ),
             const SizedBox(width: 8),
