@@ -3,13 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../services/profile_service.dart';
-
-class ProfileScreen extends StatefulWidget {
-  const ProfileScreen({super.key});
-
-  @override
-  State<ProfileScreen> createState() => _ProfileScreenState();
-}
+import '../services/owned_pack_service.dart';
 
 class _QuizSummary {
   final int attempts;
@@ -23,14 +17,58 @@ class _QuizSummary {
   });
 
   static const empty = _QuizSummary(
-    attempts: 0, 
-    averagePercent: 0, 
+    attempts: 0,
+    averagePercent: 0,
     totalXp: 0,
   );
 }
 
+class AvatarFrameDef {
+  final String id;
+  final String name;
+  final String description;
+  final List<Color> colors;
+
+  const AvatarFrameDef({
+    required this.id,
+    required this.name,
+    required this.description,
+    required this.colors,
+  });
+}
+
+const List<AvatarFrameDef> kAvatarFrames = [
+  AvatarFrameDef(
+    id: 'cosmetic_eco_frame',
+    name: 'Eco Glow',
+    description: 'Green aura for eco warriors.',
+    colors: [Color(0xFF22C55E), Color(0xFF4ADE80)],
+  ),
+  AvatarFrameDef(
+    id: 'cosmetic_sunrise_frame',
+    name: 'Sunrise Blaze',
+    description: 'Warm sunrise ring for early birds.',
+    colors: [Color(0xFFF97316), Color(0xFFFACC15)],
+  ),
+  AvatarFrameDef(
+    id: 'cosmetic_ocean_frame',
+    name: 'Ocean Wave',
+    description: 'Cool blue frame for water guardians.',
+    colors: [Color(0xFF0EA5E9), Color(0xFF38BDF8)],
+  ),
+];
+
+class ProfileScreen extends StatefulWidget {
+  const ProfileScreen({super.key});
+
+  @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
 class _ProfileScreenState extends State<ProfileScreen> {
   final _profileService = ProfileService.instance;
+  final _ownedService = OwnedPackService.instance;
+
   bool _loading = true;
   late Future<_QuizSummary> _quizSummaryFuture;
 
@@ -39,6 +77,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
     super.initState();
     _quizSummaryFuture = _getQuizSummary();
     _load();
+  }
+
+  AvatarFrameDef? _frameById(String? id) {
+    if (id == null) return null;
+    try {
+      return kAvatarFrames.firstWhere((f) => f.id == id);
+    } catch (_) {
+      return null;
+    }
   }
 
   Future<void> _load() async {
@@ -59,9 +106,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
 
     try {
-      final res = await client.from('quiz_attempts')
-      .select('score, total_questions, xp_earned')
-      .eq('user_id', session.user.id);
+      final res = await client
+          .from('quiz_attempts')
+          .select('score, total_questions, xp_earned')
+          .eq('user_id', session.user.id);
 
       if (res is! List || res.isEmpty) {
         return _QuizSummary.empty;
@@ -85,8 +133,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
       final avgPercent = totalPercent / attempts;
 
       return _QuizSummary(
-        attempts: attempts, 
-        averagePercent: avgPercent, 
+        attempts: attempts,
+        averagePercent: avgPercent,
         totalXp: totalXp,
       );
     } catch (_) {
@@ -140,24 +188,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
             elevation: 0,
             automaticallyImplyLeading: true,
             iconTheme: const IconThemeData(color: Colors.white),
-            /*
-            automaticallyImplyLeading: false,
-            leading: Container(
-              margin: const EdgeInsets.only(left: 15),
-              child: CircleAvatar(
-                backgroundColor: Colors.white.withOpacity(0.1),
-                child: IconButton(
-                  icon: const Icon(Icons.arrow_back, color: Colors.white),
-                  onPressed: () {
-                    Navigator.pushNamedAndRemoveUntil(
-                      context,
-                      '/home',
-                      (route) => false,
-                    );
-                  },
-                ),
-              ),
-            ),*/
             title: const Text(
               "My SDG Profile",
               style: TextStyle(
@@ -170,7 +200,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
         ),
       ),
-
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
@@ -194,317 +223,422 @@ class _ProfileScreenState extends State<ProfileScreen> {
               final xpInLevel = profile.xp % 100;
               const xpPerLevel = 100;
 
-              return Center(
-                child: LayoutBuilder(
-                  builder: (context, constraints) {
-                    final maxWidth = constraints.maxWidth > 480
-                        ? 420.0
-                        : constraints.maxWidth * 0.9;
+              return ValueListenableBuilder<Set<String>>(
+                valueListenable: _ownedService.ownedPackIds,
+                builder: (context, ownedIds, __) {
+                  final activeFrameDef = _frameById(profile.activeAvatarFrame);
+                  final hasActiveFrame = activeFrameDef != null &&
+                      ownedIds.contains(activeFrameDef.id);
 
-                    return SingleChildScrollView(
-                      padding: const EdgeInsets.symmetric(vertical: 24),
-                      child: Column(
-                        children: [
-                          //const SizedBox(height: 5),
-                          Container(
-                            width: maxWidth,
-                            decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.97),
-                              borderRadius: BorderRadius.circular(24),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0),
-                                  blurRadius: 20,
-                                  offset: const Offset(0, 12),
+                  return Center(
+                    child: LayoutBuilder(
+                      builder: (context, constraints) {
+                        final maxWidth = constraints.maxWidth > 480
+                            ? 420.0
+                            : constraints.maxWidth * 0.9;
+
+                        return SingleChildScrollView(
+                          padding: const EdgeInsets.symmetric(vertical: 24),
+                          child: Column(
+                            children: [
+                              Container(
+                                width: maxWidth,
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withOpacity(0.97),
+                                  borderRadius: BorderRadius.circular(24),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withOpacity(0),
+                                      blurRadius: 20,
+                                      offset: const Offset(0, 12),
+                                    ),
+                                  ],
                                 ),
-                              ],
-                            ),
-                            child: Padding(
-                              padding: const EdgeInsets.all(20.0),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  // Header: avatar + name + sign out
-                                  Row(
+                                child: Padding(
+                                  padding: const EdgeInsets.all(20.0),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
-                                      CircleAvatar(
-                                        radius: 32,
-                                        backgroundImage:
-                                            profile.avatarUrl != null
-                                                ? NetworkImage(
-                                                    profile.avatarUrl!)
+                                      // Header: avatar + name + sign out
+                                      Row(
+                                        children: [
+                                          _AvatarPreview(
+                                            profile: profile,
+                                            frame: hasActiveFrame
+                                                ? activeFrameDef
                                                 : null,
-                                        backgroundColor:
-                                            const Color(0xFF32C27C)
-                                                .withOpacity(0.1),
-                                        child: profile.avatarUrl == null
-                                            ? const Icon(
-                                                Icons.person,
-                                                size: 32,
-                                                color: Color(0xFF32C27C),
-                                              )
-                                            : null,
+                                          ),
+                                          const SizedBox(width: 14),
+                                          Expanded(
+                                            child: Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                  profile.username.isNotEmpty
+                                                      ? profile.username
+                                                      : 'Explorer',
+                                                  style: theme
+                                                      .textTheme.titleMedium
+                                                      ?.copyWith(
+                                                    fontWeight: FontWeight.w700,
+                                                  ),
+                                                ),
+                                                const SizedBox(height: 4),
+                                                Text(
+                                                  profile.email,
+                                                  style: theme
+                                                      .textTheme.bodySmall
+                                                      ?.copyWith(
+                                                    color: Colors.grey[600],
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                          IconButton(
+                                            onPressed: _signOut,
+                                            tooltip: 'Sign out',
+                                            icon: const Icon(Icons.logout),
+                                          ),
+                                        ],
                                       ),
-                                      const SizedBox(width: 14),
-                                      Expanded(
+
+                                      const SizedBox(height: 16),
+
+                                      // Avatar frames selector
+                                      const Text(
+                                        'Avatar frames',
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      const Text(
+                                        'Choose a frame to show around your avatar. Frames are unlocked in the Shop.',
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          color: Colors.grey,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 8),
+                                      Wrap(
+                                        spacing: 8,
+                                        runSpacing: 8,
+                                        children: kAvatarFrames.map((frame) {
+                                          final owned =
+                                              ownedIds.contains(frame.id);
+                                          final active =
+                                              profile.activeAvatarFrame ==
+                                                  frame.id &&
+                                                  owned;
+
+                                          return _FrameChip(
+                                            frame: frame,
+                                            owned: owned,
+                                            active: active,
+                                            onTap: () async {
+                                              if (!owned) {
+                                                ScaffoldMessenger.of(context)
+                                                    .showSnackBar(
+                                                  const SnackBar(
+                                                    content: Text(
+                                                      'You don\'t own this frame yet. Unlock it in the Shop.',
+                                                    ),
+                                                  ),
+                                                );
+                                                return;
+                                              }
+
+                                              await _profileService
+                                                  .updateProfile(
+                                                activeAvatarFrame: frame.id,
+                                              );
+                                            },
+                                          );
+                                        }).toList(),
+                                      ),
+                                      const SizedBox(height: 8),
+                                      TextButton.icon(
+                                        onPressed: () {
+                                          Navigator.pushNamed(
+                                            context,
+                                            '/shop',
+                                          );
+                                        },
+                                        icon: const Icon(
+                                          Icons.shopping_bag_outlined,
+                                          size: 18,
+                                        ),
+                                        label: const Text(
+                                          'Open Shop',
+                                          style: TextStyle(fontSize: 13),
+                                        ),
+                                      ),
+
+                                      const SizedBox(height: 16),
+
+                                      // Level + XP progress
+                                      Container(
+                                        padding: const EdgeInsets.all(16),
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFFF5F7FB),
+                                          borderRadius:
+                                              BorderRadius.circular(18),
+                                        ),
                                         child: Column(
                                           crossAxisAlignment:
                                               CrossAxisAlignment.start,
                                           children: [
-                                            Text(
-                                              profile.username.isNotEmpty
-                                                  ? profile.username
-                                                  : 'Explorer',
-                                              style: theme
-                                                  .textTheme.titleMedium
-                                                  ?.copyWith(
-                                                fontWeight: FontWeight.w700,
-                                              ),
-                                            ),
-                                            const SizedBox(height: 4),
-                                            Text(
-                                              profile.email,
-                                              style: theme
-                                                  .textTheme.bodySmall
-                                                  ?.copyWith(
-                                                color: Colors.grey[600],
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                      IconButton(
-                                        onPressed: _signOut,
-                                        tooltip: 'Sign out',
-                                        icon: const Icon(Icons.logout),
-                                      ),
-                                    ],
-                                  ),
-
-                                  const SizedBox(height: 12),
-
-                                  // Level + XP progress
-                                  Container(
-                                    padding: const EdgeInsets.all(16),
-                                    decoration: BoxDecoration(
-                                      color: const Color(0xFFF5F7FB),
-                                      borderRadius: BorderRadius.circular(18),
-                                    ),
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Row(
-                                          children: [
-                                            Container(
-                                              padding:
-                                                  const EdgeInsets.symmetric(
-                                                horizontal: 10,
-                                                vertical: 6,
-                                              ),
-                                              decoration: BoxDecoration(
-                                                color: const Color(0xFF32C27C)
-                                                    .withOpacity(0.1),
-                                                borderRadius:
-                                                    BorderRadius.circular(999),
-                                              ),
-                                              child: Row(
-                                                children: [
-                                                  const Icon(
-                                                    Icons.stars_rounded,
-                                                    size: 16,
-                                                    color: Color(0xFF32C27C),
+                                            Row(
+                                              children: [
+                                                Container(
+                                                  padding: const EdgeInsets
+                                                      .symmetric(
+                                                    horizontal: 10,
+                                                    vertical: 6,
                                                   ),
-                                                  const SizedBox(width: 4),
-                                                  Text(
-                                                    'Level $level',
-                                                    style: const TextStyle(
-                                                      fontSize: 12,
-                                                      fontWeight:
-                                                          FontWeight.w600,
-                                                      color: Color(0xFF32C27C),
-                                                    ),
+                                                  decoration: BoxDecoration(
+                                                    color: const Color(
+                                                            0xFF32C27C)
+                                                        .withOpacity(0.1),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            999),
                                                   ),
-                                                ],
-                                              ),
+                                                  child: Row(
+                                                    children: [
+                                                      const Icon(
+                                                        Icons.stars_rounded,
+                                                        size: 16,
+                                                        color:
+                                                            Color(0xFF32C27C),
+                                                      ),
+                                                      const SizedBox(width: 4),
+                                                      Text(
+                                                        'Level $level',
+                                                        style: const TextStyle(
+                                                          fontSize: 12,
+                                                          fontWeight:
+                                                              FontWeight.w600,
+                                                          color: Color(
+                                                            0xFF32C27C,
+                                                          ),
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ),
+                                                const Spacer(),
+                                                Text(
+                                                  '${profile.xp} XP',
+                                                  style: const TextStyle(
+                                                    fontWeight: FontWeight.w700,
+                                                  ),
+                                                ),
+                                              ],
                                             ),
-                                            const Spacer(),
+                                            const SizedBox(height: 10),
                                             Text(
-                                              '${profile.xp} XP',
+                                              '$xpInLevel / $xpPerLevel XP to next level',
                                               style: const TextStyle(
-                                                fontWeight: FontWeight.w700,
+                                                fontSize: 12,
+                                                color: Colors.grey,
+                                              ),
+                                            ),
+                                            const SizedBox(height: 8),
+                                            ClipRRect(
+                                              borderRadius:
+                                                  BorderRadius.circular(999),
+                                              child: LinearProgressIndicator(
+                                                value: xpInLevel / xpPerLevel,
+                                                minHeight: 8,
+                                                backgroundColor:
+                                                    Colors.grey.shade300,
                                               ),
                                             ),
                                           ],
                                         ),
-                                        const SizedBox(height: 10),
-                                        Text(
-                                          '$xpInLevel / $xpPerLevel XP to next level',
-                                          style: const TextStyle(
-                                            fontSize: 12,
-                                            color: Colors.grey,
-                                          ),
-                                        ),
-                                        const SizedBox(height: 8),
-                                        ClipRRect(
-                                          borderRadius:
-                                              BorderRadius.circular(999),
-                                          child: LinearProgressIndicator(
-                                            value: xpInLevel / xpPerLevel,
-                                            minHeight: 8,
-                                            backgroundColor:
-                                                Colors.grey.shade300,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
+                                      ),
 
-                                  const SizedBox(height: 16),
+                                      const SizedBox(height: 16),
 
-                                  // User Stats
-                                  Row(
-                                    children: [
-                                      Expanded(
-                                        child: _StatCard(
-                                          title: 'Daily streak',
-                                          value: '${profile.streak}',
-                                          subtitle: 'Days in a row',
-                                          icon: Icons.local_fire_department,
-                                          iconColor: Colors.orangeAccent,
+                                      // User Stats
+                                      Row(
+                                        children: [
+                                          Expanded(
+                                            child: _StatCard(
+                                              title: 'Daily streak',
+                                              value: '${profile.streak}',
+                                              subtitle: 'Days in a row',
+                                              icon: Icons.local_fire_department,
+                                              iconColor: Colors.orangeAccent,
+                                            ),
+                                          ),
+                                          const SizedBox(width: 12),
+                                          Expanded(
+                                            child: _StatCard(
+                                              title: 'Impact XP',
+                                              value: '${profile.xp}',
+                                              subtitle: 'From missions',
+                                              icon: Icons.public,
+                                              iconColor: Colors.blueAccent,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 16),
+
+                                      // Quiz stats
+                                      FutureBuilder<_QuizSummary>(
+                                        future: _quizSummaryFuture,
+                                        builder: (context, snapshot) {
+                                          final data = snapshot.data ??
+                                              _QuizSummary.empty;
+
+                                          return Container(
+                                            width: double.infinity,
+                                            padding: const EdgeInsets.all(16),
+                                            decoration: BoxDecoration(
+                                              color: const Color(0xFFF5F7FB),
+                                              borderRadius:
+                                                  BorderRadius.circular(18),
+                                            ),
+                                            child: Row(
+                                              children: [
+                                                CircleAvatar(
+                                                  radius: 18,
+                                                  backgroundColor:
+                                                      const Color(0xFF6366F1)
+                                                          .withOpacity(0.12),
+                                                  child: const Icon(
+                                                    Icons.quiz_outlined,
+                                                    color: Color(0xFF6366F1),
+                                                  ),
+                                                ),
+                                                const SizedBox(width: 12),
+                                                Expanded(
+                                                  child: Column(
+                                                    crossAxisAlignment:
+                                                        CrossAxisAlignment
+                                                            .start,
+                                                    children: [
+                                                      const Text(
+                                                        'Quiz History',
+                                                        style: TextStyle(
+                                                          fontSize: 13,
+                                                          fontWeight:
+                                                              FontWeight.w600,
+                                                        ),
+                                                      ),
+                                                      const SizedBox(
+                                                          height: 4),
+                                                      if (!snapshot.hasData)
+                                                        const Text(
+                                                          'Loading your quiz stats...',
+                                                          style: TextStyle(
+                                                            fontSize: 12,
+                                                            color: Colors.grey,
+                                                          ),
+                                                        )
+                                                      else if (data.attempts ==
+                                                          0)
+                                                        const Text(
+                                                          'No quizzes played yet.',
+                                                          style: TextStyle(
+                                                            fontSize: 12,
+                                                            color: Colors.grey,
+                                                          ),
+                                                        )
+                                                      else
+                                                        Text(
+                                                          '${data.attempts} quiz attempt(s) • avg score ${data.averagePercent.toStringAsFixed(0)}% • ${data.totalXp} XP earned',
+                                                          style:
+                                                              const TextStyle(
+                                                            fontSize: 12,
+                                                            color: Colors.grey,
+                                                          ),
+                                                        ),
+                                                    ],
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          );
+                                        },
+                                      ),
+
+                                      const SizedBox(height: 16),
+
+                                      // User SDG chips
+                                      const Text(
+                                        'Your focus SDGs',
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w600,
                                         ),
                                       ),
-                                      const SizedBox(width: 12),
-                                      Expanded(
-                                        child: _StatCard(
-                                          title: 'Impact XP',
-                                          value: '${profile.xp}',
-                                          subtitle: 'From missions',
-                                          icon: Icons.public,
-                                          iconColor: Colors.blueAccent,
-                                        ),
+                                      const SizedBox(height: 8),
+                                      Wrap(
+                                        spacing: 5,
+                                        runSpacing: 5,
+                                        children: const [
+                                          _SdgChip(
+                                            label: 'No Poverty',
+                                            color: 0xFFE5243B,
+                                          ),
+                                          _SdgChip(
+                                            label: 'Climate Action',
+                                            color: 0xFF3F7E44,
+                                          ),
+                                        ],
                                       ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 16),
 
-                                  FutureBuilder<_QuizSummary>(
-                                    future: _quizSummaryFuture, 
-                                    builder: (context, snapshot) {
-                                      final data = snapshot.data ?? _QuizSummary.empty;
+                                      const SizedBox(height: 18),
 
-                                      return Container(
-                                        width: double.infinity,
+                                      // Placeholder for upcoming features
+                                      Container(
                                         padding: const EdgeInsets.all(16),
                                         decoration: BoxDecoration(
                                           color: const Color(0xFFF5F7FB),
-                                          borderRadius: BorderRadius.circular(18),
+                                          borderRadius:
+                                              BorderRadius.circular(18),
                                         ),
-                                        child: Row(
-                                          children: [
-                                            CircleAvatar(
-                                              radius: 18,
-                                              backgroundColor: const Color(0xFF6366F1).withOpacity(0.12),
-                                              child: const Icon(Icons.quiz_outlined, color: Color(0xFF6366F1)
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: const [
+                                            Text(
+                                              'Badges & Achievements',
+                                              style: TextStyle(
+                                                fontSize: 14,
+                                                fontWeight: FontWeight.w600,
                                               ),
                                             ),
-                                            const SizedBox(width: 12),
-                                            Expanded(
-                                              child: Column(
-                                                crossAxisAlignment: CrossAxisAlignment.start,
-                                                children: [
-                                                  const Text(
-                                                    'Quiz History',
-                                                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
-                                                  ),
-                                                  const SizedBox(height: 4),
-                                                  if (!snapshot.hasData)
-                                                  const Text(
-                                                    'Loading your quiz stats...',
-                                                    style: TextStyle(fontSize: 12, color: Colors.grey),
-                                                  )
-                                                  else if (data.attempts == 0)
-                                                  const Text(
-                                                    'No quizzes played yet.',
-                                                    style: TextStyle(fontSize: 12, color: Colors.grey),
-                                                  )
-                                                  else 
-                                                  Text(
-                                                    '${data.attempts} quiz attempt(s)• avg score ${data.averagePercent.toStringAsFixed(0)}% • ${data.totalXp} XP earned',
-                                                    style: TextStyle(fontSize: 12, color: Colors.grey),
-                                                  )
-                                                ],
-                                              )
-                                            )
+                                            SizedBox(height: 8),
+                                            Text(
+                                              'Soon you\'ll unlock badges for streaks, favourite SDGs, and global challenges.',
+                                              style: TextStyle(
+                                                fontSize: 12,
+                                                color: Colors.grey,
+                                              ),
+                                            ),
                                           ],
-                                        )
-                                      );
-                                    }),
-
-                                  const SizedBox(height: 16),
-
-                                  // User SDG chips 
-                                  const Text(
-                                    'Your focus SDGs',
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 8),
-                                  Wrap(
-                                    spacing: 5,
-                                    runSpacing: 5,
-                                    children: const [
-                                      _SdgChip(
-                                          label: 'No Poverty',
-                                          color: 0xFFE5243B),
-                                      _SdgChip(
-                                          label: 'Climate Action',
-                                          color: 0xFF3F7E44),
+                                        ),
+                                      ),
                                     ],
                                   ),
-
-                                  const SizedBox(height: 18),
-
-                                  // Placeholder for upcoming features
-                                  Container(
-                                    padding: const EdgeInsets.all(16),
-                                    decoration: BoxDecoration(
-                                      color: const Color(0xFFF5F7FB),
-                                      borderRadius: BorderRadius.circular(18),
-                                    ),
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: const [
-                                        Text(
-                                          'Badges & Achievements',
-                                          style: TextStyle(
-                                            fontSize: 14,
-                                            fontWeight: FontWeight.w600,
-                                          ),
-                                        ),
-                                        SizedBox(height: 8),
-                                        Text(
-                                          'Soon you\'ll unlock badges for streaks, favourite SDGs, and global challenges.',
-                                          style: TextStyle(
-                                            fontSize: 12,
-                                            color: Colors.grey,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ],
+                                ),
                               ),
-                            ),
+                            ],
                           ),
-                        ],
-                      ),
-                    );
-                  },
-                ),
+                        );
+                      },
+                    ),
+                  );
+                },
               );
             },
           ),
@@ -532,8 +666,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(Icons.person_outline,
-                    size: 56, color: Colors.white),
+                const Icon(
+                  Icons.person_outline,
+                  size: 56,
+                  color: Colors.white,
+                ),
                 const SizedBox(height: 12),
                 const Text(
                   'No profile found yet',
@@ -644,6 +781,152 @@ class _SdgChip extends StatelessWidget {
       ),
       backgroundColor: Color(color),
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+    );
+  }
+}
+
+class _AvatarPreview extends StatelessWidget {
+  final UserProfile profile;
+  final AvatarFrameDef? frame;
+
+  const _AvatarPreview({
+    required this.profile,
+    this.frame,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final initials = profile.username.isNotEmpty
+        ? profile.username.trim()[0].toUpperCase()
+        : '🌍';
+
+    final hasFrame = frame != null;
+
+    return Container(
+      padding: hasFrame ? const EdgeInsets.all(3) : EdgeInsets.zero,
+      decoration: hasFrame
+          ? BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: LinearGradient(
+                colors: frame!.colors,
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+            )
+          : null,
+      child: CircleAvatar(
+        radius: 32,
+        backgroundImage:
+            profile.avatarUrl != null ? NetworkImage(profile.avatarUrl!) : null,
+        backgroundColor: hasFrame
+            ? Colors.white
+            : const Color(0xFF32C27C).withOpacity(0.1),
+        child: profile.avatarUrl == null
+            ? Text(
+                initials,
+                style: const TextStyle(
+                  fontSize: 26,
+                ),
+              )
+            : null,
+      ),
+    );
+  }
+}
+
+class _FrameChip extends StatelessWidget {
+  final AvatarFrameDef frame;
+  final bool owned;
+  final bool active;
+  final VoidCallback onTap;
+
+  const _FrameChip({
+    required this.frame,
+    required this.owned,
+    required this.active,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final gradient = LinearGradient(
+      colors: frame.colors,
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+    );
+
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 150,
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: active
+                ? const Color(0xFF22C55E)
+                : (owned ? Colors.grey.shade300 : Colors.grey.shade400),
+            width: active ? 2 : 1,
+          ),
+          color: owned ? Colors.white : Colors.grey.shade100,
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(2),
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: gradient,
+              ),
+              child: const CircleAvatar(
+                radius: 14,
+                backgroundColor: Colors.white,
+                child: Text('🙂', style: TextStyle(fontSize: 14)),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    frame.name,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight:
+                          active ? FontWeight.w700 : FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    owned ? frame.description : 'Locked! Get in shop',
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 10,
+                      color: owned ? Colors.grey[600] : Colors.grey[500],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            if (active)
+              const Icon(
+                Icons.check_circle,
+                size: 16,
+                color: Color(0xFF22C55E),
+              )
+            else if (!owned)
+              const Icon(
+                Icons.lock,
+                size: 16,
+                color: Colors.grey,
+              ),
+          ],
+        ),
+      ),
     );
   }
 }

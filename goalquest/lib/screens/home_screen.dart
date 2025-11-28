@@ -2,7 +2,9 @@
 
 import 'package:flutter/material.dart';
 import '../services/profile_service.dart';
-import '../services/owned_pack_service.dart'; 
+import '../services/owned_pack_service.dart';
+import '../screens/profile_screen.dart' show kAvatarFrames, AvatarFrameDef;
+// ↑ Re-use frame definitions from Profile Screen
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -13,6 +15,15 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   final _profileService = ProfileService.instance;
+
+  AvatarFrameDef? _frameById(String? id) {
+    if (id == null) return null;
+    try {
+      return kAvatarFrames.firstWhere((f) => f.id == id);
+    } catch (_) {
+      return null;
+    }
+  }
 
   @override
   void initState() {
@@ -31,10 +42,7 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Container(
           decoration: const BoxDecoration(
             gradient: LinearGradient(
-              colors: [
-                Color(0xFF32C27C),
-                Color(0xFF2196F3),
-              ],
+              colors: [Color(0xFF32C27C), Color(0xFF2196F3)],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
@@ -63,16 +71,58 @@ class _HomeScreenState extends State<HomeScreen> {
               Padding(
                 padding: const EdgeInsets.only(right: 12.0),
                 child: GestureDetector(
-                  onTap: () {
-                    Navigator.pushNamed(context, '/profile');
-                  },
-                  child: CircleAvatar(
-                    radius: 18,
-                    backgroundColor: Colors.white.withOpacity(0.15),
-                    child: const Icon(
-                      Icons.person,
-                      color: Colors.white,
-                    ),
+                  onTap: () => Navigator.pushNamed(context, '/profile'),
+                  child: ValueListenableBuilder<UserProfile?>(
+                    valueListenable: _profileService.profileListenable,
+                    builder: (context, profile, _) {
+                      if (profile == null) {
+                        return const CircleAvatar(
+                          radius: 18,
+                          backgroundColor: Colors.white,
+                          child: Icon(Icons.person, color: Colors.black),
+                        );
+                      }
+
+                      // Get active frame
+                      final activeFrame =
+                          _frameById(profile.activeAvatarFrame);
+
+                      final owned = OwnedPackService
+                          .instance.ownedPackIds.value
+                          .contains(activeFrame?.id);
+
+                      return Container(
+                        padding: owned && activeFrame != null
+                            ? const EdgeInsets.all(3)
+                            : EdgeInsets.zero,
+                        decoration: owned && activeFrame != null
+                            ? BoxDecoration(
+                                shape: BoxShape.circle,
+                                gradient: LinearGradient(
+                                  colors: activeFrame.colors,
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                ),
+                              )
+                            : null,
+                        child: CircleAvatar(
+                          radius: 18,
+                          backgroundColor: owned && activeFrame != null
+                              ? Colors.white
+                              : Colors.white.withOpacity(0.15),
+                          child: profile.avatarUrl != null
+                              ? ClipOval(
+                                  child: Image.network(
+                                    profile.avatarUrl!,
+                                    width: 36,
+                                    height: 36,
+                                    fit: BoxFit.cover,
+                                  ),
+                                )
+                              : const Icon(Icons.person, color: Colors.white),
+                        ),
+                      );
+                    },
                   ),
                 ),
               ),
@@ -80,13 +130,12 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
       ),
+
+      // ========================= BODY =========================
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            colors: [
-              Color(0xFF32C27C),
-              Color(0xFF2196F3),
-            ],
+            colors: [Color(0xFF32C27C), Color(0xFF2196F3)],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
@@ -95,9 +144,7 @@ class _HomeScreenState extends State<HomeScreen> {
           child: ValueListenableBuilder<UserProfile?>(
             valueListenable: _profileService.profileListenable,
             builder: (context, profile, _) {
-              if (profile == null) {
-                return _buildLoggedOutState(theme);
-              }
+              if (profile == null) return _buildLoggedOutState(theme);
 
               final xp = profile.xp;
               const xpPerLevel = 100;
@@ -106,21 +153,23 @@ class _HomeScreenState extends State<HomeScreen> {
               final progress = xpInLevel / xpPerLevel;
               final streak = profile.streak;
 
-              final owned = OwnedPackService.instance.ownedPackIds.value;
-              final hasEcoFrame = owned.contains('cosmetic_eco_frame');
+              // Determine active frame and ownership
+              final frame = _frameById(profile.activeAvatarFrame);
+              final owned = OwnedPackService
+                  .instance.ownedPackIds.value
+                  .contains(frame?.id);
 
               return LayoutBuilder(
                 builder: (context, constraints) {
-                  final maxWidth = constraints.maxWidth > 480
-                      ? 480.0
-                      : constraints.maxWidth * 0.95;
+                  final maxWidth =
+                      constraints.maxWidth > 480 ? 480.0 : constraints.maxWidth * 0.95;
 
                   return Center(
                     child: SingleChildScrollView(
                       padding: const EdgeInsets.symmetric(vertical: 24),
                       child: Column(
                         children: [
-                          // ===== HEADER =====
+                          // ---------- Header ----------
                           Text(
                             'Your SDG Journey',
                             style: theme.textTheme.headlineSmall?.copyWith(
@@ -130,7 +179,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                           const SizedBox(height: 24),
 
-                          // ===== XP + STREAK CARD =====
+                          // ---------- XP + STREAK CARD ----------
                           Container(
                             width: maxWidth,
                             decoration: BoxDecoration(
@@ -149,22 +198,17 @@ class _HomeScreenState extends State<HomeScreen> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  // Top row: avatar-ish circle + greeting + level
                                   Row(
                                     children: [
-                                      // 👇 UPDATED AVATAR WITH ECO FRAME
+                                      // ===== Avatar With Cosmetic Frame =====
                                       Container(
-                                        padding: hasEcoFrame
-                                            ? const EdgeInsets.all(3)
-                                            : EdgeInsets.zero,
-                                        decoration: hasEcoFrame
+                                        padding:
+                                            owned && frame != null ? const EdgeInsets.all(3) : EdgeInsets.zero,
+                                        decoration: owned && frame != null
                                             ? BoxDecoration(
                                                 shape: BoxShape.circle,
-                                                gradient: const LinearGradient(
-                                                  colors: [
-                                                    Color(0xFF22C55E),
-                                                    Color(0xFF4ADE80),
-                                                  ],
+                                                gradient: LinearGradient(
+                                                  colors: frame.colors,
                                                   begin: Alignment.topLeft,
                                                   end: Alignment.bottomRight,
                                                 ),
@@ -172,17 +216,28 @@ class _HomeScreenState extends State<HomeScreen> {
                                             : null,
                                         child: CircleAvatar(
                                           radius: 26,
-                                          backgroundColor: hasEcoFrame
+                                          backgroundColor: owned && frame != null
                                               ? Colors.white
-                                              : const Color(0xFF32C27C)
-                                                  .withOpacity(0.12),
-                                          child: const Text(
-                                            '🌍',
-                                            style: TextStyle(fontSize: 26),
-                                          ),
+                                              : const Color(0xFF32C27C).withOpacity(0.12),
+                                          child: profile.avatarUrl != null
+                                              ? ClipOval(
+                                                  child: Image.network(
+                                                    profile.avatarUrl!,
+                                                    width: 52,
+                                                    height: 52,
+                                                    fit: BoxFit.cover,
+                                                  ),
+                                                )
+                                              : const Text(
+                                                  '🌍',
+                                                  style: TextStyle(fontSize: 26),
+                                                ),
                                         ),
                                       ),
+
                                       const SizedBox(width: 12),
+
+                                      // Username + welcome text
                                       Expanded(
                                         child: Column(
                                           crossAxisAlignment:
@@ -208,6 +263,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                           ],
                                         ),
                                       ),
+
+                                      // Level Chip
                                       Container(
                                         padding: const EdgeInsets.symmetric(
                                           horizontal: 10,
@@ -221,11 +278,9 @@ class _HomeScreenState extends State<HomeScreen> {
                                         ),
                                         child: Row(
                                           children: [
-                                            const Icon(
-                                              Icons.stars_rounded,
-                                              size: 16,
-                                              color: Color(0xFF32C27C),
-                                            ),
+                                            const Icon(Icons.stars_rounded,
+                                                size: 16,
+                                                color: Color(0xFF32C27C)),
                                             const SizedBox(width: 4),
                                             Text(
                                               'Level $level',
@@ -243,7 +298,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
                                   const SizedBox(height: 16),
 
-                                  // XP label with animation
+                                  // XP label, animated
                                   Row(
                                     mainAxisAlignment:
                                         MainAxisAlignment.spaceBetween,
@@ -275,9 +330,10 @@ class _HomeScreenState extends State<HomeScreen> {
                                       ),
                                     ],
                                   ),
+
                                   const SizedBox(height: 8),
 
-                                  // Animated XP bar
+                                  // Animated progress bar
                                   TweenAnimationBuilder<double>(
                                     tween: Tween<double>(
                                       begin: 0,
@@ -296,8 +352,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                               Colors.grey.shade300,
                                           valueColor:
                                               const AlwaysStoppedAnimation(
-                                            Color(0xFF32C27C),
-                                          ),
+                                                  Color(0xFF32C27C)),
                                         ),
                                       );
                                     },
@@ -313,18 +368,14 @@ class _HomeScreenState extends State<HomeScreen> {
 
                                   const SizedBox(height: 16),
 
-                                  // Streak + quick actions
+                                  // Streak row
                                   Row(
                                     children: [
-                                      // Streak chip
                                       Container(
                                         padding: const EdgeInsets.symmetric(
-                                          horizontal: 10,
-                                          vertical: 6,
-                                        ),
+                                            horizontal: 10, vertical: 6),
                                         decoration: BoxDecoration(
-                                          color:
-                                              Colors.orange.withOpacity(0.08),
+                                          color: Colors.orange.withOpacity(0.08),
                                           borderRadius:
                                               BorderRadius.circular(999),
                                         ),
@@ -349,10 +400,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                       ),
                                       const Spacer(),
                                       TextButton.icon(
-                                        onPressed: () {
-                                          Navigator.pushNamed(
-                                              context, '/impactDashboard');
-                                        },
+                                        onPressed: () => Navigator.pushNamed(
+                                            context, '/impactDashboard'),
                                         icon: const Icon(
                                           Icons.auto_graph,
                                           size: 16,
@@ -371,7 +420,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
                           const SizedBox(height: 24),
 
-                          // ===== QUICK NAV CARDS =====
+                          // -------------- NAVIGATION TILES --------------
                           Container(
                             width: maxWidth,
                             decoration: BoxDecoration(
@@ -396,22 +445,18 @@ class _HomeScreenState extends State<HomeScreen> {
                                   onTap: () => Navigator.pushNamed(
                                       context, '/dailyMissions'),
                                 ),
-                                const Divider(
-                                    height: 1, color: Color(0xFFE2E8F0)),
+                                const Divider(height: 1, color: Color(0xFFE2E8F0)),
 
                                 _HomeNavTile(
                                   icon: Icons.videogame_asset_rounded,
                                   iconColor: const Color(0xFF6366F1),
                                   title: 'Mini Games & Quizzes',
-                                  subtitle:
-                                      'Play to learn about the SDGs and earn XP.',
+                                  subtitle: 'Play & learn about the SDGs.',
                                   onTap: () =>
                                       Navigator.pushNamed(context, '/miniGames'),
                                 ),
-                                const Divider(
-                                    height: 1, color: Color(0xFFE2E8F0)),
+                                const Divider(height: 1, color: Color(0xFFE2E8F0)),
 
-                                // 👇 NEW SHOP TILE
                                 _HomeNavTile(
                                   icon: Icons.shopping_bag_outlined,
                                   iconColor: const Color(0xFF8B5CF6),
@@ -421,39 +466,35 @@ class _HomeScreenState extends State<HomeScreen> {
                                   onTap: () =>
                                       Navigator.pushNamed(context, '/shop'),
                                 ),
-                                const Divider(
-                                    height: 1, color: Color(0xFFE2E8F0)),
+                                const Divider(height: 1, color: Color(0xFFE2E8F0)),
 
                                 _HomeNavTile(
                                   icon: Icons.public,
                                   iconColor: const Color(0xFF0EA5E9),
                                   title: 'Live Impact Map',
                                   subtitle:
-                                      'See where other young changemakers are acting.',
+                                      'See other young changemakers near you.',
                                   onTap: () =>
                                       Navigator.pushNamed(context, '/liveMap'),
                                 ),
-                                const Divider(
-                                    height: 1, color: Color(0xFFE2E8F0)),
+                                const Divider(height: 1, color: Color(0xFFE2E8F0)),
 
                                 _HomeNavTile(
                                   icon: Icons.groups_rounded,
                                   iconColor: const Color(0xFFEC4899),
                                   title: 'Community Stories',
                                   subtitle:
-                                      'Share your wins and see what others are doing.',
+                                      'Share your wins & read others’ stories.',
                                   onTap: () =>
                                       Navigator.pushNamed(context, '/community'),
                                 ),
-                                const Divider(
-                                    height: 1, color: Color(0xFFE2E8F0)),
+                                const Divider(height: 1, color: Color(0xFFE2E8F0)),
 
                                 _HomeNavTile(
                                   icon: Icons.menu_book_rounded,
                                   iconColor: const Color(0xFFF97316),
                                   title: 'Learn the SDGs',
-                                  subtitle:
-                                      'Explore each goal with bite-sized lessons.',
+                                  subtitle: 'Short lessons for each goal.',
                                   onTap: () =>
                                       Navigator.pushNamed(context, '/learnSdg'),
                                 ),
