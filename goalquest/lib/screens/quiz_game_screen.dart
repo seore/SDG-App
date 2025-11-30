@@ -1,7 +1,7 @@
 // ignore_for_file: deprecated_member_use
 
+import 'dart:math';
 import 'package:flutter/material.dart';
-
 import '../data/quiz_questions.dart';
 import '../services/game_tracking_service.dart';
 import '../services/profile_service.dart';
@@ -14,6 +14,8 @@ class QuizGameScreen extends StatefulWidget {
 }
 
 class _QuizGameScreenState extends State<QuizGameScreen> {
+  late final List<QuizQuestion> questions;
+
   int _currentIndex = 0;
   int _score = 0;
   int? _selectedIndex;
@@ -21,7 +23,13 @@ class _QuizGameScreenState extends State<QuizGameScreen> {
   bool _submitting = false;
   bool _celebrate = false; 
 
-  QuizQuestion get _currentQuestion => sdgQuizQuestions[_currentIndex];
+  QuizQuestion get _currentQuestion => questions[_currentIndex];
+
+  @override
+  void initState() {
+    super.initState();
+    questions = getRandomQuestions();
+  }
 
   void _onOptionTap(int index) {
     if (_showCorrect) return; 
@@ -57,8 +65,7 @@ class _QuizGameScreenState extends State<QuizGameScreen> {
 
     await Future.delayed(const Duration(milliseconds: 700));
 
-    if (_currentIndex == sdgQuizQuestions.length - 1) {
-      // Quiz finished
+    if (_currentIndex == questions.length - 1) {
       await _finishQuiz();
     } else {
       setState(() {
@@ -73,7 +80,7 @@ class _QuizGameScreenState extends State<QuizGameScreen> {
     if (_submitting) return;
     setState(() => _submitting = true);
 
-    final totalQuestions = sdgQuizQuestions.length;
+    final totalQuestions = questions.length;
     final xpEarned = _score * 10;
     final sdgNumber = _currentQuestion.sdgNumber;
 
@@ -165,9 +172,6 @@ class _QuizGameScreenState extends State<QuizGameScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: const [
               Text('🎉', style: TextStyle(fontSize: 32)),
-              Text('✨', style: TextStyle(fontSize: 28)),
-              Text('🌍', style: TextStyle(fontSize: 30)),
-              Text('🎉', style: TextStyle(fontSize: 32)),
             ],
           ),
         ],
@@ -180,8 +184,22 @@ class _QuizGameScreenState extends State<QuizGameScreen> {
     final theme = Theme.of(context);
     final q = _currentQuestion;
     final sdg = q.sdg;
-    final totalQuestions = sdgQuizQuestions.length;
+    final totalQuestions = questions.length;
     final progress = (_currentIndex + 1) / totalQuestions;
+
+    Color difficultyColor;
+    switch (q.difficulty.toLowerCase()) {
+      case 'easy':
+        difficultyColor = const Color(0xFF22C55E);
+        break;
+      case 'easy':
+        difficultyColor = const Color(0xFFEF4444);
+        break;
+      default:
+        difficultyColor = const Color(0xFFF59E0B);
+    }
+
+    final difficultyLabel = q.difficulty.isNotEmpty ? q.difficulty[0].toUpperCase() + q.difficulty.substring(1) : q.difficulty;
 
     return Scaffold(
       appBar: PreferredSize(
@@ -213,23 +231,6 @@ class _QuizGameScreenState extends State<QuizGameScreen> {
             elevation: 0,
             automaticallyImplyLeading: true,
             iconTheme: const IconThemeData(color: Colors.white),
-            /*
-            leading: Container(
-              margin: const EdgeInsets.only(left: 8),
-              child: CircleAvatar(
-                backgroundColor: Colors.white.withOpacity(0.1),
-                child: IconButton(
-                  icon: const Icon(Icons.arrow_back, color: Colors.white),
-                  onPressed: () {
-                    Navigator.pushNamedAndRemoveUntil(
-                      context,
-                      '/home',
-                      (route) => false,
-                    );
-                  },
-                ),
-              ),
-            ),*/
             title: const Text(
               'SDG Quiz',
               style: TextStyle(
@@ -331,6 +332,40 @@ class _QuizGameScreenState extends State<QuizGameScreen> {
                                         ),
                                       ),
                                     ),
+                                  const SizedBox(height: 6),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 3,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: difficultyColor.withOpacity(0.08),
+                                      borderRadius: BorderRadius.circular(999),
+                                      border: Border.all(
+                                        color: difficultyColor.withOpacity(0.7), 
+                                        width: 0.7,
+                                      ),
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(
+                                          Icons.bolt_rounded,
+                                          size: 12,
+                                          color: difficultyColor,
+                                        ),
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          difficultyLabel,
+                                          style: TextStyle(
+                                            fontSize: 11,
+                                            fontWeight: FontWeight.w500,
+                                            color: difficultyColor,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
                                   const SizedBox(height: 12),
                                   Text(
                                     q.question,
@@ -494,5 +529,12 @@ class _QuizGameScreenState extends State<QuizGameScreen> {
         ],
       ),
     );
+  }
+  
+   List<QuizQuestion> getRandomQuestions() {
+    final r = Random();
+    final List<QuizQuestion> shuffled = List.from(sdgQuizQuestions);
+    shuffled.shuffle(r);
+    return shuffled;
   }
 }

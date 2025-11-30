@@ -1,5 +1,4 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
-
 import 'profile_service.dart';
 
 class QuizService {
@@ -16,7 +15,6 @@ class QuizService {
   }) async {
     final user = _client.auth.currentUser;
     if (user == null) {
-      // Not logged in, don’t log anything
       return;
     }
 
@@ -29,7 +27,6 @@ class QuizService {
       'xp_earned': xpEarned,
     });
 
-    // Also update profile XP + streak
     await ProfileService.instance.addXp(xpEarned);
   }
 
