@@ -11,10 +11,6 @@ class OnboardingScreen extends StatelessWidget {
     final size = MediaQuery.of(context).size;
 
     return Scaffold(
-      appBar: AppBar(
-        automaticallyImplyLeading: false,
-        title: const Text('Welcome'),
-      ),
       body: Container(
         width: double.infinity,
         height: double.infinity,
@@ -30,40 +26,74 @@ class OnboardingScreen extends StatelessWidget {
         ),
         child: SafeArea(
           child: Padding(
-            padding: const EdgeInsets.all(24.0),
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const SizedBox(height: 16),
+                /// Top row: logo/title + Skip
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'SDG Journey',
+                      style: GoogleFonts.poppins(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.white.withOpacity(0.95),
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: () {
+                        Navigator.pushNamedAndRemoveUntil(
+                          context,
+                          '/home',
+                          (route) => false,
+                        );
+                      },
+                      child: Text(
+                        'Skip',
+                        style: GoogleFonts.poppins(
+                          color: Colors.white.withOpacity(0.9),
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    )
+                  ],
+                ),
+                const SizedBox(height: 12),
                 Text(
-                  'SDG Journey',
+                  'Small actions.\nGlobal impact.',
                   style: GoogleFonts.poppins(
-                    fontSize: 22,
+                    fontSize: 28,
+                    height: 1.2,
                     fontWeight: FontWeight.w700,
-                    color: Colors.white.withOpacity(0.9),
+                    color: Colors.white,
                   ),
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Small Actions. Global Imapct',
+                  'Turn your daily choices into real-world change for the planet and people.',
                   style: GoogleFonts.poppins(
-                    fontSize: 16,
-                    color: Colors.white.withOpacity(0.85),
+                    fontSize: 15,
+                    color: Colors.white.withOpacity(0.9),
                   ),
                 ),
-                SizedBox(height: size.height * 0.08),
+
+                SizedBox(height: size.height * 0.05),
+
+                /// Hero circle
                 Center(
                   child: Container(
-                    width: size.width * 0.7,
-                    height: size.width * 0.7,
+                    width: size.width * 0.6,
+                    height: size.width * 0.6,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       color: Colors.white.withOpacity(0.15),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.15),
-                          blurRadius: 20,
-                          offset: const Offset(0, 10),
+                          color: Colors.black.withOpacity(0.2),
+                          blurRadius: 25,
+                          offset: const Offset(0, 12),
                         ),
                       ],
                     ),
@@ -75,8 +105,60 @@ class OnboardingScreen extends StatelessWidget {
                     ),
                   ),
                 ),
-                const Spacer(),
-                const SizedBox(height: 16),
+
+                const SizedBox(height: 32),
+
+                /// Feature card
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(18),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.96),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Here’s what you can do:',
+                        style: GoogleFonts.poppins(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: const Color(0xFF15223B),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      _FeatureRow(
+                        icon: Icons.check_circle_rounded,
+                        color: const Color(0xFF32C27C),
+                        title: 'Complete daily missions',
+                        subtitle:
+                            'Fun challenges that make a real difference.',
+                      ),
+                      const SizedBox(height: 8),
+                      _FeatureRow(
+                        icon: Icons.insights_rounded,
+                        color: const Color(0xFF27B0E6),
+                        title: 'Track your impact',
+                        subtitle:
+                            'See how your actions support the SDGs over time.',
+                      ),
+                      const SizedBox(height: 8),
+                      _FeatureRow(
+                        icon: Icons.people_alt_rounded,
+                        color: const Color(0xFFFFC857),
+                        title: 'Join a global community',
+                        subtitle:
+                            'Be part of young change-makers like you.',
+                      ),
+                    ],
+                  ),
+                ),
+
+                //const Spacer(),
+                const SizedBox(height: 20),
+
+                /// CTA buttons
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
@@ -89,10 +171,14 @@ class OnboardingScreen extends StatelessWidget {
                       ),
                     ),
                     onPressed: () {
-                      Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
+                      Navigator.pushNamedAndRemoveUntil(
+                        context,
+                        '/home',
+                        (route) => false,
+                      );
                     },
                     child: Text(
-                      'Start your journey',
+                      'Start your first mission',
                       style: GoogleFonts.poppins(
                         fontSize: 18,
                         fontWeight: FontWeight.w600,
@@ -100,12 +186,88 @@ class OnboardingScreen extends StatelessWidget {
                     ),
                   ),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 10),
+                /*
+                Center(
+                  child: TextButton(
+                    onPressed: () {
+                      // adjust to whatever route you use to learn SDGs
+                      Navigator.pushNamed(context, '/sdgMap');
+                    },
+                    child: Text(
+                      'Learn about the SDGs first',
+                      style: GoogleFonts.poppins(
+                        color: Colors.white.withOpacity(0.95),
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ),
+                */
+                const SizedBox(height: 8),
               ],
             ),
           ),
         ),
       ),
+    );
+  }
+}
+
+class _FeatureRow extends StatelessWidget {
+  final IconData icon;
+  final Color color;
+  final String title;
+  final String subtitle;
+
+  const _FeatureRow({
+    required this.icon,
+    required this.color,
+    required this.title,
+    required this.subtitle,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          padding: const EdgeInsets.all(6),
+          decoration: BoxDecoration(
+            color: color.withOpacity(0.12),
+            shape: BoxShape.circle,
+          ),
+          child: Icon(
+            icon,
+            size: 20,
+            color: color,
+          ),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: GoogleFonts.poppins(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: const Color(0xFF15223B),
+                ),
+              ),
+              Text(
+                subtitle,
+                style: GoogleFonts.poppins(
+                  fontSize: 12,
+                  color: const Color(0xFF5D6475),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }
