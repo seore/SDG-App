@@ -2,9 +2,6 @@
 
 import 'package:flutter/material.dart';
 import '../services/profile_service.dart';
-import '../services/owned_pack_service.dart';
-import '../screens/profile_screen.dart' show kAvatarFrames, AvatarFrameDef;
-// ↑ Re-use frame definitions from Profile Screen
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -16,20 +13,11 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   final _profileService = ProfileService.instance;
 
-  AvatarFrameDef? _frameById(String? id) {
-    if (id == null) return null;
-    try {
-      return kAvatarFrames.firstWhere((f) => f.id == id);
-    } catch (_) {
-      return null;
-    }
-  }
-
   @override
   void initState() {
     super.initState();
     _profileService.loadCurrentUserProfile();
-    OwnedPackService.instance.loadOwnedPacks();
+    // OwnedPackService.instance.loadOwnedPacks(); 
   }
 
   @override
@@ -75,52 +63,39 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: ValueListenableBuilder<UserProfile?>(
                     valueListenable: _profileService.profileListenable,
                     builder: (context, profile, _) {
+                      // Simple avatar, no cosmetic frame
                       if (profile == null) {
-                        return const CircleAvatar(
+                        return CircleAvatar(
                           radius: 18,
-                          backgroundColor: Colors.white,
-                          child: Icon(Icons.person, color: Colors.black),
+                          backgroundColor: Colors.white.withOpacity(0.15),
+                          child: const Icon(Icons.person, color: Colors.white),
                         );
                       }
 
-                      // Get active frame
-                      final activeFrame =
-                          _frameById(profile.activeAvatarFrame);
-
-                      final owned = OwnedPackService
-                          .instance.ownedPackIds.value
-                          .contains(activeFrame?.id);
-
-                      return Container(
-                        padding: owned && activeFrame != null
-                            ? const EdgeInsets.all(3)
-                            : EdgeInsets.zero,
-                        decoration: owned && activeFrame != null
-                            ? BoxDecoration(
-                                shape: BoxShape.circle,
-                                gradient: LinearGradient(
-                                  colors: activeFrame.colors,
-                                  begin: Alignment.topLeft,
-                                  end: Alignment.bottomRight,
-                                ),
-                              )
-                            : null,
-                        child: CircleAvatar(
+                      if (profile.avatarUrl != null) {
+                        return CircleAvatar(
                           radius: 18,
-                          backgroundColor: owned && activeFrame != null
-                              ? Colors.white
-                              : Colors.white.withOpacity(0.15),
-                          child: profile.avatarUrl != null
-                              ? ClipOval(
-                                  child: Image.network(
-                                    profile.avatarUrl!,
-                                    width: 36,
-                                    height: 36,
-                                    fit: BoxFit.cover,
-                                  ),
-                                )
-                              : const Icon(Icons.person, color: Colors.white),
-                        ),
+                          backgroundColor: Colors.white.withOpacity(0.15),
+                          child: ClipOval(
+                            child: Image.network(
+                              profile.avatarUrl!,
+                              width: 36,
+                              height: 36,
+                              fit: BoxFit.cover,
+                            ),
+                          ),
+                        );
+                      }
+
+                      final hasUsername = profile.username.trim().isNotEmpty;
+                      final initials = hasUsername
+                          ? profile.username.trim()[0].toUpperCase()
+                          : null;
+
+                      return CircleAvatar(
+                        radius: 18,
+                        backgroundColor: Colors.white.withOpacity(0),
+                        child: Icon(Icons.person, color: Colors.white),
                       );
                     },
                   ),
@@ -153,16 +128,11 @@ class _HomeScreenState extends State<HomeScreen> {
               final progress = xpInLevel / xpPerLevel;
               final streak = profile.streak;
 
-              // Determine active frame and ownership
-              final frame = _frameById(profile.activeAvatarFrame);
-              final owned = OwnedPackService
-                  .instance.ownedPackIds.value
-                  .contains(frame?.id);
-
               return LayoutBuilder(
                 builder: (context, constraints) {
-                  final maxWidth =
-                      constraints.maxWidth > 480 ? 480.0 : constraints.maxWidth * 0.95;
+                  final maxWidth = constraints.maxWidth > 480
+                      ? 480.0
+                      : constraints.maxWidth * 0.95;
 
                   return Center(
                     child: SingleChildScrollView(
@@ -200,41 +170,27 @@ class _HomeScreenState extends State<HomeScreen> {
                                 children: [
                                   Row(
                                     children: [
-                                      // ===== Avatar With Cosmetic Frame =====
-                                      Container(
-                                        padding:
-                                            owned && frame != null ? const EdgeInsets.all(3) : EdgeInsets.zero,
-                                        decoration: owned && frame != null
-                                            ? BoxDecoration(
-                                                shape: BoxShape.circle,
-                                                gradient: LinearGradient(
-                                                  colors: frame.colors,
-                                                  begin: Alignment.topLeft,
-                                                  end: Alignment.bottomRight,
+                                      // Simple avatar (no frame)
+                                      CircleAvatar(
+                                        radius: 26,
+                                        backgroundColor:
+                                            const Color(0xFF32C27C)
+                                                .withOpacity(0.12),
+                                        child: profile.avatarUrl != null
+                                            ? ClipOval(
+                                                child: Image.network(
+                                                  profile.avatarUrl!,
+                                                  width: 52,
+                                                  height: 52,
+                                                  fit: BoxFit.cover,
                                                 ),
                                               )
-                                            : null,
-                                        child: CircleAvatar(
-                                          radius: 26,
-                                          backgroundColor: owned && frame != null
-                                              ? Colors.white
-                                              : const Color(0xFF32C27C).withOpacity(0.12),
-                                          child: profile.avatarUrl != null
-                                              ? ClipOval(
-                                                  child: Image.network(
-                                                    profile.avatarUrl!,
-                                                    width: 52,
-                                                    height: 52,
-                                                    fit: BoxFit.cover,
-                                                  ),
-                                                )
-                                              : const Text(
-                                                  '🌍',
-                                                  style: TextStyle(fontSize: 26),
-                                                ),
-                                        ),
+                                            : const Text(
+                                                '🌍',
+                                                style:
+                                                    TextStyle(fontSize: 26),
+                                              ),
                                       ),
-
                                       const SizedBox(width: 12),
 
                                       // Username + welcome text
@@ -277,14 +233,16 @@ class _HomeScreenState extends State<HomeScreen> {
                                               BorderRadius.circular(999),
                                         ),
                                         child: Row(
-                                          children: [
-                                            const Icon(Icons.stars_rounded,
-                                                size: 16,
-                                                color: Color(0xFF32C27C)),
-                                            const SizedBox(width: 4),
+                                          children: const [
+                                            Icon(
+                                              Icons.stars_rounded,
+                                              size: 16,
+                                              color: Color(0xFF32C27C),
+                                            ),
+                                            SizedBox(width: 4),
                                             Text(
-                                              'Level $level',
-                                              style: const TextStyle(
+                                              'Level',
+                                              style: TextStyle(
                                                 fontSize: 12,
                                                 fontWeight: FontWeight.w600,
                                                 color: Color(0xFF32C27C),
@@ -352,7 +310,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                               Colors.grey.shade300,
                                           valueColor:
                                               const AlwaysStoppedAnimation(
-                                                  Color(0xFF32C27C)),
+                                            Color(0xFF32C27C),
+                                          ),
                                         ),
                                       );
                                     },
@@ -373,9 +332,12 @@ class _HomeScreenState extends State<HomeScreen> {
                                     children: [
                                       Container(
                                         padding: const EdgeInsets.symmetric(
-                                            horizontal: 10, vertical: 6),
+                                          horizontal: 10,
+                                          vertical: 6,
+                                        ),
                                         decoration: BoxDecoration(
-                                          color: Colors.orange.withOpacity(0.08),
+                                          color:
+                                              Colors.orange.withOpacity(0.08),
                                           borderRadius:
                                               BorderRadius.circular(999),
                                         ),
@@ -438,35 +400,39 @@ class _HomeScreenState extends State<HomeScreen> {
                               children: [
                                 _HomeNavTile(
                                   icon: Icons.flag_rounded,
-                                  iconColor: const Color(0xFF32C27C),
+                                  iconColor: const Color.fromARGB(255, 137, 197, 18),
                                   title: 'Daily Missions',
                                   subtitle:
                                       'Small real-world actions you can do today.',
                                   onTap: () => Navigator.pushNamed(
                                       context, '/dailyMissions'),
                                 ),
-                                const Divider(height: 1, color: Color(0xFFE2E8F0)),
+                                const Divider(
+                                    height: 1, color: Color(0xFFE2E8F0)),
 
                                 _HomeNavTile(
                                   icon: Icons.videogame_asset_rounded,
                                   iconColor: const Color(0xFF6366F1),
                                   title: 'Mini Games & Quizzes',
-                                  subtitle: 'Play & learn about the SDGs.',
+                                  subtitle:
+                                      'Play & learn about the SDGs.',
                                   onTap: () =>
                                       Navigator.pushNamed(context, '/miniGames'),
                                 ),
-                                const Divider(height: 1, color: Color(0xFFE2E8F0)),
+                                const Divider(
+                                    height: 1, color: Color(0xFFE2E8F0)),
 
                                 _HomeNavTile(
                                   icon: Icons.shopping_bag_outlined,
-                                  iconColor: const Color(0xFF8B5CF6),
-                                  title: 'Shop & Customize',
+                                  iconColor: const Color.fromARGB(255, 220, 19, 19),
+                                  title: 'SDG Shop',
                                   subtitle:
-                                      'Unlock themes, avatar frames & bonus packs.',
+                                      'Unlock themes & bonus packs (cosmetics coming later).',
                                   onTap: () =>
                                       Navigator.pushNamed(context, '/shop'),
                                 ),
-                                const Divider(height: 1, color: Color(0xFFE2E8F0)),
+                                const Divider(
+                                    height: 1, color: Color(0xFFE2E8F0)),
 
                                 _HomeNavTile(
                                   icon: Icons.public,
@@ -477,7 +443,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                   onTap: () =>
                                       Navigator.pushNamed(context, '/liveMap'),
                                 ),
-                                const Divider(height: 1, color: Color(0xFFE2E8F0)),
+                                const Divider(
+                                    height: 1, color: Color(0xFFE2E8F0)),
 
                                 _HomeNavTile(
                                   icon: Icons.groups_rounded,
@@ -488,7 +455,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                   onTap: () =>
                                       Navigator.pushNamed(context, '/community'),
                                 ),
-                                const Divider(height: 1, color: Color(0xFFE2E8F0)),
+                                const Divider(
+                                    height: 1, color: Color(0xFFE2E8F0)),
 
                                 _HomeNavTile(
                                   icon: Icons.menu_book_rounded,
