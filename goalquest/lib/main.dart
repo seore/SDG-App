@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:goalquest/services/owned_pack_service.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:uni_links/uni_links.dart';
+import 'package:app_links/app_links.dart';
 import 'services/profile_service.dart';
 import 'app.dart';
 
@@ -16,9 +16,11 @@ Future<void> main() async {
 
   final client = Supabase.instance.client;
 
+  final appLinks = AppLinks();
+
   Uri? initialUri;
   try {
-    initialUri = await getInitialUri();
+    initialUri = await appLinks.getInitialLink();
   } catch (_) {
     // ignore errors here – we'll just fall back to normal routing
   }

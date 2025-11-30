@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:goalquest/screens/sdg_match_game.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:uni_links/uni_links.dart';
+import 'package:app_links/app_links.dart';
 import 'dart:async';
 
 import 'screens/onboarding.dart';
@@ -36,18 +36,20 @@ class GoalQuestApp extends StatefulWidget {
 
 class _GoalQuestAppState extends State<GoalQuestApp> {
   final GlobalKey<NavigatorState> _navKey = GlobalKey<NavigatorState>();
+  
+  late final AppLinks _appLinks;
   StreamSubscription? _sub;
 
   @override
   void initState() {
     super.initState();
+    _appLinks = AppLinks();
     _handleIncomingLinks();
   }
 
   void _handleIncomingLinks() {
-    _sub = uriLinkStream.listen((Uri? uri) {
+    _sub = _appLinks.uriLinkStream.listen((Uri? uri) {
       if (uri == null) return;
-
       if (uri.queryParameters["type"] == "recovery") {
         _navKey.currentState?.pushNamed('/resetPassword');
       }
