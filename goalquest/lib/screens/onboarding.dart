@@ -44,8 +44,7 @@ class OnboardingScreen extends StatelessWidget {
                     ),
                     TextButton(
                       onPressed: () {
-                        Navigator.pushNamedAndRemoveUntil(
-                          context,
+                        Navigator.of(context, rootNavigator: true).pushNamedAndRemoveUntil(
                           '/home',
                           (route) => false,
                         );
@@ -171,8 +170,7 @@ class OnboardingScreen extends StatelessWidget {
                       ),
                     ),
                     onPressed: () {
-                      Navigator.pushNamedAndRemoveUntil(
-                        context,
+                      Navigator.of(context, rootNavigator: true).pushNamedAndRemoveUntil(
                         '/home',
                         (route) => false,
                       );

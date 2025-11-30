@@ -445,37 +445,58 @@ class _SignUpFormState extends State<_SignUpForm> {
   }
 
   Future<void> _signUp() async {
-    setState(() => _loading = true);
-    try {
-      final res = await _supabase.auth.signUp(
-        email: _emailCtrl.text.trim(),
-        password: _passwordCtrl.text,
-        data: {
-          'username': _usernameCtrl.text.trim(),
-        },
-      );
+  setState(() => _loading = true);
 
-      if (res.user != null) {
-        await ProfileService.instance.loadCurrentUserProfile();
+  try {
+    final email = _emailCtrl.text.trim();
+    final password = _passwordCtrl.text;
 
-        if (!mounted) return;
-        Navigator.pushNamedAndRemoveUntil(
-            context, '/onboarding', (route) => false);
-      } else {
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Sign up failed.')),
-        );
-      }
-    } catch (e) {
+    final res = await _supabase.auth.signUp(
+      email: email,
+      password: password,
+      data: {
+        'username': _usernameCtrl.text.trim(),
+      },
+    );
+
+    // If sign-up failed for some reason
+    if (res.user == null) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $e')),
+        const SnackBar(content: Text('Sign up failed.')),
       );
-    } finally {
-      if (mounted) setState(() => _loading = false);
+      return;
     }
+
+    // With email confirmations disabled, we should get a session here
+    if (res.session == null) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Account created, but no session. Check auth settings.'),
+        ),
+      );
+      return;
+    }
+
+    await ProfileService.instance.loadCurrentUserProfile();
+
+    if (!mounted) return;
+    Navigator.pushNamedAndRemoveUntil(
+      context,
+      '/onboarding',
+      (route) => false,
+    );
+  } catch (e) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Error: $e')),
+    );
+  } finally {
+    if (mounted) setState(() => _loading = false);
   }
+}
+
 
   @override
   Widget build(BuildContext context) {
