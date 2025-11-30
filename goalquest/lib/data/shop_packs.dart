@@ -30,7 +30,6 @@ const List<ShopPacks> kShopPacks = [
     icon: Icons.water,
     priceCents: 199,
   ),
-
   ShopPacks(
     id: 'cosmetic_sunrise_frame',
     title: 'Sunrise Blaze Frame',
@@ -40,7 +39,6 @@ const List<ShopPacks> kShopPacks = [
     icon: Icons.wb_sunny_outlined,
     priceCents: 199,
   ),
-
   ShopPacks(
     id: 'cosmetic_star_badge',
     title: 'Star Achiever Badge',
@@ -50,7 +48,6 @@ const List<ShopPacks> kShopPacks = [
     icon: Icons.star,
     priceCents: 149,
   ),
-
   ShopPacks(
     id: 'cosmetic_heart_badge',
     title: 'Kindness Badge',
@@ -60,7 +57,6 @@ const List<ShopPacks> kShopPacks = [
     icon: Icons.favorite,
     priceCents: 149,
   ),
-
   ShopPacks(
     id: 'cosmetic_lightning_frame',
     title: 'Lightning Frame',
@@ -70,7 +66,6 @@ const List<ShopPacks> kShopPacks = [
     icon: Icons.flash_on,
     priceCents: 249,
   ),
-
   ShopPacks(
     id: 'cosmetic_gold_frame',
     title: 'Premium Gold Frame',

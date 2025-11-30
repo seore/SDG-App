@@ -42,14 +42,26 @@ const List<MiniGameConfig> _miniGames = [
   ),
 
   MiniGameConfig(
+    id: 'sdg_match',
+    title: 'SDG Match-Up',
+    subtitle: 'Match each SDG to its correct description.',
+    sdgNumber: 4, 
+    icon: Icons.view_module_rounded,
+    available: true,
+    routeName: '/sdgMatchGame',
+  ),
+
+  /*
+  MiniGameConfig(
     id: 'trash_sort',
     title: 'Trash Sorter',
     subtitle: 'Drag and drop items into the right bins.',
     sdgNumber: 12,
     icon: Icons.recycling,
-    available: true,
+    available: false,
     routeName: '/trashSortGame',
   ),
+  */
 
   MiniGameConfig(
     id: 'trash_sort_advanced',
@@ -69,18 +81,8 @@ const List<MiniGameConfig> _miniGames = [
     subtitle: 'Upgrade roads & parks for a greener, fairer city',
     sdgNumber: 11,
     icon: Icons.location_city,
-    available: true,
+    available: false,
     routeName: '/cityFixGame',
-  ),
-
-  MiniGameConfig(
-    id: 'sdg_match',
-    title: 'SDG Match-Up',
-    subtitle: 'Match each SDG to its correct description.',
-    sdgNumber: 4, 
-    icon: Icons.view_module_rounded,
-    available: true,
-    routeName: '/sdgMatchGame',
   ),
 
   MiniGameConfig(
@@ -89,7 +91,7 @@ const List<MiniGameConfig> _miniGames = [
     subtitle: 'Choose water-saving actions in everyday scenes.',
     sdgNumber: 6,
     icon: Icons.water_drop_outlined,
-    available: true,
+    available: false,
     routeName: '/waterGuardianGame',
   ),
 
@@ -353,7 +355,7 @@ class MiniGamesScreen extends StatelessWidget {
                                                         vertical: 2,
                                                       ),
                                                       decoration: BoxDecoration(
-                                                        color: Colors.amber
+                                                        color: const Color.fromARGB(255, 240, 74, 56)
                                                             .withOpacity(0.12),
                                                         borderRadius:
                                                             BorderRadius
@@ -365,7 +367,7 @@ class MiniGamesScreen extends StatelessWidget {
                                                           fontSize: 10,
                                                           fontWeight:
                                                               FontWeight.w600,
-                                                          color: Colors.amber,
+                                                          color: Color.fromARGB(255, 255, 7, 7),
                                                         ),
                                                       ),
                                                     ),

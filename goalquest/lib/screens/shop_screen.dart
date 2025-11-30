@@ -72,10 +72,259 @@ class _ShopScreenState extends State<ShopScreen> {
     }
   }
 
+  Widget _buildPackRow({
+    required BuildContext context,
+    required ShopPacks pack,
+    required bool isOwned,
+  }) {
+    final theme = Theme.of(context);
+    final sdg = getSdgByNumber(pack.sdgNumber);
+    final priceText = '£${(pack.priceCents / 100).toStringAsFixed(2)}';
+
+    final isActiveCard = _activePackId == pack.id;
+    final isBusy = _loading && _activePackId == pack.id;
+
+    return AnimatedScale(
+      duration: const Duration(milliseconds: 200),
+      curve: Curves.easeOut,
+      scale: isActiveCard ? 1.02 : 1.0,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        curve: Curves.easeOut,
+        color: isActiveCard && isOwned
+            ? (sdg?.color ?? Colors.green).withOpacity(0.03)
+            : Colors.transparent,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: 18,
+            vertical: 14,
+          ),
+          child: Row(
+            children: [
+              // Icon bubble
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: (sdg?.color ?? Colors.blue).withOpacity(0.12),
+                ),
+                child: Icon(
+                  pack.icon,
+                  color: sdg?.color ?? Colors.blue,
+                ),
+              ),
+              const SizedBox(width: 12),
+
+              // Text + SDG tag
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      pack.title,
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      pack.description,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: Colors.grey[600],
+                      ),
+                    ),
+                    /*
+                    if (sdg != null) ...[
+                      const SizedBox(height: 6),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: sdg.color.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(999),
+                        ),
+                        child: Text(
+                          'SDG ${sdg.number}: ${sdg.shortTitle}',
+                          style: const TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ],
+                    */
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+
+              // Right side: owned / price / spinner
+              AnimatedSwitcher(
+                duration: const Duration(milliseconds: 200),
+                transitionBuilder: (child, anim) => FadeTransition(
+                  opacity: anim,
+                  child: ScaleTransition(
+                    scale: anim,
+                    child: child,
+                  ),
+                ),
+                child: isOwned
+                    ? Container(
+                        key: ValueKey('owned_${pack.id}'),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          color: const Color.fromARGB(255, 13, 175, 19)
+                              .withOpacity(0.08),
+                          borderRadius: BorderRadius.circular(999),
+                        ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.check_circle,
+                              size: 14,
+                              color: Colors.green,
+                            ),
+                            SizedBox(width: 4),
+                            Text(
+                              'Owned',
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.green,
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
+                    : isBusy
+                        ? const SizedBox(
+                            key: ValueKey('spinner'),
+                            height: 26,
+                            width: 26,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                            ),
+                          )
+                        : ElevatedButton(
+                            key: ValueKey('btn_${pack.id}'),
+                            onPressed:
+                                _loading ? null : () => _purchasePack(pack),
+                            style: ElevatedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 8,
+                              ),
+                            ),
+                            child: Text(
+                              priceText,
+                              style: const TextStyle(fontSize: 12),
+                            ),
+                          ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSection({
+    required String title,
+    required String subtitle,
+    required IconData icon,
+    required Color color,
+    required List<ShopPacks> packs,
+    required Set<String> owned,
+  }) {
+    if (packs.isEmpty) return const SizedBox.shrink();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Section header
+        Padding(
+          padding: const EdgeInsets.fromLTRB(18, 16, 18, 6),
+          child: Row(
+            children: [
+              Container(
+                width: 28,
+                height: 28,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: color.withOpacity(0.15),
+                ),
+                child: Icon(icon, size: 18, color: color),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      subtitle,
+                      style: const TextStyle(
+                        fontSize: 11,
+                        color: Colors.grey,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 4),
+        // List of packs for this section
+        ...List.generate(packs.length, (index) {
+          final pack = packs[index];
+          final isOwned = owned.contains(pack.id);
+
+          return Column(
+            children: [
+              if (index != 0)
+                const Divider(
+                  height: 1,
+                  color: Color(0xFFE2E8F0),
+                ),
+              _buildPackRow(
+                context: context,
+                pack: pack,
+                isOwned: isOwned,
+              ),
+            ],
+          );
+        }),
+        const SizedBox(height: 12),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final ownedNotifier = OwnedPackService.instance.ownedPackIds;
+
+    // Categorise packs by id prefix
+    final cosmeticPacks = kShopPacks
+        .where((p) => p.id.startsWith('cosmetic_'))
+        .toList();
+    final gamePacks =
+        kShopPacks.where((p) => p.id.startsWith('dlc_')).toList();
 
     return Scaffold(
       appBar: PreferredSize(
@@ -140,13 +389,6 @@ class _ShopScreenState extends State<ShopScreen> {
                       padding: const EdgeInsets.symmetric(vertical: 24),
                       child: Column(
                         children: [
-                          Text(
-                            'Unlock new looks & bonus levels',
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              color: Colors.white.withOpacity(0.95),
-                            ),
-                          ),
-                          const SizedBox(height: 16),
                           Container(
                             width: maxWidth,
                             decoration: BoxDecoration(
@@ -163,229 +405,32 @@ class _ShopScreenState extends State<ShopScreen> {
                             child: ValueListenableBuilder<Set<String>>(
                               valueListenable: ownedNotifier,
                               builder: (context, owned, _) {
-                                return ListView.separated(
-                                  shrinkWrap: true,
-                                  physics: const NeverScrollableScrollPhysics(),
-                                  itemCount: kShopPacks.length,
-                                  separatorBuilder: (_, __) => const Divider(
-                                    height: 1,
-                                    color: Color(0xFFE2E8F0),
-                                  ),
-                                  itemBuilder: (context, index) {
-                                    final pack = kShopPacks[index];
-                                    final isOwned = owned.contains(pack.id);
-                                    final sdg = getSdgByNumber(pack.sdgNumber);
-                                    final priceText =
-                                        '£${(pack.priceCents / 100).toStringAsFixed(2)}';
-
-                                    final isActiveCard =
-                                        _activePackId == pack.id;
-                                    final isBusy =
-                                        _loading && _activePackId == pack.id;
-
-                                    return AnimatedScale(
-                                      duration:
-                                          const Duration(milliseconds: 200),
-                                      curve: Curves.easeOut,
-                                      scale: isActiveCard ? 1.02 : 1.0,
-                                      child: AnimatedContainer(
-                                        duration:
-                                            const Duration(milliseconds: 200),
-                                        curve: Curves.easeOut,
-                                        color: isActiveCard && isOwned
-                                            ? (sdg?.color ?? Colors.green)
-                                                .withOpacity(0.03)
-                                            : Colors.transparent,
-                                        child: Padding(
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 18,
-                                            vertical: 14,
-                                          ),
-                                          child: Row(
-                                            children: [
-                                              // Icon bubble
-                                              Container(
-                                                width: 44,
-                                                height: 44,
-                                                decoration: BoxDecoration(
-                                                  shape: BoxShape.circle,
-                                                  color: (sdg?.color ??
-                                                          Colors.blue)
-                                                      .withOpacity(0.12),
-                                                ),
-                                                child: Icon(
-                                                  pack.icon,
-                                                  color: sdg?.color ??
-                                                      Colors.blue,
-                                                ),
-                                              ),
-                                              const SizedBox(width: 12),
-
-                                              // Text + SDG tag
-                                              Expanded(
-                                                child: Column(
-                                                  crossAxisAlignment:
-                                                      CrossAxisAlignment
-                                                          .start,
-                                                  children: [
-                                                    Text(
-                                                      pack.title,
-                                                      style: theme.textTheme
-                                                          .titleSmall
-                                                          ?.copyWith(
-                                                        fontWeight:
-                                                            FontWeight.w700,
-                                                      ),
-                                                    ),
-                                                    const SizedBox(height: 4),
-                                                    Text(
-                                                      pack.description,
-                                                      style: theme.textTheme
-                                                          .bodySmall
-                                                          ?.copyWith(
-                                                        color:
-                                                            Colors.grey[600],
-                                                      ),
-                                                    ),
-                                                    if (sdg != null) ...[
-                                                      const SizedBox(
-                                                          height: 6),
-                                                      Container(
-                                                        padding:
-                                                            const EdgeInsets
-                                                                .symmetric(
-                                                          horizontal: 8,
-                                                          vertical: 2,
-                                                        ),
-                                                        decoration:
-                                                            BoxDecoration(
-                                                          color: sdg.color
-                                                              .withOpacity(
-                                                                  0.1),
-                                                          borderRadius:
-                                                              BorderRadius
-                                                                  .circular(
-                                                                      999),
-                                                        ),
-                                                        child: Text(
-                                                          'SDG ${sdg.number}: ${sdg.shortTitle}',
-                                                          style:
-                                                              const TextStyle(
-                                                            fontSize: 11,
-                                                            fontWeight:
-                                                                FontWeight.w600,
-                                                          ),
-                                                        ),
-                                                      ),
-                                                    ],
-                                                  ],
-                                                ),
-                                              ),
-                                              const SizedBox(width: 8),
-
-                                              // Right side: button / owned / spinner
-                                              AnimatedSwitcher(
-                                                duration: const Duration(
-                                                    milliseconds: 200),
-                                                transitionBuilder:
-                                                    (child, anim) =>
-                                                        FadeTransition(
-                                                  opacity: anim,
-                                                  child: ScaleTransition(
-                                                    scale: anim,
-                                                    child: child,
-                                                  ),
-                                                ),
-                                                child: isOwned
-                                                    ? Container(
-                                                        key: ValueKey(
-                                                            'owned_${pack.id}'),
-                                                        padding:
-                                                            const EdgeInsets
-                                                                .symmetric(
-                                                          horizontal: 10,
-                                                          vertical: 6,
-                                                        ),
-                                                        decoration:
-                                                            BoxDecoration(
-                                                          color: Colors.green
-                                                              .withOpacity(
-                                                                  0.08),
-                                                          borderRadius:
-                                                              BorderRadius
-                                                                  .circular(
-                                                                      999),
-                                                        ),
-                                                        child: Row(
-                                                          mainAxisSize:
-                                                              MainAxisSize.min,
-                                                          children: const [
-                                                            Icon(
-                                                              Icons
-                                                                  .check_circle,
-                                                              size: 14,
-                                                              color: Colors
-                                                                  .green,
-                                                            ),
-                                                            SizedBox(
-                                                                width: 4),
-                                                            Text(
-                                                              'Owned',
-                                                              style: TextStyle(
-                                                                fontSize: 11,
-                                                                fontWeight:
-                                                                    FontWeight
-                                                                        .w600,
-                                                                color: Colors
-                                                                    .green,
-                                                              ),
-                                                            ),
-                                                          ],
-                                                        ),
-                                                      )
-                                                    : isBusy
-                                                        ? const SizedBox(
-                                                            key: ValueKey(
-                                                                'spinner'),
-                                                            height: 26,
-                                                            width: 26,
-                                                            child:
-                                                                CircularProgressIndicator(
-                                                              strokeWidth: 2,
-                                                            ),
-                                                          )
-                                                        : ElevatedButton(
-                                                            key: ValueKey(
-                                                                'btn_${pack.id}'),
-                                                            onPressed:
-                                                                _loading
-                                                                    ? null
-                                                                    : () => _purchasePack(
-                                                                        pack),
-                                                            style: ElevatedButton
-                                                                .styleFrom(
-                                                              padding:
-                                                                  const EdgeInsets
-                                                                      .symmetric(
-                                                                horizontal: 12,
-                                                                vertical: 8,
-                                                              ),
-                                                            ),
-                                                            child: Text(
-                                                              priceText,
-                                                              style:
-                                                                  const TextStyle(
-                                                                fontSize: 12,
-                                                              ),
-                                                            ),
-                                                          ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                      ),
-                                    );
-                                  },
+                                return Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    _buildSection(
+                                      title: 'Avatar & Profile Cosmetics',
+                                      subtitle:
+                                          'Frames, badges and visual customisation.',
+                                      icon: Icons.person_outline,
+                                      color: const Color(0xFF8B5CF6),
+                                      packs: cosmeticPacks,
+                                      owned: owned,
+                                    ),
+                                    const Divider(
+                                      height: 1,
+                                      color: Color(0xFFE2E8F0),
+                                    ),
+                                    _buildSection(
+                                      title: 'Game Add-ons & Extra Levels',
+                                      subtitle:
+                                          'New challenges and SDG game content.',
+                                      icon: Icons.videogame_asset_rounded,
+                                      color: const Color(0xFF10B981),
+                                      packs: gamePacks,
+                                      owned: owned,
+                                    ),
+                                  ],
                                 );
                               },
                             ),
@@ -412,34 +457,18 @@ class _ShopScreenState extends State<ShopScreen> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                           children: [
-                            Text('🎉',
-                                style: TextStyle(
-                                    fontSize: 32, shadows: [
+                            Text(
+                              '🛍️',
+                              style: TextStyle(
+                                fontSize: 30,
+                                shadows: [
                                   Shadow(
-                                      blurRadius: 8,
-                                      color: Colors.black26)
-                                ])),
-                            Text('🛍️',
-                                style: TextStyle(
-                                    fontSize: 30, shadows: [
-                                  Shadow(
-                                      blurRadius: 8,
-                                      color: Colors.black26)
-                                ])),
-                            Text('⭐️',
-                                style: TextStyle(
-                                    fontSize: 28, shadows: [
-                                  Shadow(
-                                      blurRadius: 8,
-                                      color: Colors.black26)
-                                ])),
-                            Text('🌍',
-                                style: TextStyle(
-                                    fontSize: 30, shadows: [
-                                  Shadow(
-                                      blurRadius: 8,
-                                      color: Colors.black26)
-                                ])),
+                                    blurRadius: 8,
+                                    color: Colors.black26,
+                                  )
+                                ],
+                              ),
+                            ),
                           ],
                         ),
                       ],
