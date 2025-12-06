@@ -8,11 +8,8 @@ An educational, interactive Sustainable Development Goals (SDG) platform designe
 
 - Mobile application (Android / iOS)
 - Runs directly on the device (APK / IPA), not in a browser
-
-> 🔧 Update this section with your actual stack, for example:
-> - Android (Kotlin / Java)
-> - Flutter (Dart)
-> - React Native (TypeScript / JavaScript)
+- Flutter (Dart)
+- - React Native (TypeScript / JavaScript)
 
 ---
 
