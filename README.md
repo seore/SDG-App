@@ -67,7 +67,7 @@ Color accessibility and readability were priorities, along with building modular
 
 ## 🚦 Running the Project
 
-Clone the repository
-Install dependencies: flutter pub get 
-Navigate to folder: goalquest
-Run app: flutter run -d android / ios
+- Clone the repository
+- Install dependencies: flutter pub get 
+- Navigate to folder: goalquest
+- Run app: flutter run -d android / ios
