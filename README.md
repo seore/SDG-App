@@ -71,3 +71,9 @@ Color accessibility and readability were priorities, along with building modular
 - Install dependencies: flutter pub get 
 - Navigate to folder: goalquest
 - Run app: flutter run -d android / ios
+
+## Preview
+
+https://github.com/user-attachments/assets/3ee4e436-7728-46c6-8c20-06acaa5dc7fb
+
+
