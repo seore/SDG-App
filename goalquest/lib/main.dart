@@ -45,7 +45,7 @@ Future<void> main() async {
   final String startRoute;
   if (DemoMode.enabled) {
     ProfileService.instance.profileListenable.value = DemoMode.profile;
-    startRoute = '/home';
+    startRoute = DemoMode.initialRoute;
   } else if (openResetPassword) {
     startRoute = '/resetPassword';
   } else {

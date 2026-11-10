@@ -9,6 +9,12 @@ import 'motion.dart';
 
 /// What to show in the celebration.
 class CelebrationData {
+  /// Big heading, e.g. "Mission complete" or "Quiz complete".
+  final String heading;
+
+  /// Label for the main XP row in the breakdown.
+  final String xpLabel;
+
   final String title;
   final String? subtitle;
   final Color color;
@@ -23,6 +29,8 @@ class CelebrationData {
   final int? newLevel;
 
   const CelebrationData({
+    this.heading = 'Mission complete',
+    this.xpLabel = 'Mission XP',
     required this.title,
     this.subtitle,
     required this.color,
@@ -223,7 +231,7 @@ class _CelebrationOverlayState extends State<CelebrationOverlay>
             ),
             const SizedBox(height: AppSpacing.lg),
             Text(
-              'Mission complete',
+              data.heading,
               style: theme.textTheme.titleLarge?.copyWith(
                 fontWeight: FontWeight.w700,
                 letterSpacing: -0.3,
@@ -255,7 +263,7 @@ class _CelebrationOverlayState extends State<CelebrationOverlay>
                       _RewardRow(
                         icon: Icons.bolt_rounded,
                         iconColor: AppColors.xp,
-                        label: 'Mission XP',
+                        label: data.xpLabel,
                         value: '+${(data.xpEarned * _xp.value).round()}',
                       ),
                       if (data.streakBonus > 0) ...[

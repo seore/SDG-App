@@ -1,6 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../theme/app_theme.dart';
+import '../widgets/app_card.dart';
+import '../widgets/app_scaffold.dart';
+import '../widgets/motion.dart';
+import 'auth_screen.dart' show friendlyAuthError;
+
 class ResetPasswordScreen extends StatefulWidget {
   const ResetPasswordScreen({super.key});
 
@@ -9,10 +15,11 @@ class ResetPasswordScreen extends StatefulWidget {
 }
 
 class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
+  final _formKey = GlobalKey<FormState>();
   final _passwordCtrl = TextEditingController();
   final _confirmCtrl = TextEditingController();
   bool _loading = false;
-  String? _error;
+  bool _obscure = true;
 
   @override
   void dispose() {
@@ -22,41 +29,21 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
   }
 
   Future<void> _submit() async {
-    final pw = _passwordCtrl.text.trim();
-    final confirm = _confirmCtrl.text.trim();
+    if (!_formKey.currentState!.validate()) return;
+    final messenger = ScaffoldMessenger.of(context);
+    final navigator = Navigator.of(context);
 
-    if (pw.length < 6) {
-      setState(() => _error = 'Password must be at least 6 characters.');
-      return;
-    }
-    if (pw != confirm) {
-      setState(() => _error = 'Passwords do not match.');
-      return;
-    }
-
-    setState(() {
-      _error = null;
-      _loading = true;
-    });
-
+    setState(() => _loading = true);
     try {
-      final client = Supabase.instance.client;
-
-      await client.auth.updateUser(
-        UserAttributes(password: pw),
+      await Supabase.instance.client.auth.updateUser(
+        UserAttributes(password: _passwordCtrl.text.trim()),
       );
-
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
+      messenger.showSnackBar(
         const SnackBar(content: Text('Password updated. You can log in now.')),
       );
-
-      Navigator.pushNamedAndRemoveUntil(context, '/auth', (r) => false);
+      navigator.pushNamedAndRemoveUntil('/auth', (r) => false);
     } catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _error = 'Failed to update password: $e';
-      });
+      messenger.showSnackBar(SnackBar(content: Text(friendlyAuthError(e))));
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -66,59 +53,105 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Set a new password'),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(20.0),
-        child: Column(
-          children: [
-            Text(
-              'Choose a new password for your SDG Journey account.',
-              style: theme.textTheme.bodyMedium,
-            ),
-            const SizedBox(height: 24),
-            TextField(
-              controller: _passwordCtrl,
-              obscureText: true,
-              decoration: const InputDecoration(
-                labelText: 'New password',
-              ),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _confirmCtrl,
-              obscureText: true,
-              decoration: const InputDecoration(
-                labelText: 'Confirm password',
-              ),
-            ),
-            const SizedBox(height: 8),
-            if (_error != null)
-              Text(
-                _error!,
-                style: const TextStyle(color: Colors.red, fontSize: 12),
-              ),
-            const Spacer(),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: _loading ? null : _submit,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 12.0),
-                  child: _loading
-                      ? const SizedBox(
-                          height: 18,
-                          width: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Text('Save new password'),
+    return AppScaffold(
+      title: 'Reset password',
+      body: ListView(
+        padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
+        children: [
+          ContentWidth(
+            child: FadeSlideIn(
+              child: AppCard(
+                padding: const EdgeInsets.all(20),
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      const Align(
+                        alignment: Alignment.centerLeft,
+                        child: IconTile(
+                          icon: Icons.lock_reset_rounded,
+                          color: AppColors.primary,
+                          size: 48,
+                        ),
+                      ),
+                      const SizedBox(height: AppSpacing.lg),
+                      Text(
+                        'Set a new password',
+                        style: theme.textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: -0.4,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Choose a new password for your SDG Journey account.',
+                        style: theme.textTheme.bodyMedium
+                            ?.copyWith(color: AppColors.textSecondary),
+                      ),
+                      const SizedBox(height: AppSpacing.xl),
+                      TextFormField(
+                        controller: _passwordCtrl,
+                        obscureText: _obscure,
+                        textInputAction: TextInputAction.next,
+                        autofillHints: const [AutofillHints.newPassword],
+                        validator: (v) => (v?.trim().length ?? 0) < 6
+                            ? 'Use at least 6 characters'
+                            : null,
+                        decoration: InputDecoration(
+                          labelText: 'New password',
+                          prefixIcon:
+                              const Icon(Icons.lock_outline_rounded, size: 20),
+                          suffixIcon: IconButton(
+                            tooltip:
+                                _obscure ? 'Show password' : 'Hide password',
+                            icon: Icon(_obscure
+                                ? Icons.visibility_off_outlined
+                                : Icons.visibility_outlined),
+                            onPressed: () =>
+                                setState(() => _obscure = !_obscure),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: AppSpacing.md),
+                      TextFormField(
+                        controller: _confirmCtrl,
+                        obscureText: _obscure,
+                        textInputAction: TextInputAction.done,
+                        onFieldSubmitted: (_) => _loading ? null : _submit(),
+                        validator: (v) =>
+                            v?.trim() != _passwordCtrl.text.trim()
+                                ? "Passwords don't match"
+                                : null,
+                        decoration: const InputDecoration(
+                          labelText: 'Confirm password',
+                          prefixIcon: Icon(Icons.lock_outline_rounded, size: 20),
+                        ),
+                      ),
+                      const SizedBox(height: AppSpacing.xl),
+                      FilledButton(
+                        onPressed: _loading ? null : _submit,
+                        style: FilledButton.styleFrom(
+                          minimumSize: const Size.fromHeight(50),
+                        ),
+                        child: _loading
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.white,
+                                ),
+                              )
+                            : const Text('Save new password'),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

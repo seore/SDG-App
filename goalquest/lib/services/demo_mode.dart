@@ -17,6 +17,10 @@ class DemoMode {
   /// e.g. --dart-define=DEMO_TAB=2
   static const int initialTab = int.fromEnvironment('DEMO_TAB');
 
+  /// Screen to open on launch, e.g. --dart-define=DEMO_ROUTE=/onboarding
+  static const String initialRoute =
+      String.fromEnvironment('DEMO_ROUTE', defaultValue: '/home');
+
   /// Shorter mission timer so the completion flow can be tried quickly.
   static const Duration missionMinDuration = Duration(seconds: 10);
 
