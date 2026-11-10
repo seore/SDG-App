@@ -9,7 +9,7 @@ import 'app_card.dart';
 import 'motion.dart';
 import 'progress_widgets.dart';
 
-const _correctColor = AppColors.success;
+Color get _correctColor => AppColors.success;
 const _wrongColor = Color(0xFFDC2626);
 
 /// "Question 3 of 10" label, score and a spring progress bar.
@@ -17,14 +17,15 @@ class GameProgressHeader extends StatelessWidget {
   final String label;
   final String? trailing;
   final double progress;
-  final Color color;
+  final Color? color;
+  Color get effectiveColor => color ?? AppColors.primary;
 
   const GameProgressHeader({
     super.key,
     required this.label,
     required this.progress,
     this.trailing,
-    this.color = AppColors.primary,
+    this.color,
   });
 
   @override
@@ -37,7 +38,7 @@ class GameProgressHeader extends StatelessWidget {
             Expanded(
               child: Text(
                 label,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
                   color: AppColors.textSecondary,
@@ -64,7 +65,7 @@ class GameProgressHeader extends StatelessWidget {
           ],
         ),
         const SizedBox(height: AppSpacing.sm),
-        SpringProgressBar(value: progress, color: color),
+        SpringProgressBar(value: progress, color: effectiveColor),
       ],
     );
   }
@@ -129,7 +130,7 @@ class _AnswerOptionState extends State<AnswerOption>
     };
 
     final Widget? trailing = switch (s) {
-      AnswerState.correct => const Icon(Icons.check_circle_rounded,
+      AnswerState.correct => Icon(Icons.check_circle_rounded,
           key: ValueKey('ok'), color: _correctColor, size: 22),
       AnswerState.wrong => const Icon(Icons.cancel_rounded,
           key: ValueKey('no'), color: _wrongColor, size: 22),
@@ -285,7 +286,7 @@ class AnswerFeedback extends StatelessWidget {
                     const SizedBox(height: 2),
                     Text(
                       explanation!,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 13,
                         color: AppColors.textPrimary,
                         height: 1.4,
@@ -306,13 +307,13 @@ class AnswerFeedback extends StatelessWidget {
 class ScorePop extends StatefulWidget {
   final int trigger; // change to replay
   final String text;
-  final Color color;
+  final Color? color;
 
   const ScorePop({
     super.key,
     required this.trigger,
     this.text = '+1',
-    this.color = _correctColor,
+    this.color,
   });
 
   @override
@@ -355,7 +356,7 @@ class _ScorePopState extends State<ScorePop>
               style: TextStyle(
                 fontWeight: FontWeight.w800,
                 fontSize: 16,
-                color: widget.color,
+                color: widget.color ?? _correctColor,
               ),
             ),
           ),
@@ -391,7 +392,7 @@ class GameActionBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: AppColors.surface,
         border: Border(top: BorderSide(color: AppColors.border)),
       ),

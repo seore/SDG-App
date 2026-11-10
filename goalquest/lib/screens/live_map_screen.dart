@@ -37,8 +37,10 @@ class _LiveMapScreenState extends State<LiveMapScreen> {
   // MapTiler's default tiles are 512px; drawing them in flutter_map's 256px
   // grid halves every label. Use the explicit 256px grid with an @2x variant
   // ({r}) so labels are full size and sharp on high-DPI screens.
-  static const _tileUrl =
-      'https://api.maptiler.com/maps/basic-v2/256/{z}/{x}/{y}{r}.png?key=$_mapTilerKey';
+  static String get _tileUrl {
+    final style = AppColors.current.isDark ? 'basic-v2-dark' : 'basic-v2';
+    return 'https://api.maptiler.com/maps/$style/256/{z}/{x}/{y}{r}.png?key=$_mapTilerKey';
+  }
 
   int? selectedSdg;
   TimeFilter _timeFilter = TimeFilter.all;
@@ -64,7 +66,9 @@ class _LiveMapScreenState extends State<LiveMapScreen> {
     final liveData = LiveDataService.instance;
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: SystemUiOverlayStyle.dark,
+      value: AppColors.current.isDark
+          ? SystemUiOverlayStyle.light
+          : SystemUiOverlayStyle.dark,
       child: Scaffold(
         backgroundColor: AppColors.background,
         body: StreamBuilder<List<LiveMissionCompletion>>(
@@ -227,7 +231,7 @@ class _LiveMapScreenState extends State<LiveMapScreen> {
                 color: AppColors.textPrimary,
               ),
               if (_filtersActive)
-                const Positioned(
+                Positioned(
                   right: 10,
                   top: 10,
                   child: CircleAvatar(
@@ -308,7 +312,7 @@ class _LiveMapScreenState extends State<LiveMapScreen> {
                   sdg.fullTitle,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 12,
                     color: AppColors.textSecondary,
                   ),
@@ -398,7 +402,7 @@ class _LiveMapScreenState extends State<LiveMapScreen> {
               child: Text(
                 text,
                 key: ValueKey(text),
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 13,
                   color: AppColors.textPrimary,
                 ),
@@ -643,7 +647,7 @@ class _LiveMapScreenState extends State<LiveMapScreen> {
                         if (sdg != null)
                           Text(
                             'SDG ${sdg.number} · ${sdg.shortTitle}',
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 13,
                               color: AppColors.textSecondary,
                             ),
@@ -743,13 +747,14 @@ class _MapButton extends StatelessWidget {
   final IconData icon;
   final String tooltip;
   final VoidCallback onTap;
-  final Color color;
+  final Color? color;
+  Color get effectiveColor => color ?? AppColors.textPrimary;
 
   const _MapButton({
     required this.icon,
     required this.tooltip,
     required this.onTap,
-    this.color = AppColors.textPrimary,
+    this.color,
   });
 
   @override
@@ -763,7 +768,7 @@ class _MapButton extends StatelessWidget {
         child: SizedBox(
           width: 44,
           height: 44,
-          child: Icon(icon, size: 22, color: color),
+          child: Icon(icon, size: 22, color: effectiveColor),
         ),
       ),
     );
@@ -814,7 +819,7 @@ class _FilterChip extends StatelessWidget {
                   color: color,
                   shape: BoxShape.circle,
                   border: Border.all(
-                    color: selected ? Colors.white : Colors.transparent,
+                    color: selected ? AppColors.background : Colors.transparent,
                     width: 1.5,
                   ),
                 ),
@@ -826,7 +831,7 @@ class _FilterChip extends StatelessWidget {
               style: TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
-                color: selected ? Colors.white : AppColors.textPrimary,
+                color: selected ? AppColors.background : AppColors.textPrimary,
               ),
             ),
           ],
@@ -966,7 +971,7 @@ class _SheetLabel extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: AppSpacing.sm),
       child: Text(
         text,
-        style: const TextStyle(
+        style: TextStyle(
           fontSize: 13,
           fontWeight: FontWeight.w600,
           color: AppColors.textSecondary,

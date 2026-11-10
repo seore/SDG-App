@@ -234,7 +234,7 @@ class MissionListCard extends StatelessWidget {
                 ],
               ),
             ),
-            const Icon(
+            Icon(
               Icons.chevron_right_rounded,
               color: AppColors.textTertiary,
             ),

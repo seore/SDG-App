@@ -120,7 +120,7 @@ class _LearnSdgScreenState extends State<LearnSdgScreen> {
           ),
           // Footer navigation
           Container(
-            decoration: const BoxDecoration(
+            decoration: BoxDecoration(
               color: AppColors.surface,
               border: Border(top: BorderSide(color: AppColors.border)),
             ),
@@ -141,7 +141,7 @@ class _LearnSdgScreenState extends State<LearnSdgScreen> {
                           children: [
                             Text(
                               'Goal ${current.number} of ${sdgGoals.length}',
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 12,
                                 color: AppColors.textSecondary,
                               ),
@@ -332,7 +332,7 @@ class _LessonPage extends StatelessWidget {
                   shadow: const [],
                   child: Row(
                     children: [
-                      const Icon(Icons.edit_note_rounded,
+                      Icon(Icons.edit_note_rounded,
                           color: AppColors.textSecondary),
                       const SizedBox(width: AppSpacing.md),
                       Expanded(

@@ -135,14 +135,14 @@ class _PackCard extends StatelessWidget {
 
     final Widget action;
     if (owned) {
-      action = const PillChip(
+      action = PillChip(
         key: ValueKey('owned'),
         label: 'Owned',
         color: AppColors.success,
         icon: Icons.check_circle_rounded,
       );
     } else if (busy) {
-      action = const SizedBox(
+      action = SizedBox(
         key: ValueKey('busy'),
         width: 22,
         height: 22,

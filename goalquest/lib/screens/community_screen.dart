@@ -92,7 +92,7 @@ class _StoryCard extends StatelessWidget {
                   backgroundColor: AppColors.primarySoft,
                   child: Text(
                     name[0].toUpperCase(),
-                    style: const TextStyle(
+                    style: TextStyle(
                       color: AppColors.primaryDark,
                       fontWeight: FontWeight.w700,
                     ),
@@ -112,7 +112,7 @@ class _StoryCard extends StatelessWidget {
                       ),
                       Text(
                         _timeAgo(story.createdAt),
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 12,
                           color: AppColors.textSecondary,
                         ),
@@ -149,7 +149,7 @@ class _StoryCard extends StatelessWidget {
                     errorBuilder: (_, __, ___) => Container(
                       color: AppColors.surfaceMuted,
                       alignment: Alignment.center,
-                      child: const Icon(Icons.broken_image_outlined,
+                      child: Icon(Icons.broken_image_outlined,
                           color: AppColors.textTertiary),
                     ),
                   ),
@@ -174,7 +174,7 @@ class _StoryCard extends StatelessWidget {
                   Expanded(
                     child: Text(
                       sdg.shortTitle,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w500,
                         color: AppColors.textSecondary,
@@ -239,7 +239,7 @@ class _LoadingListState extends State<_LoadingList>
                     children: [
                       Row(
                         children: [
-                          const CircleAvatar(
+                          CircleAvatar(
                             radius: 18,
                             backgroundColor: AppColors.surfaceMuted,
                           ),
@@ -301,7 +301,7 @@ class _StateView extends StatelessWidget {
             Text(
               message,
               textAlign: TextAlign.center,
-              style: const TextStyle(color: AppColors.textSecondary),
+              style: TextStyle(color: AppColors.textSecondary),
             ),
           ],
         ),

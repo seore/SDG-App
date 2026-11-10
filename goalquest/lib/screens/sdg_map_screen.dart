@@ -34,7 +34,7 @@ class SdgMapScreen extends StatelessWidget {
                           : null,
                       child: Row(
                         children: [
-                          const IconTile(
+                          IconTile(
                             icon: Icons.map_outlined,
                             color: AppColors.primary,
                             size: 44,
@@ -57,7 +57,7 @@ class SdgMapScreen extends StatelessWidget {
                               ],
                             ),
                           ),
-                          const Icon(Icons.chevron_right_rounded,
+                          Icon(Icons.chevron_right_rounded,
                               color: AppColors.textTertiary),
                         ],
                       ),

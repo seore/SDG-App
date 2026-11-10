@@ -255,7 +255,7 @@ class _ImpactTile extends StatelessWidget {
                 child: Text(
                   metric.shortLabel,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w500,
                     color: AppColors.textSecondary,
@@ -394,7 +394,7 @@ class _WeeklyChart extends StatelessWidget {
                           if (counts[i] > 0)
                             Text(
                               '${counts[i]}',
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 11,
                                 fontWeight: FontWeight.w600,
                                 color: AppColors.textSecondary,
@@ -671,7 +671,7 @@ class _ActivityRow extends StatelessWidget {
                   '${c.userName} · ${_timeAgo(c.createdAt)}',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 12,
                     color: AppColors.textSecondary,
                   ),
@@ -681,7 +681,7 @@ class _ActivityRow extends StatelessWidget {
           ),
           Text(
             '+${c.xp} XP',
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w600,
               color: AppColors.xp,
@@ -717,7 +717,7 @@ class _StateCard extends StatelessWidget {
           Text(
             message,
             textAlign: TextAlign.center,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 13,
               color: AppColors.textSecondary,
             ),

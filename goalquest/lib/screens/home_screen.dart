@@ -392,12 +392,12 @@ class _MissionRow extends StatelessWidget {
                 transitionBuilder: (c, a) =>
                     ScaleTransition(scale: a, child: c),
                 child: completed
-                    ? const Icon(Icons.check_circle_rounded,
+                    ? Icon(Icons.check_circle_rounded,
                         key: ValueKey('done'), color: AppColors.success)
                     : Text(
                         '+${mission.xp} XP',
                         key: const ValueKey('xp'),
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
                           color: AppColors.xp,
@@ -507,7 +507,7 @@ class _ExploreTile extends StatelessWidget {
                       : Offset.zero,
                   duration: AppDurations.medium,
                   curve: AppMotion.spring,
-                  child: const Icon(Icons.arrow_outward_rounded,
+                  child: Icon(Icons.arrow_outward_rounded,
                       size: 16, color: AppColors.textTertiary),
                 ),
               ],
@@ -525,7 +525,7 @@ class _ExploreTile extends StatelessWidget {
               data.subtitle,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
+              style: TextStyle(
                 color: AppColors.textSecondary,
                 fontSize: 12,
               ),
@@ -549,7 +549,7 @@ class _LoggedOutState extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const IconTile(
+            IconTile(
                 icon: Icons.lock_outline_rounded,
                 color: AppColors.primary,
                 size: 56),

@@ -5,6 +5,7 @@ import '../services/api_client.dart';
 import '../services/demo_mode.dart';
 import '../services/profile_service.dart';
 import '../theme/app_theme.dart';
+import '../theme/theme_controller.dart';
 import '../widgets/app_card.dart';
 import '../widgets/app_scaffold.dart';
 import '../widgets/motion.dart';
@@ -172,7 +173,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return AppScaffold(
       title: 'Profile',
       body: _loading
-          ? const Center(
+          ? Center(
               child: CircularProgressIndicator(color: AppColors.primary),
             )
           : ValueListenableBuilder<UserProfile?>(
@@ -228,6 +229,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         icon: Icons.mail_outline_rounded,
                         label: 'Email',
                         value: profile.email,
+                      ),
+                      const Divider(indent: 52),
+                      ValueListenableBuilder<ThemeMode>(
+                        valueListenable: ThemeController.instance.mode,
+                        builder: (context, mode, _) => _SettingsRow(
+                          icon: Icons.dark_mode_outlined,
+                          label: 'Appearance',
+                          value: switch (mode) {
+                            ThemeMode.system => 'System',
+                            ThemeMode.light => 'Light',
+                            ThemeMode.dark => 'Dark',
+                          },
+                          onTap: () => _showAppearanceSheet(context),
+                        ),
                       ),
                       const Divider(indent: 52),
                       _SettingsRow(
@@ -583,13 +598,13 @@ class _FocusSdgs extends StatelessWidget {
       return AppCard(
         child: Row(
           children: [
-            const IconTile(
+            IconTile(
               icon: Icons.track_changes_rounded,
               color: AppColors.primary,
               size: 40,
             ),
             const SizedBox(width: AppSpacing.md),
-            const Expanded(
+            Expanded(
               child: Text(
                 'Pick up to 3 goals you care about. Your daily missions will include them.',
                 style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
@@ -633,7 +648,7 @@ class _FocusSdgs extends StatelessWidget {
                           style: const TextStyle(fontWeight: FontWeight.w600),
                         ),
                       ),
-                      const Icon(
+                      Icon(
                         Icons.chevron_right_rounded,
                         color: AppColors.textTertiary,
                       ),
@@ -784,7 +799,7 @@ class _FocusPickerState extends State<_FocusPicker> {
                   child: Text(
                     '${_selected.length} of $_max selected',
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(color: AppColors.textSecondary),
+                    style: TextStyle(color: AppColors.textSecondary),
                   ),
                 ),
                 FilledButton(
@@ -921,14 +936,14 @@ class _SettingsRow extends StatelessWidget {
                   child: Text(
                     value!,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
+                    style: TextStyle(
                       color: AppColors.textSecondary,
                       fontSize: 13,
                     ),
                   ),
                 ),
               if (onTap != null && !destructive)
-                const Icon(
+                Icon(
                   Icons.chevron_right_rounded,
                   color: AppColors.textTertiary,
                 ),
@@ -952,7 +967,7 @@ class _NoProfileState extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const IconTile(
+            IconTile(
               icon: Icons.person_outline_rounded,
               color: AppColors.primary,
               size: 56,
@@ -986,4 +1001,63 @@ class _NoProfileState extends StatelessWidget {
       ),
     );
   }
+}
+
+Future<void> _showAppearanceSheet(BuildContext context) {
+  return showModalBottomSheet<void>(
+    context: context,
+    showDragHandle: true,
+    backgroundColor: AppColors.surface,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+    ),
+    builder: (context) => SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+        child: ValueListenableBuilder<ThemeMode>(
+          valueListenable: ThemeController.instance.mode,
+          builder: (context, mode, _) => Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Appearance',
+                style: Theme.of(context)
+                    .textTheme
+                    .titleMedium
+                    ?.copyWith(fontWeight: FontWeight.w700),
+              ),
+              const SizedBox(height: AppSpacing.lg),
+              SizedBox(
+                width: double.infinity,
+                child: SegmentedButton<ThemeMode>(
+                  showSelectedIcon: false,
+                  segments: const [
+                    ButtonSegment(
+                      value: ThemeMode.system,
+                      icon: Icon(Icons.brightness_auto_outlined, size: 18),
+                      label: Text('System'),
+                    ),
+                    ButtonSegment(
+                      value: ThemeMode.light,
+                      icon: Icon(Icons.light_mode_outlined, size: 18),
+                      label: Text('Light'),
+                    ),
+                    ButtonSegment(
+                      value: ThemeMode.dark,
+                      icon: Icon(Icons.dark_mode_outlined, size: 18),
+                      label: Text('Dark'),
+                    ),
+                  ],
+                  selected: {mode},
+                  onSelectionChanged: (s) =>
+                      ThemeController.instance.setMode(s.first),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    ),
+  );
 }

@@ -6,6 +6,7 @@ import 'dart:async';
 import 'screens/onboarding.dart';
 import 'screens/home_shell.dart';
 import 'theme/app_theme.dart';
+import 'theme/theme_controller.dart';
 import 'services/demo_mode.dart';
 import 'screens/profile_screen.dart';
 import 'screens/daily_missions_screen.dart';
@@ -36,7 +37,8 @@ class GoalQuestApp extends StatefulWidget {
   State<GoalQuestApp> createState() => _GoalQuestAppState();
 }
 
-class _GoalQuestAppState extends State<GoalQuestApp> {
+class _GoalQuestAppState extends State<GoalQuestApp>
+    with WidgetsBindingObserver {
   final GlobalKey<NavigatorState> _navKey = GlobalKey<NavigatorState>();
 
   late final AppLinks _appLinks;
@@ -45,6 +47,10 @@ class _GoalQuestAppState extends State<GoalQuestApp> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    ThemeController.instance.mode.addListener(_applyPalette);
+    _palette = _resolvePalette();
+    AppColors.current = _palette;
     _appLinks = AppLinks();
     _handleIncomingLinks();
   }
@@ -58,8 +64,31 @@ class _GoalQuestAppState extends State<GoalQuestApp> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    ThemeController.instance.mode.removeListener(_applyPalette);
     _sub?.cancel();
     super.dispose();
+  }
+
+  late AppPalette _palette;
+
+  AppPalette _resolvePalette() => ThemeController.instance.paletteFor(
+        WidgetsBinding.instance.platformDispatcher.platformBrightness,
+      );
+
+  @override
+  void didChangePlatformBrightness() => _applyPalette();
+
+  /// Switches palette and repaints everything without losing state.
+  void _applyPalette() {
+    final next = _resolvePalette();
+    if (identical(next, _palette)) return;
+    setState(() {
+      _palette = next;
+      AppColors.current = next;
+    });
+    final ctx = _navKey.currentContext;
+    if (ctx != null) rebuildAllChildren(ctx);
   }
 
   @override
@@ -68,7 +97,7 @@ class _GoalQuestAppState extends State<GoalQuestApp> {
       navigatorKey: _navKey,
       title: 'SDG Journey',
       debugShowCheckedModeBanner: false,
-      theme: AppTheme.light(),
+      theme: AppTheme.build(_palette),
 
       initialRoute: widget.initialRoute,
       // By default Flutter also pushes '/' (auth) beneath a deep initial

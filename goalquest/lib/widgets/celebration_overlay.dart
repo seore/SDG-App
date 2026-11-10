@@ -306,13 +306,13 @@ class _CelebrationOverlayState extends State<CelebrationOverlay>
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Icon(Icons.workspace_premium_rounded,
+                      Icon(Icons.workspace_premium_rounded,
                           size: 18, color: AppColors.primary),
                       const SizedBox(width: 6),
                       Flexible(
                         child: Text(
                           'Level up — you reached level ${data.newLevel}',
-                          style: const TextStyle(
+                          style: TextStyle(
                             color: AppColors.primaryDark,
                             fontWeight: FontWeight.w600,
                             fontSize: 13,
@@ -361,7 +361,7 @@ class _RewardRow extends StatelessWidget {
         Expanded(
           child: Text(
             label,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 13,
               color: AppColors.textSecondary,
             ),
@@ -369,7 +369,7 @@ class _RewardRow extends StatelessWidget {
         ),
         Text(
           '$value XP',
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.w700,
             color: AppColors.textPrimary,
@@ -401,7 +401,7 @@ class _LevelBar extends StatelessWidget {
           children: [
             Text(
               'Level ${info.level}',
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
                 color: AppColors.textPrimary,
@@ -410,7 +410,7 @@ class _LevelBar extends StatelessWidget {
             const Spacer(),
             Text(
               '${info.xpInLevel} / ${LevelInfo.xpPerLevel}',
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 12,
                 color: AppColors.textSecondary,
                 fontFeatures: [FontFeature.tabularFigures()],
@@ -425,7 +425,7 @@ class _LevelBar extends StatelessWidget {
             value: info.progress,
             minHeight: 6,
             backgroundColor: AppColors.border,
-            valueColor: const AlwaysStoppedAnimation(AppColors.primary),
+            valueColor: AlwaysStoppedAnimation(AppColors.primary),
           ),
         ),
       ],

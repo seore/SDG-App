@@ -7,6 +7,7 @@ import 'services/demo_mode.dart';
 import 'services/mission_catalog.dart';
 import 'services/mission_progress_service.dart';
 import 'services/profile_service.dart';
+import 'theme/theme_controller.dart';
 
 /// `sdgjourney://password-reset?token=...` → `/resetPassword?token=...`
 String? resetRouteFor(Uri? uri) {
@@ -19,7 +20,10 @@ String? resetRouteFor(Uri? uri) {
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await MissionCatalogService.instance.load();
+  await Future.wait([
+    MissionCatalogService.instance.load(),
+    ThemeController.instance.load(),
+  ]);
 
   Uri? initialUri;
   try {

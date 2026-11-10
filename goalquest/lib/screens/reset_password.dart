@@ -71,7 +71,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      const Align(
+                      Align(
                         alignment: Alignment.centerLeft,
                         child: IconTile(
                           icon: Icons.lock_reset_rounded,

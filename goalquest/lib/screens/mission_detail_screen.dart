@@ -204,7 +204,7 @@ class _MissionDetailScreenState extends State<MissionDetailScreen> {
                       ?.copyWith(fontWeight: FontWeight.w600),
                 ),
               ),
-              const Text(
+              Text(
                 'Optional',
                 style: TextStyle(fontSize: 12, color: AppColors.textTertiary),
               ),
@@ -323,7 +323,7 @@ class _MissionDetailScreenState extends State<MissionDetailScreen> {
         }
 
         return Container(
-          decoration: const BoxDecoration(
+          decoration: BoxDecoration(
             color: AppColors.surface,
             border: Border(top: BorderSide(color: AppColors.border)),
           ),
@@ -347,11 +347,11 @@ class _MissionDetailScreenState extends State<MissionDetailScreen> {
                                 children: [
                                   Row(
                                     children: [
-                                      const Icon(Icons.timer_outlined,
+                                      Icon(Icons.timer_outlined,
                                           size: 16,
                                           color: AppColors.textSecondary),
                                       const SizedBox(width: 6),
-                                      const Expanded(
+                                      Expanded(
                                         child: Text(
                                           'Do the action, then complete it in',
                                           style: TextStyle(

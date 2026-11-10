@@ -12,7 +12,8 @@ class XpRing extends StatefulWidget {
   final double size;
   final double strokeWidth;
   final Widget child;
-  final Color color;
+  final Color? color;
+  Color get effectiveColor => color ?? AppColors.primary;
 
   const XpRing({
     super.key,
@@ -20,7 +21,7 @@ class XpRing extends StatefulWidget {
     required this.child,
     this.size = 76,
     this.strokeWidth = 5,
-    this.color = AppColors.primary,
+    this.color,
   });
 
   @override
@@ -67,7 +68,7 @@ class _XpRingState extends State<XpRing> with SingleTickerProviderStateMixin {
       builder: (context, child) => CustomPaint(
         painter: _RingPainter(
           progress: _ctrl.value.clamp(0.0, 1.0),
-          color: widget.color,
+          color: widget.effectiveColor,
           strokeWidth: widget.strokeWidth,
         ),
         child: child,
@@ -193,13 +194,14 @@ class _StreakFlameState extends State<StreakFlame>
 /// Thin horizontal progress bar that springs to its value.
 class SpringProgressBar extends StatelessWidget {
   final double value;
-  final Color color;
+  final Color? color;
+  Color get effectiveColor => color ?? AppColors.primary;
   final double height;
 
   const SpringProgressBar({
     super.key,
     required this.value,
-    this.color = AppColors.primary,
+    this.color,
     this.height = 6,
   });
 
@@ -217,7 +219,7 @@ class SpringProgressBar extends StatelessWidget {
           curve: AppMotion.gentleSpring,
           builder: (context, v, _) => FractionallySizedBox(
             widthFactor: v.clamp(0.0, 1.0),
-            child: Container(color: color),
+            child: Container(color: effectiveColor),
           ),
         ),
       ),

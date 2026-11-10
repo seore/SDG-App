@@ -439,13 +439,13 @@ class _MissionStack extends StatelessWidget {
                               transitionBuilder: (c, a) =>
                                   ScaleTransition(scale: a, child: c),
                               child: done
-                                  ? const Icon(Icons.check_circle_rounded,
+                                  ? Icon(Icons.check_circle_rounded,
                                       key: ValueKey('done'),
                                       color: AppColors.success)
                                   : Text(
                                       '+$xp XP',
                                       key: const ValueKey('xp'),
-                                      style: const TextStyle(
+                                      style: TextStyle(
                                         fontSize: 12,
                                         fontWeight: FontWeight.w600,
                                         color: AppColors.xp,
@@ -501,7 +501,7 @@ class _ImpactPreview extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
+                          Text(
                             'Impact XP',
                             style: TextStyle(
                               fontSize: 12,
@@ -527,7 +527,7 @@ class _ImpactPreview extends StatelessWidget {
                 const SizedBox(height: AppSpacing.md),
                 Opacity(
                   opacity: _stagger(t, 1, 2).clamp(0.0, 1.0),
-                  child: const Wrap(
+                  child: Wrap(
                     alignment: WrapAlignment.spaceBetween,
                     spacing: AppSpacing.lg,
                     runSpacing: AppSpacing.sm,
