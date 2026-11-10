@@ -780,11 +780,13 @@ class _FocusPickerState extends State<_FocusPicker> {
             const SizedBox(height: AppSpacing.lg),
             Row(
               children: [
-                Text(
-                  '${_selected.length} of $_max selected',
-                  style: const TextStyle(color: AppColors.textSecondary),
+                Expanded(
+                  child: Text(
+                    '${_selected.length} of $_max selected',
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(color: AppColors.textSecondary),
+                  ),
                 ),
-                const Spacer(),
                 FilledButton(
                   onPressed: _saving ? null : _save,
                   child: Text(_saving ? 'Saving…' : 'Save'),
@@ -858,11 +860,14 @@ class _FocusChip extends StatelessWidget {
                       ),
               ),
               const SizedBox(width: 6),
-              Text(
-                goal.shortTitle,
-                style: const TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w500,
+              Flexible(
+                child: Text(
+                  goal.shortTitle,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
               ),
             ],
