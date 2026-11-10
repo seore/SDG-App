@@ -1,0 +1,12 @@
+# Dependencies
+node_modules/
+
+# Cloudflare Wrangler local state
+.wrangler/
+
+# Local database data (PGlite)
+.data/
+
+# Env / OS
+.env
+.DS_Store
