@@ -9,6 +9,7 @@ import { activity } from './routes/activity';
 import { auth } from './routes/auth';
 import { feed } from './routes/feed';
 import { me } from './routes/me';
+import { teams } from './routes/teams';
 import { uploads } from './routes/uploads';
 
 export interface Deps {
@@ -35,6 +36,7 @@ export function createApp(resolve: (c: Ctx) => Deps) {
   app.route('/auth', auth);
   app.route('/me', me);
   app.route('/feed', feed);
+  app.route('/teams', teams);
   app.route('/', activity);
   app.route('/', uploads);
 

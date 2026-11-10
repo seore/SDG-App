@@ -5,6 +5,7 @@ import '../models/mission.dart';
 import '../services/mission_catalog.dart';
 import '../services/mission_progress_service.dart';
 import '../services/profile_service.dart';
+import '../services/team_service.dart';
 import '../theme/app_theme.dart';
 import '../utils/sdg_utils.dart';
 import '../widgets/app_card.dart';
@@ -12,6 +13,7 @@ import '../widgets/app_scaffold.dart';
 import '../widgets/motion.dart';
 import '../widgets/progress_widgets.dart';
 import 'mission_detail_screen.dart';
+import 'teams_screen.dart';
 
 /// Home dashboard tab. [onOpenTab] switches the bottom navigation tab.
 class HomeScreen extends StatelessWidget {
@@ -62,6 +64,11 @@ class HomeScreen extends StatelessWidget {
                         child: _TodaySection(
                           onSeeAll: () => onOpenTab?.call(1),
                         ),
+                      ),
+                      const SizedBox(height: AppSpacing.xxl),
+                      const FadeSlideIn(
+                        delay: Duration(milliseconds: 150),
+                        child: _TeamSection(),
                       ),
                       const SizedBox(height: AppSpacing.xxl),
                       const FadeSlideIn(
@@ -575,6 +582,74 @@ class _LoggedOutState extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+/// Your team's weekly progress, or an invitation to start one.
+class _TeamSection extends StatelessWidget {
+  const _TeamSection();
+
+  @override
+  Widget build(BuildContext context) {
+    return ValueListenableBuilder<List<Team>?>(
+      valueListenable: TeamService.instance.teams,
+      builder: (context, teams, _) {
+        final hasTeams = teams != null && teams.isNotEmpty;
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            SectionHeader(
+              title: 'Team challenge',
+              trailing: hasTeams
+                  ? TextButton(
+                      onPressed: () => Navigator.pushNamed(context, '/teams'),
+                      child: Text(teams.length > 1 ? 'All teams' : 'Manage'),
+                    )
+                  : null,
+            ),
+            if (hasTeams)
+              TeamProgressCard(team: teams.first)
+            else
+              Pressable(
+                pressedScale: 0.985,
+                onTap: () => Navigator.pushNamed(context, '/teams'),
+                builder: (context, state) => AppCard(
+                  shadow: state == PressState.hovered ? AppShadows.raised : null,
+                  child: Row(
+                    children: [
+                      const IconTile(
+                        icon: Icons.groups_rounded,
+                        color: Color(0xFF19486A),
+                        size: 44,
+                      ),
+                      const SizedBox(width: AppSpacing.md),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Team up with your class',
+                              style: TextStyle(fontWeight: FontWeight.w600),
+                            ),
+                            Text(
+                              'Set a weekly target and reach it together.',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: AppColors.textSecondary,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Icon(Icons.chevron_right_rounded, color: AppColors.textTertiary),
+                    ],
+                  ),
+                ),
+              ),
+          ],
+        );
+      },
     );
   }
 }

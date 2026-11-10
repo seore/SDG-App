@@ -18,6 +18,7 @@ import 'package:goalquest/services/mission_catalog.dart';
 import 'package:goalquest/services/mission_progress_service.dart';
 import 'package:goalquest/services/owned_pack_service.dart';
 import 'package:goalquest/services/profile_service.dart';
+import 'package:goalquest/services/team_service.dart';
 import 'package:goalquest/services/weekly_service.dart';
 
 const apiUrl = String.fromEnvironment('API_URL');
@@ -78,6 +79,15 @@ void main() {
     expect(feed.any((c) => c.isMine && c.missionId == mission.id), isTrue);
     final stories = await LiveDataService.instance.storiesStream.first;
     expect(stories.first.message, 'Completed: ${mission.title}');
+
+    final team = await TeamService.instance.create('Integration Team', 20);
+    expect(team.code, hasLength(6));
+    await TeamService.instance.load();
+    expect(TeamService.instance.teams.value!.single.missionsThisWeek, 1);
+    final detail = await TeamService.instance.detail(team.id);
+    expect(detail.leaderboard.single.isMe, isTrue);
+    await TeamService.instance.leave(team.id);
+    expect(TeamService.instance.teams.value, isEmpty);
 
     await OwnedPackService.instance.addOwnedPack('cosmetic_eco_frame');
     expect(OwnedPackService.instance.ownedPackIds.value, contains('cosmetic_eco_frame'));

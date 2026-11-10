@@ -239,6 +239,67 @@ describe('weekly summary', () => {
   });
 });
 
+describe('teams', () => {
+  it('creates a team, joins by code and tracks weekly progress', async () => {
+    const teacher = await newUser();
+    const pupil = await newUser();
+    const created = await call('POST', '/teams', { name: 'Class 7B', weekly_target: 20 }, teacher.access_token);
+    expect(created.status).toBe(201);
+    expect(created.json.code).toMatch(/^[A-Z2-9]{6}$/);
+    expect(created.json.members).toBe(1);
+    expect(created.json.is_owner).toBe(true);
+
+    const joined = await call('POST', '/teams/join', { code: created.json.code.toLowerCase() }, pupil.access_token);
+    expect(joined.status).toBe(200);
+    expect(joined.json.members).toBe(2);
+    expect(joined.json.is_owner).toBe(false);
+    // Joining twice is harmless.
+    expect((await call('POST', '/teams/join', { code: created.json.code }, pupil.access_token)).json.members).toBe(2);
+
+    await call('POST', '/missions/m_unplug/complete', {}, pupil.access_token);
+    await call('POST', '/missions/m_read_20/complete', {}, pupil.access_token);
+    await call('POST', '/missions/m_unplug/complete', {}, teacher.access_token);
+
+    const list = await call('GET', '/teams', undefined, teacher.access_token);
+    expect(list.json.teams[0].missions_this_week).toBe(3);
+
+    const detail = await call('GET', `/teams/${created.json.id}`, undefined, pupil.access_token);
+    expect(detail.json.leaderboard.map((m: any) => [m.missions, m.is_me])).toEqual([
+      [2, true],
+      [1, false],
+    ]);
+  });
+
+  it('rejects bad codes, hides other teams and cleans up empty teams', async () => {
+    const a = await newUser();
+    const b = await newUser();
+    expect((await call('POST', '/teams/join', { code: 'ZZZZZZ' }, a.access_token)).status).toBe(404);
+    expect((await call('POST', '/teams/join', { code: 'no' }, a.access_token)).status).toBe(400);
+
+    const t = (await call('POST', '/teams', { name: 'Solo' }, a.access_token)).json;
+    expect((await call('GET', `/teams/${t.id}`, undefined, b.access_token)).status).toBe(404);
+
+    await call('POST', `/teams/${t.id}/leave`, {}, a.access_token);
+    expect((await call('GET', '/teams', undefined, a.access_token)).json.teams).toEqual([]);
+    expect((await call('POST', '/teams/join', { code: t.code }, b.access_token)).status).toBe(404);
+  });
+
+  it('limits how many teams one person can be in', async () => {
+    const u = await newUser();
+    for (let i = 0; i < 5; i++) {
+      expect((await call('POST', '/teams', { name: `Team ${i}` }, u.access_token)).status).toBe(201);
+    }
+    expect((await call('POST', '/teams', { name: 'One too many' }, u.access_token)).status).toBe(409);
+  });
+
+  it('starts the week on Monday (UTC)', async () => {
+    const { weekStart } = await import('../src/routes/teams');
+    expect(weekStart(new Date('2026-03-10T12:00:00Z'))).toBe('2026-03-09'); // Tuesday
+    expect(weekStart(new Date('2026-03-15T23:00:00Z'))).toBe('2026-03-09'); // Sunday
+    expect(weekStart(new Date('2026-03-16T00:30:00Z'))).toBe('2026-03-16'); // Monday
+  });
+});
+
 describe('feeds and profile', () => {
   it('marks your own completions and coarsens locations', async () => {
     const a = await newUser();
