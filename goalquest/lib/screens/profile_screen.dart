@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../data/sdg_data.dart';
+import '../services/api_client.dart';
+import '../services/demo_mode.dart';
 import '../services/profile_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/app_card.dart';
@@ -130,34 +131,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<_QuizSummary> _getQuizSummary() async {
-    final client = Supabase.instance.client;
-    final session = client.auth.currentSession;
-    if (session == null) return _QuizSummary.empty;
-
+    if (DemoMode.enabled || !ApiClient.instance.hasSession) {
+      return _QuizSummary.empty;
+    }
     try {
-      final res = await client
-          .from('quiz_attempts')
-          .select('score, total_questions, xp_earned')
-          .eq('user_id', session.user.id);
-
-      if (res.isEmpty) return _QuizSummary.empty;
-
-      double totalPercent = 0;
-      int totalXp = 0;
-      for (final row in res) {
-        final score = (row['score'] ?? 0) as int;
-        final totalQuestions = (row['total_questions'] ?? 0) as int;
-        final xpEarned = (row['xp_earned'] ?? 0) as int;
-        if (totalQuestions > 0) {
-          totalPercent += (score / totalQuestions) * 100.0;
-        }
-        totalXp += xpEarned;
-      }
-
+      final json = await ApiClient.instance.get('/me/quiz-summary') as Map;
       return _QuizSummary(
-        attempts: res.length,
-        averagePercent: totalPercent / res.length,
-        totalXp: totalXp,
+        attempts: json['attempts'] as int,
+        averagePercent: (json['average_percent'] as num).toDouble(),
+        totalXp: json['total_xp'] as int,
       );
     } catch (_) {
       return _QuizSummary.empty;

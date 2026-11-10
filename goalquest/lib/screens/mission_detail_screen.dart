@@ -3,12 +3,12 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../data/sdg_data.dart';
 import '../models/mission.dart';
 import '../services/demo_mode.dart';
-import '../services/live_data_service.dart';
+import '../services/activity_service.dart';
+import '../services/api_client.dart';
 import '../services/location_service.dart';
 import '../services/mission_progress_service.dart';
 import '../services/profile_service.dart';
@@ -431,81 +431,39 @@ class _MissionDetailScreenState extends State<MissionDetailScreen> {
     setState(() => _isSubmitting = true);
 
     try {
-      // Guard against double rewards (e.g. app restart or second device).
-      if (!DemoMode.enabled && await _progress.isCompletedToday(mission.id)) {
-        messenger.showSnackBar(
-          const SnackBar(
-            content: Text('You already completed this mission today.'),
-          ),
-        );
-        return;
-      }
-
-      if (DemoMode.enabled) {
-        // Offline demo: reward locally, skip uploads and backend writes.
-        _progress.completeMission(mission.id);
-        final award = await ProfileService.instance.addXp(mission.xp);
-        if (!mounted) return;
-        setState(() => _isSubmitting = false);
-        await _celebrate(color, award);
-        if (mounted) navigator.pop();
-        return;
-      }
-
-      String? photoUrl;
+      // Photo is optional: if storage isn't set up or the upload fails,
+      // complete the mission without it.
+      String? photoKey;
       if (_photo != null) {
         try {
-          final supabase = Supabase.instance.client;
-          final fileName =
-              '${mission.id}_${DateTime.now().millisecondsSinceEpoch}.jpg';
-          await supabase.storage
-              .from('mission-photos')
-              .upload(fileName, File(_photo!.path));
-          photoUrl =
-              supabase.storage.from('mission-photos').getPublicUrl(fileName);
-        } catch (_) {
-          // Continue without a photo if the upload fails.
-        }
+          photoKey = await ActivityService.instance
+              .uploadMissionPhoto(await File(_photo!.path).readAsBytes());
+        } catch (_) {}
       }
 
-      final position = await LocationService.getCurrentPosition();
-      final profile = ProfileService.instance.currentProfile;
-      final userName = (profile?.username.trim().isNotEmpty ?? false)
-          ? profile!.username
-          : 'Explorer';
+      final position =
+          DemoMode.enabled ? null : await LocationService.getCurrentPosition();
 
-      await LiveDataService.instance.addCompletion(
-        userName: userName,
-        missionId: mission.id,
-        missionTitle: mission.title,
-        sdgNumber: sdgNumber,
-        xp: mission.xp,
+      // The server checks the mission, the once-a-day rule and the daily
+      // limit, and decides the XP.
+      final award = await ActivityService.instance.completeMission(
+        mission.id,
         lat: position?.latitude,
         lng: position?.longitude,
+        photoKey: photoKey,
       );
       _progress.completeMission(mission.id);
 
-      final award = await ProfileService.instance.addXp(mission.xp);
-
-      try {
-        await LiveDataService.instance.addStory(
-          userName: userName,
-          message: 'Completed: ${mission.title}',
-          sdgNumber: sdgNumber,
-          photoUrl: photoUrl,
-        );
-      } catch (_) {
-        // A failed story post shouldn't block the reward.
-      }
-
       if (!mounted) return;
       setState(() => _isSubmitting = false);
-
       await _celebrate(color, award);
       if (mounted) navigator.pop();
-    } catch (e) {
+    } on ApiException catch (e) {
+      if (e.code == 'already_completed') _progress.completeMission(mission.id);
+      messenger.showSnackBar(SnackBar(content: Text(e.message)));
+    } catch (_) {
       messenger.showSnackBar(
-        SnackBar(content: Text('Could not complete mission: $e')),
+        const SnackBar(content: Text('Could not complete the mission. Please try again.')),
       );
     } finally {
       if (mounted && _isSubmitting) setState(() => _isSubmitting = false);

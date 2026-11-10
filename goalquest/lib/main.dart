@@ -1,55 +1,43 @@
-import 'package:flutter/material.dart';
-import 'package:goalquest/services/owned_pack_service.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:app_links/app_links.dart';
-import 'services/profile_service.dart';
-import 'services/demo_mode.dart';
-import 'services/mission_progress_service.dart';
+import 'package:flutter/material.dart';
+
 import 'app.dart';
+import 'services/auth_service.dart';
+import 'services/demo_mode.dart';
+import 'services/mission_catalog.dart';
+import 'services/mission_progress_service.dart';
+import 'services/profile_service.dart';
+
+/// `sdgjourney://password-reset?token=...` → `/resetPassword?token=...`
+String? resetRouteFor(Uri? uri) {
+  if (uri == null || uri.scheme != 'sdgjourney' || uri.host != 'password-reset') {
+    return null;
+  }
+  final token = uri.queryParameters['token'];
+  return token == null ? null : '/resetPassword?token=$token';
+}
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
-  await Supabase.initialize(
-    url: 'https://nwjmxqjjpubanvowpyko.supabase.co',
-    anonKey:
-        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im53am14cWpqcHViYW52b3dweWtvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMwNjg2MDksImV4cCI6MjA3ODY0NDYwOX0._EYxBR7TSEnFcP1mbZT33PAl8_rzjNodBTo2EGW4CjM',
-  );
-
-  final client = Supabase.instance.client;
-
-  final appLinks = AppLinks();
+  await MissionCatalogService.instance.load();
 
   Uri? initialUri;
   try {
-    initialUri = await appLinks.getInitialLink();
+    initialUri = await AppLinks().getInitialLink();
   } catch (_) {
-    // ignore errors here – we'll just fall back to normal routing
-  }
-
-  bool openResetPassword = false;
-  if (initialUri != null &&
-      initialUri.scheme == 'sdgjourney' &&
-      initialUri.host == 'password-reset') {
-    openResetPassword = true;
-  }
-
-  final session = client.auth.currentSession;
-
-  if (session != null) {
-    await ProfileService.instance.loadCurrentUserProfile();
-    await OwnedPackService.instance.loadOwnedPacks();
-    await MissionProgressService.instance.loadToday();
+    // Fall back to normal routing.
   }
 
   final String startRoute;
   if (DemoMode.enabled) {
     ProfileService.instance.profileListenable.value = DemoMode.profile;
     startRoute = DemoMode.initialRoute;
-  } else if (openResetPassword) {
-    startRoute = '/resetPassword';
+  } else if (resetRouteFor(initialUri) != null) {
+    startRoute = resetRouteFor(initialUri)!;
   } else {
-    startRoute = session != null ? '/home' : '/auth';
+    final signedIn = await AuthService.instance.restore();
+    if (signedIn) await MissionProgressService.instance.loadToday();
+    startRoute = signedIn ? '/home' : '/auth';
   }
 
   runApp(GoalQuestApp(initialRoute: startRoute));

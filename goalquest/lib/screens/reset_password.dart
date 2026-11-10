@@ -1,14 +1,17 @@
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../theme/app_theme.dart';
 import '../widgets/app_card.dart';
 import '../widgets/app_scaffold.dart';
 import '../widgets/motion.dart';
+import '../services/auth_service.dart';
 import 'auth_screen.dart' show friendlyAuthError;
 
 class ResetPasswordScreen extends StatefulWidget {
-  const ResetPasswordScreen({super.key});
+  /// One-time token from the emailed link.
+  final String token;
+
+  const ResetPasswordScreen({super.key, required this.token});
 
   @override
   State<ResetPasswordScreen> createState() => _ResetPasswordScreenState();
@@ -35,8 +38,9 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
 
     setState(() => _loading = true);
     try {
-      await Supabase.instance.client.auth.updateUser(
-        UserAttributes(password: _passwordCtrl.text.trim()),
+      await AuthService.instance.resetPassword(
+        token: widget.token,
+        password: _passwordCtrl.text.trim(),
       );
       messenger.showSnackBar(
         const SnackBar(content: Text('Password updated. You can log in now.')),

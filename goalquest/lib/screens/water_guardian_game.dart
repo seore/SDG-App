@@ -198,21 +198,16 @@ class _WaterGuardianGameScreenState extends State<WaterGuardianGameScreen> {
   Future<void> _finish() async {
     if (_finishing) return;
     setState(() => _finishing = true);
-
-    final xp = _score * _xpPerCorrect;
-    final award = await GameSessionService.instance.completeGame(
-      gameId: 'water_guardian',
-      sdgNumber: 6,
-      xpEarned: xp,
-    );
-    if (!mounted) return;
-    await showGameResult(
+    await finishGame(
       context,
-      heading: 'Great job, Water Guardian',
-      summary: 'You chose the water-saving option $_score of ${_scenarios.length} times',
+      gameId: 'water_guardian',
+      score: _score,
+      total: _scenarios.length,
       sdgNumber: 6,
-      xpEarned: xp,
-      award: award,
+      localXp: _score * _xpPerCorrect,
+      heading: 'Great job, Water Guardian',
+      summary:
+          'You chose the water-saving option $_score of ${_scenarios.length} times',
     );
   }
 

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../data/sdg_data.dart';
 import '../services/live_data_service.dart';
-import '../services/profile_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/app_card.dart';
 import '../widgets/app_scaffold.dart';
@@ -28,11 +27,8 @@ class _ImpactDashboardScreenState extends State<ImpactDashboardScreen> {
         stream: LiveDataService.instance.completionsStream,
         builder: (context, snapshot) {
           final all = snapshot.data ?? const <LiveMissionCompletion>[];
-          // Match on user id – usernames aren't unique.
-          final myId = ProfileService.instance.currentProfile?.id;
-          final mine = myId == null
-              ? <LiveMissionCompletion>[]
-              : all.where((c) => c.userId == myId).toList();
+          // The server marks the signed-in user's own completions.
+          final mine = all.where((c) => c.isMine).toList();
           final visible = _scope == _Scope.me ? mine : all;
 
           final missions = visible.length;

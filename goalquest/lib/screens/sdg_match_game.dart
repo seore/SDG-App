@@ -76,21 +76,15 @@ class _SdgMatchGameScreenState extends State<SdgMatchGameScreen> {
   Future<void> _finish() async {
     if (_finishing) return;
     setState(() => _finishing = true);
-
-    final xp = _score * _xpPerCorrect;
-    final award = await GameSessionService.instance.completeGame(
-      gameId: 'sdg_match',
-      sdgNumber: 4,
-      xpEarned: xp,
-    );
-    if (!mounted) return;
-    await showGameResult(
+    await finishGame(
       context,
+      gameId: 'sdg_match',
+      score: _score,
+      total: _rounds.length,
+      sdgNumber: 4,
+      localXp: _score * _xpPerCorrect,
       heading: 'Match-Up complete',
       summary: 'You matched $_score of ${_rounds.length} goals',
-      sdgNumber: 4,
-      xpEarned: xp,
-      award: award,
     );
   }
 

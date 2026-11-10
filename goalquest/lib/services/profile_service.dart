@@ -1,9 +1,7 @@
-// ignore_for_file: unnecessary_cast
-
 import 'package:flutter/foundation.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../theme/app_theme.dart';
+import 'api_client.dart';
 import 'demo_mode.dart';
 import 'mission_progress_service.dart';
 
@@ -28,19 +26,16 @@ class UserProfile {
     this.activeAvatarFrame,
   });
 
-  factory UserProfile.fromMap(
-    Map<String, dynamic> map, {
-    required String email,
-  }) {
+  factory UserProfile.fromJson(Map<String, dynamic> map) {
+    final last = map['last_active_on'] as String?;
     return UserProfile(
       id: map['id'] as String,
-      email: email,
+      email: (map['email'] ?? '') as String,
       username: (map['username'] ?? '') as String,
       xp: (map['xp'] ?? 0) as int,
       streak: (map['streak'] ?? 0) as int,
       avatarUrl: map['avatar_url'] as String?,
-      lastActive: map['last_active_at'] != null ? 
-      DateTime.tryParse(map['last_active_at'] as String) : null,
+      lastActive: last == null ? null : DateTime.tryParse(last),
       activeAvatarFrame: map['active_avatar_frame'] as String?,
     );
   }
@@ -76,12 +71,16 @@ class XpAward {
   final int levelBefore;
   final int levelAfter;
 
+  /// True when the daily reward limit for this activity was reached.
+  final bool capped;
+
   const XpAward({
     required this.baseXp,
     required this.streakBonus,
     required this.streak,
     required this.levelBefore,
     required this.levelAfter,
+    this.capped = false,
   });
 
   int get total => baseXp + streakBonus;
@@ -92,7 +91,7 @@ class ProfileService {
   ProfileService._internal();
   static final ProfileService instance = ProfileService._internal();
 
-  SupabaseClient get _client => Supabase.instance.client;
+  final _api = ApiClient.instance;
 
   final ValueNotifier<UserProfile?> profileListenable =
       ValueNotifier<UserProfile?>(null);
@@ -104,182 +103,92 @@ class ProfileService {
       profileListenable.value ??= DemoMode.profile;
       return;
     }
-    final session = _client.auth.currentSession;
-
-    if (session == null) {
+    if (!_api.hasSession) {
       profileListenable.value = null;
       return;
     }
-
-    final authUser = session.user;
-    final email = authUser.email ?? '';
-
-    final rows = await _client
-        .from('users')
-        .select()
-        .eq('id', authUser.id)
-        .limit(1);
-
-    Map<String, dynamic> row;
-
-    if (rows.isEmpty) {
-      final metadata = authUser.userMetadata ?? {};
-      final defaultUsername = (metadata['username'] ??
-              (email.isNotEmpty ? email.split('@').first : 'Explorer'))
-          .toString();
-
-      final inserted = await _client
-          .from('users')
-          .insert({
-            'id': authUser.id,
-            'username': defaultUsername,
-            'xp': 0,
-            'streak': 0,
-          })
-          .select()
-          .single() as Map<String, dynamic>;
-
-      row = inserted;
-    } else {
-      row = rows.first as Map<String, dynamic>;
-    }
-
-    profileListenable.value = UserProfile.fromMap(row, email: email);
+    final json = await _api.get('/me') as Map<String, dynamic>;
+    profileListenable.value = UserProfile.fromJson(json);
   }
 
-  /// Adds XP (plus any streak bonus) and returns what was awarded,
-  /// or null when no user is signed in.
-  Future<XpAward?> addXp(int amount) async {
-    final client = Supabase.instance.client;
-    final profile = currentProfile;
-
-    if (profile == null) return null;
-
-    final now = DateTime.now();
-    final lastActive = profile.lastActive;
-    int newStreak = profile.streak;
-
-    if (lastActive == null) {
-      newStreak = 1;
-    } else {
-      final lastDate = DateTime(lastActive.year, lastActive.month, lastActive.day);
-      final today = DateTime(now.year, now.month, now.day);
-      final diffDays = today.difference(lastDate).inDays;
-
-      if (diffDays == 1) {
-        newStreak += 1;
-      } else if (diffDays > 1) {
-        newStreak = 1;
-      }
-    }
-
-    int bonus = 0;
-    if (newStreak >= 3 && newStreak < 7) {
-      bonus = 5;
-    } else if (newStreak >= 7 && newStreak < 14) {
-      bonus = 10;
-    } else if (newStreak >= 14) {
-      bonus = 20;
-    }
-
-    final totalToAdd =  amount + bonus;
-    final updatedXp = profile.xp + totalToAdd; 
-
-    if (DemoMode.enabled) {
-      profileListenable.value = profile.copyWith(
-        xp: updatedXp,
-        streak: newStreak,
-        lastActive: now,
-      );
-      return XpAward(
-        baseXp: amount,
-        streakBonus: bonus,
-        streak: newStreak,
-        levelBefore: LevelInfo(profile.xp).level,
-        levelAfter: LevelInfo(updatedXp).level,
-      );
-    }
-
-    final res = await client
-        .from('users')
-        .update({
-          'xp': updatedXp,
-          'streak': newStreak,
-          'last_active_at': now.toIso8601String(),
-        })
-        .eq('id', profile.id)
-        .select()
-        .maybeSingle();
-
-    if (res != null) {
-      final updatedMap = Map<String, dynamic>.from(res as Map);
-      final updatedProfile =
-          UserProfile.fromMap(updatedMap, email: profile.email).copyWith(
-        xp: updatedXp,
-        streak: newStreak,
-        lastActive: now,
-      );
-      profileListenable.value = updatedProfile;
-    }
-
+  /// Applies an award returned by the server (missions and games) and
+  /// updates the cached profile.
+  XpAward applyServerAward(Map<String, dynamic> json) {
+    final profile = UserProfile.fromJson(json['profile'] as Map<String, dynamic>);
+    profileListenable.value = profile;
     return XpAward(
-      baseXp: amount,
-      streakBonus: bonus,
-      streak: newStreak,
-      levelBefore: LevelInfo(profile.xp).level,
-      levelAfter: LevelInfo(updatedXp).level,
+      baseXp: json['xp_earned'] as int,
+      streakBonus: json['streak_bonus'] as int,
+      streak: json['streak'] as int,
+      levelBefore: LevelInfo(json['xp_before'] as int).level,
+      levelAfter: LevelInfo(json['xp_after'] as int).level,
+      capped: (json['capped'] as bool?) ?? false,
     );
   }
 
-  Future<void> setStreak(int newStreak) async {
-    final current = profileListenable.value;
-    final session = _client.auth.currentSession;
-    if (current == null || session == null) return;
+  /// Demo mode only: awards XP locally with the same rules as the server.
+  XpAward awardLocally(int amount) {
+    final profile = currentProfile!;
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final last = profile.lastActive;
+    final lastDay = last == null ? null : DateTime(last.year, last.month, last.day);
 
-    final updated = await _client
-        .from('users')
-        .update({'streak': newStreak})
-        .eq('id', session.user.id)
-        .select()
-        .single() as Map<String, dynamic>;
+    int streak;
+    if (lastDay == null) {
+      streak = 1;
+    } else if (lastDay == today) {
+      streak = profile.streak < 1 ? 1 : profile.streak;
+    } else if (today.difference(lastDay).inDays == 1) {
+      streak = profile.streak + 1;
+    } else {
+      streak = 1;
+    }
 
-    profileListenable.value = UserProfile.fromMap(updated, email: current.email);
+    var bonus = 0;
+    if (amount > 0) {
+      if (streak >= 14) {
+        bonus = 20;
+      } else if (streak >= 7) {
+        bonus = 10;
+      } else if (streak >= 3) {
+        bonus = 5;
+      }
+    }
+
+    final xpAfter = profile.xp + amount + bonus;
+    profileListenable.value =
+        profile.copyWith(xp: xpAfter, streak: streak, lastActive: now);
+    return XpAward(
+      baseXp: amount,
+      streakBonus: bonus,
+      streak: streak,
+      levelBefore: LevelInfo(profile.xp).level,
+      levelAfter: LevelInfo(xpAfter).level,
+    );
   }
 
   Future<void> updateProfile({
     String? username,
     String? avatarUrl,
-    String? activeAvatarFrame, 
+    String? activeAvatarFrame,
     bool clearAvatarFrame = false,
   }) async {
-    final current = profileListenable.value;
-    final session = _client.auth.currentSession;
-    if (current == null || session == null) return;
-
-    final updateData = <String, dynamic>{};
-    if (username != null) updateData['username'] = username;
-    if (avatarUrl != null) updateData['avatar_url'] = avatarUrl;
-    if (clearAvatarFrame) {
-      updateData['active_avatar_frame'] = null;
-    } else if (activeAvatarFrame != null) {
-      updateData['active_avatar_frame'] = activeAvatarFrame;
-    }
-
-    if (updateData.isEmpty) return;
-
-    final updated = await _client
-        .from('users')
-        .update(updateData)
-        .eq('id', session.user.id)
-        .select()
-        .single() as Map<String, dynamic>;
-
-    profileListenable.value =
-        UserProfile.fromMap(updated, email: current.email);
+    final body = <String, dynamic>{
+      if (username != null) 'username': username,
+      if (avatarUrl != null) 'avatar_url': avatarUrl,
+      if (clearAvatarFrame)
+        'active_avatar_frame': null
+      else if (activeAvatarFrame != null)
+        'active_avatar_frame': activeAvatarFrame,
+    };
+    if (body.isEmpty) return;
+    final json = await _api.patch('/me', body) as Map<String, dynamic>;
+    profileListenable.value = UserProfile.fromJson(json);
   }
 
   Future<void> signOut() async {
-    if (!DemoMode.enabled) await _client.auth.signOut();
+    if (!DemoMode.enabled) await _api.logout();
     profileListenable.value = null;
     MissionProgressService.instance.reset();
   }

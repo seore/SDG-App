@@ -2,6 +2,7 @@
     package="com.example.goalquest">
 
     <!-- ✅ Permissions must be directly under <manifest>, BEFORE <application> -->
+    <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
 
@@ -18,7 +19,7 @@
     </queries>
 
     <application
-        android:label="goalquest"
+        android:label="SDG Journey"
         android:name="${applicationName}"
         android:icon="@mipmap/launcher_icon">
 
@@ -43,6 +44,14 @@
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+
+            <!-- Password reset links: sdgjourney://password-reset?token=... -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="sdgjourney" android:host="password-reset" />
             </intent-filter>
 
         </activity>

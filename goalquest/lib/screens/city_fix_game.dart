@@ -184,22 +184,16 @@ class _CityFixGameScreenState extends State<CityFixGameScreen> {
   Future<void> _finishGame() async {
     if (_submitting) return;
     setState(() => _submitting = true);
-
     final cityScore = _calculateCityScore();
-    final xp = _calculateXp();
-    final award = await GameSessionService.instance.completeGame(
-      gameId: 'city_fix',
-      sdgNumber: 11,
-      xpEarned: xp,
-    );
-    if (!mounted) return;
-    await showGameResult(
+    await finishGame(
       context,
+      gameId: 'city_fix',
+      score: cityScore,
+      total: 40,
+      sdgNumber: 11,
+      localXp: _calculateXp(),
       heading: 'City upgraded',
       summary: 'Your city scored $cityScore out of 40',
-      sdgNumber: 11,
-      xpEarned: xp,
-      award: award,
     );
   }
 

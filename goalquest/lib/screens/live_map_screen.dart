@@ -6,7 +6,6 @@ import 'package:latlong2/latlong.dart';
 import '../data/sdg_data.dart';
 import '../services/live_data_service.dart';
 import '../services/location_service.dart';
-import '../services/profile_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/app_card.dart';
 import '../widgets/motion.dart';
@@ -63,7 +62,6 @@ class _LiveMapScreenState extends State<LiveMapScreen> {
   @override
   Widget build(BuildContext context) {
     final liveData = LiveDataService.instance;
-    final myId = ProfileService.instance.currentProfile?.id;
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle.dark,
@@ -90,8 +88,7 @@ class _LiveMapScreenState extends State<LiveMapScreen> {
                 : const LatLng(20.0, 0.0);
 
             final markers = completions.map((c) {
-              final isMine = (myId != null && c.userId == myId) ||
-                  c.userName == 'You';
+              final isMine = c.isMine;
               final size = isMine ? 36.0 : 30.0;
               return Marker(
                 point: LatLng(c.lat!, c.lng!),

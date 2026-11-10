@@ -15,6 +15,14 @@ class Mission {
     this.isCompleted = false,
   });
 
+  factory Mission.fromJson(Map<String, dynamic> json) => Mission(
+        id: json['id'] as String,
+        title: json['title'] as String,
+        description: json['description'] as String,
+        sdg: json['sdg'] as String,
+        xp: json['xp'] as int,
+      );
+
   Mission copyWith({
     String? id,
     String? title,

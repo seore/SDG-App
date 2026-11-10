@@ -161,22 +161,16 @@ class _TrashSortGameScreenState extends State<TrashSortGameScreen> {
   Future<void> _finish() async {
     if (_finishing) return;
     setState(() => _finishing = true);
-
     final score = _total - _missed.length;
-    final xp = score * _xpPerCorrect;
-    final award = await GameSessionService.instance.completeGame(
-      gameId: 'trash_sort',
-      sdgNumber: 12,
-      xpEarned: xp,
-    );
-    if (!mounted) return;
-    await showGameResult(
+    await finishGame(
       context,
+      gameId: 'trash_sort',
+      score: score,
+      total: _total,
+      sdgNumber: 12,
+      localXp: score * _xpPerCorrect,
       heading: 'Sorting complete',
       summary: '$score of $_total items sorted right first time',
-      sdgNumber: 12,
-      xpEarned: xp,
-      award: award,
     );
   }
 

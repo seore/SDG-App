@@ -1,30 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../services/profile_service.dart';
+import '../services/api_client.dart';
+import '../services/auth_service.dart';
+import '../services/mission_progress_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/app_card.dart';
 import '../widgets/brand.dart';
 import '../widgets/motion.dart';
 
-/// Turns auth/network exceptions into a sentence a user can act on.
+/// Turns API/network exceptions into a sentence a user can act on.
+/// The server already sends user-facing messages.
 String friendlyAuthError(Object e) {
-  if (e is AuthRetryableFetchException) {
-    return "Can't reach the server. Check your connection and try again.";
-  }
-  if (e is AuthException) {
-    final msg = e.message.toLowerCase();
-    if (msg.contains('invalid login')) return 'Incorrect email or password.';
-    if (msg.contains('already registered')) {
-      return 'An account with this email already exists. Try logging in.';
-    }
-    return e.message;
-  }
-  final text = e.toString();
-  if (text.contains('SocketException') || text.contains('Failed host lookup')) {
-    return "Can't reach the server. Check your connection and try again.";
-  }
+  if (e is ApiException) return e.message;
   return 'Something went wrong. Please try again.';
 }
 
@@ -244,8 +232,6 @@ class _LoginFormState extends State<_LoginForm> {
   bool _loading = false;
   bool _obscure = true;
 
-  SupabaseClient get _supabase => Supabase.instance.client;
-
   @override
   void dispose() {
     _emailCtrl.dispose();
@@ -259,18 +245,12 @@ class _LoginFormState extends State<_LoginForm> {
     final navigator = Navigator.of(context);
     setState(() => _loading = true);
     try {
-      final response = await _supabase.auth.signInWithPassword(
+      await AuthService.instance.logIn(
         email: _emailCtrl.text.trim(),
         password: _passwordCtrl.text,
       );
-      if (response.session != null) {
-        await ProfileService.instance.loadCurrentUserProfile();
-        navigator.pushNamedAndRemoveUntil('/home', (route) => false);
-      } else {
-        messenger.showSnackBar(
-          const SnackBar(content: Text('Login failed. Please try again.')),
-        );
-      }
+      await MissionProgressService.instance.loadToday();
+      navigator.pushNamedAndRemoveUntil('/home', (route) => false);
     } catch (e) {
       messenger.showSnackBar(SnackBar(content: Text(friendlyAuthError(e))));
     } finally {
@@ -290,13 +270,11 @@ class _LoginFormState extends State<_LoginForm> {
 
     setState(() => _loading = true);
     try {
-      await _supabase.auth.resetPasswordForEmail(
-        email,
-        redirectTo: 'sdgjourney://password-reset',
-      );
+      await AuthService.instance.requestPasswordReset(email);
       messenger.showSnackBar(
         const SnackBar(
-          content: Text('Password reset email sent. Check your inbox.'),
+          content: Text(
+              "If that email has an account, we've sent a reset link. Check your inbox."),
         ),
       );
     } catch (e) {
@@ -376,8 +354,6 @@ class _SignUpFormState extends State<_SignUpForm> {
   bool _loading = false;
   bool _obscure = true;
 
-  SupabaseClient get _supabase => Supabase.instance.client;
-
   @override
   void dispose() {
     _usernameCtrl.dispose();
@@ -393,30 +369,11 @@ class _SignUpFormState extends State<_SignUpForm> {
     setState(() => _loading = true);
 
     try {
-      final res = await _supabase.auth.signUp(
+      await AuthService.instance.signUp(
         email: _emailCtrl.text.trim(),
         password: _passwordCtrl.text,
-        data: {'username': _usernameCtrl.text.trim()},
+        username: _usernameCtrl.text.trim(),
       );
-
-      if (res.user == null) {
-        messenger.showSnackBar(
-          const SnackBar(content: Text('Sign up failed. Please try again.')),
-        );
-        return;
-      }
-
-      // With email confirmations disabled, we should get a session here.
-      if (res.session == null) {
-        messenger.showSnackBar(
-          const SnackBar(
-            content: Text('Account created. Check your email to confirm it.'),
-          ),
-        );
-        return;
-      }
-
-      await ProfileService.instance.loadCurrentUserProfile();
       navigator.pushNamedAndRemoveUntil('/onboarding', (route) => false);
     } catch (e) {
       messenger.showSnackBar(SnackBar(content: Text(friendlyAuthError(e))));

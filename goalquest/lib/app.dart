@@ -23,6 +23,7 @@ import 'screens/community_screen.dart';
 import 'screens/learn_sdg.dart';
 import 'screens/auth_screen.dart';
 import 'screens/reset_password.dart';
+import 'main.dart' show resetRouteFor;
 
 import 'models/mission.dart';
 
@@ -50,10 +51,8 @@ class _GoalQuestAppState extends State<GoalQuestApp> {
 
   void _handleIncomingLinks() {
     _sub = _appLinks.uriLinkStream.listen((Uri? uri) {
-      if (uri == null) return;
-      if (uri.queryParameters["type"] == "recovery") {
-        _navKey.currentState?.pushNamed('/resetPassword');
-      }
+      final route = resetRouteFor(uri);
+      if (route != null) _navKey.currentState?.pushNamed(route);
     });
   }
 
@@ -83,12 +82,17 @@ class _GoalQuestAppState extends State<GoalQuestApp> {
   }
 
   Route<dynamic>? _onGenerateRoute(RouteSettings settings) {
+    final uri = Uri.parse(settings.name ?? '/');
     {
-      switch (settings.name) {
+      switch (uri.path) {
         case '/auth':
           return MaterialPageRoute(builder: (_) => const AuthScreen());
         case '/resetPassword':
-          return MaterialPageRoute(builder: (_) => const ResetPasswordScreen());
+          return MaterialPageRoute(
+            builder: (_) => ResetPasswordScreen(
+              token: uri.queryParameters['token'] ?? '',
+            ),
+          );
         case '/onboarding':
           return MaterialPageRoute(builder: (_) => const OnboardingScreen());
         case '/home':

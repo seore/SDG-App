@@ -4,8 +4,6 @@ import 'package:flutter/material.dart';
 
 import '../data/quiz_questions.dart';
 import '../services/game_session.dart';
-import '../services/game_tracking_service.dart';
-import '../services/profile_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/app_card.dart';
 import '../widgets/app_scaffold.dart';
@@ -59,32 +57,17 @@ class _QuizGameScreenState extends State<QuizGameScreen> {
   Future<void> _finish() async {
     if (_finishing) return;
     setState(() => _finishing = true);
-
     final total = _questions.length;
-    final xp = _score * _xpPerCorrect;
-
-    XpAward? award;
-    try {
-      award = await ProfileService.instance.addXp(xp);
-    } catch (_) {}
-    try {
-      await GameTrackingService.instance.recordQuizCompletion(
-        sdgNumber: _q.sdgNumber,
-        score: _score,
-        totalQuestions: total,
-        xpEarned: xp,
-      );
-    } catch (_) {}
-
-    if (!mounted) return;
     final percent = (_score / total * 100).round();
-    await showGameResult(
+    await finishGame(
       context,
+      gameId: 'quiz',
+      score: _score,
+      total: total,
+      sdgNumber: _q.sdgNumber,
+      localXp: _score * _xpPerCorrect,
       heading: 'Quiz complete',
       summary: 'You scored $_score of $total ($percent%)',
-      sdgNumber: 4,
-      xpEarned: xp,
-      award: award,
     );
   }
 
