@@ -92,6 +92,60 @@ me.get('/impact', async (c) => {
   return c.json({ mine: sum(mine), community: sum(community) });
 });
 
+/** Last 7 days (including today, UTC) for the shareable weekly summary. */
+me.get('/weekly', async (c) => {
+  const db = c.get('db');
+  const userId = c.get('userId');
+  const now = c.get('config').now();
+  const today = utcDay(now);
+  const from = utcDay(new Date(now.getTime() - 6 * 86_400_000));
+
+  type Num = string | number | null;
+  const [[missions], [games], bySdg, impact, user] = await Promise.all([
+    db.query<{ count: Num; xp: Num; days: Num }>(
+      `select count(*) as count, coalesce(sum(xp), 0) as xp,
+              count(distinct completed_on) as days
+         from mission_completions
+        where user_id = $1 and completed_on between $2::date and $3::date`,
+      [userId, from, today],
+    ),
+    db.query<{ count: Num; xp: Num }>(
+      `select count(*) as count, coalesce(sum(xp_earned), 0) as xp
+         from game_sessions
+        where user_id = $1 and played_on between $2::date and $3::date`,
+      [userId, from, today],
+    ),
+    db.query<{ sdg_number: number; count: Num }>(
+      `select sdg_number, count(*) as count
+         from mission_completions
+        where user_id = $1 and completed_on between $2::date and $3::date
+        group by sdg_number order by count(*) desc, sdg_number limit 3`,
+      [userId, from, today],
+    ),
+    db.query<{ impact_metric: string; total: Num }>(
+      `select impact_metric, sum(impact_amount) as total
+         from mission_completions
+        where user_id = $1 and impact_metric is not null
+          and completed_on between $2::date and $3::date
+        group by impact_metric`,
+      [userId, from, today],
+    ),
+    loadUser(db, userId),
+  ]);
+
+  return c.json({
+    from,
+    to: today,
+    missions: Number(missions?.count ?? 0),
+    active_days: Number(missions?.days ?? 0),
+    games: Number(games?.count ?? 0),
+    xp: Number(missions?.xp ?? 0) + Number(games?.xp ?? 0),
+    streak: user ? toProfile(user, now).streak : 0,
+    top_sdgs: bySdg.map((r) => ({ sdg_number: Number(r.sdg_number), missions: Number(r.count) })),
+    impact: Object.fromEntries(impact.map((r) => [r.impact_metric, Number(r.total)])),
+  });
+});
+
 me.get('/packs', async (c) => {
   const rows = await c
     .get('db')

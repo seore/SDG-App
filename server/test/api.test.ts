@@ -211,6 +211,34 @@ describe('impact', () => {
   });
 });
 
+describe('weekly summary', () => {
+  it('summarises the last 7 days only', async () => {
+    const s = await newUser();
+    const start = clock;
+    try {
+      clock = new Date(start.getTime() - 8 * 86_400_000); // outside the week
+      await call('POST', '/missions/m_short_shower/complete', {}, s.access_token);
+      clock = new Date(start.getTime() - 2 * 86_400_000);
+      await call('POST', '/missions/m_short_shower/complete', {}, s.access_token);
+      clock = start;
+      await call('POST', '/missions/m_turn_off_tap/complete', {}, s.access_token);
+      await call('POST', '/missions/m_walk_instead/complete', {}, s.access_token);
+      await call('POST', '/games/complete', { game_id: 'quiz', score: 5, total: 10 }, s.access_token);
+
+      const w = (await call('GET', '/me/weekly', undefined, s.access_token)).json;
+      expect(w.missions).toBe(3);
+      expect(w.active_days).toBe(2);
+      expect(w.games).toBe(1);
+      expect(w.xp).toBe(20 + 15 + 30 + 50);
+      expect(w.top_sdgs[0]).toEqual({ sdg_number: 6, missions: 2 });
+      expect(w.impact.water_l).toBe(52);
+      expect(w.impact.co2_kg).toBeCloseTo(0.8);
+    } finally {
+      clock = start;
+    }
+  });
+});
+
 describe('feeds and profile', () => {
   it('marks your own completions and coarsens locations', async () => {
     const a = await newUser();

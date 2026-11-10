@@ -18,6 +18,7 @@ import 'package:goalquest/services/mission_catalog.dart';
 import 'package:goalquest/services/mission_progress_service.dart';
 import 'package:goalquest/services/owned_pack_service.dart';
 import 'package:goalquest/services/profile_service.dart';
+import 'package:goalquest/services/weekly_service.dart';
 
 const apiUrl = String.fromEnvironment('API_URL');
 
@@ -67,6 +68,11 @@ void main() {
     final game = await ActivityService.instance.completeGame(
       gameId: 'quiz', score: 8, total: 10, localXp: 0, sdgNumber: 4);
     expect(game.baseXp, 80);
+
+    final week = await WeeklyService.instance.load();
+    expect(week.missions, 1);
+    expect(week.xp, mission.xp + 80);
+    expect(week.topSdgs, isNotEmpty);
 
     final feed = await LiveDataService.instance.completionsStream.first;
     expect(feed.any((c) => c.isMine && c.missionId == mission.id), isTrue);

@@ -24,6 +24,7 @@ import 'screens/community_screen.dart';
 import 'screens/learn_sdg.dart';
 import 'screens/auth_screen.dart';
 import 'screens/reset_password.dart';
+import 'screens/weekly_summary_screen.dart';
 import 'main.dart' show resetRouteFor;
 
 import 'models/mission.dart';
@@ -175,6 +176,8 @@ class _GoalQuestAppState extends State<GoalQuestApp>
           return MaterialPageRoute(builder: (_) => const QuizGameScreen());
         case '/shop':
           return MaterialPageRoute(builder: (_) => const ShopScreen());
+        case '/weeklySummary':
+          return MaterialPageRoute(builder: (_) => const WeeklySummaryScreen());
         case '/impactDashboard':
           return MaterialPageRoute(
             builder: (_) => const ImpactDashboardScreen(),

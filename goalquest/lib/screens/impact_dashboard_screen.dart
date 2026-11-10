@@ -31,6 +31,14 @@ class _ImpactDashboardScreenState extends State<ImpactDashboardScreen> {
   Widget build(BuildContext context) {
     return AppScaffold(
       title: 'Your impact',
+      actions: [
+        TextButton.icon(
+          onPressed: () => Navigator.pushNamed(context, '/weeklySummary'),
+          icon: const Icon(Icons.ios_share_rounded, size: 18),
+          label: const Text('My week'),
+        ),
+        const SizedBox(width: 8),
+      ],
       body: StreamBuilder<List<LiveMissionCompletion>>(
         stream: LiveDataService.instance.completionsStream,
         builder: (context, snapshot) {
