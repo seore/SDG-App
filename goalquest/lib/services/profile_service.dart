@@ -83,6 +83,10 @@ class XpAward {
   /// True when the daily reward limit for this activity was reached.
   final bool capped;
 
+  /// AI photo check result for a mission photo, if one ran.
+  final bool photoVerified;
+  final String? photoFeedback;
+
   const XpAward({
     required this.baseXp,
     required this.streakBonus,
@@ -90,6 +94,8 @@ class XpAward {
     required this.levelBefore,
     required this.levelAfter,
     this.capped = false,
+    this.photoVerified = false,
+    this.photoFeedback,
   });
 
   int get total => baseXp + streakBonus;
@@ -132,6 +138,8 @@ class ProfileService {
       levelBefore: LevelInfo(json['xp_before'] as int).level,
       levelAfter: LevelInfo(json['xp_after'] as int).level,
       capped: (json['capped'] as bool?) ?? false,
+      photoVerified: ((json['photo_check'] as Map?)?['verified'] as bool?) ?? false,
+      photoFeedback: (json['photo_check'] as Map?)?['feedback'] as String?,
     );
   }
 

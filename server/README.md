@@ -18,6 +18,14 @@ The app never talks to the database directly. This API owns:
   to about 1 km for privacy.
 - **Photo uploads** to S3-compatible storage (Neon Object Storage or
   Cloudflare R2), using temporary signed upload links.
+- **AI photo check** (optional, needs `ANTHROPIC_API_KEY`). Claude
+  (`claude-opus-5-5`, low effort) checks whether a mission photo matches the
+  mission and whether it's safe to show publicly (no faces or personal
+  details). It also writes a short encouraging note.
+  - A matching photo earns +5 XP. A non-matching photo is never penalised.
+  - Only safe photos appear in the community feed; without the key, no photo
+    is ever public.
+  - Only the image and the mission text are sent to Claude.
 
 ## Run locally
 

@@ -1,24 +1,8 @@
-import { AwsClient } from 'aws4fetch';
 import { Hono } from 'hono';
 
-import type { StorageConfig } from '../config';
 import { apiError, requireAuth, type AppEnv } from '../context';
 import { randomToken } from '../crypto';
-
-// Works with any S3-compatible store: Neon Object Storage, Cloudflare R2, S3.
-
-function client(s: StorageConfig) {
-  return new AwsClient({
-    accessKeyId: s.accessKeyId,
-    secretAccessKey: s.secretAccessKey,
-    service: 's3',
-    region: s.region,
-  });
-}
-
-function objectUrl(s: StorageConfig, key: string) {
-  return `${s.endpoint}/${s.bucket}/${key.split('/').map(encodeURIComponent).join('/')}`;
-}
+import { objectUrl, storageClient as client } from '../storage';
 
 export const uploads = new Hono<AppEnv>();
 

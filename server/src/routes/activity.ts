@@ -2,10 +2,12 @@ import { Hono } from 'hono';
 import { z } from 'zod';
 
 import { apiError, requireAuth, type AppEnv } from '../context';
+import { checkWithTimeout, type PhotoVerdict } from '../photo-check';
 import { awardXp, loadUser, toProfile } from '../profile';
 import {
   games,
   MAX_MISSIONS_PER_DAY,
+  PHOTO_VERIFIED_BONUS_XP,
   missions,
   REWARDED_PLAYS_PER_GAME_PER_DAY,
   utcDay,
@@ -77,21 +79,63 @@ activity.post('/missions/:id/complete', async (c) => {
     throw apiError(409, 'already_completed', 'You already completed this mission today.');
   }
 
+  // AI photo check (optional). Never blocks completion: on any failure the
+  // mission still counts and the photo simply stays private.
+  const config = c.get('config');
+  let verdict: PhotoVerdict | null = null;
+  if (photoKey && config.photoChecker && config.loadPhoto) {
+    const image = await config.loadPhoto(photoKey).catch(() => null);
+    if (image) {
+      verdict = await checkWithTimeout(config.photoChecker, {
+        image,
+        mediaType: 'image/jpeg',
+        missionTitle: mission.title,
+        missionDescription: mission.description,
+      });
+    }
+  }
+  const verified = !!verdict && verdict.matches && verdict.safe_to_share;
+  const bonusXp = verified ? PHOTO_VERIFIED_BONUS_XP : 0;
+  if (verdict) {
+    await db.query(
+      `update mission_completions set photo_verified = $2, photo_feedback = $3
+        where id = $1`,
+      [(inserted[0] as { id: string }).id, verified, verdict.feedback],
+    );
+  }
+
+  // Photos are only shown publicly once checked as safe to share.
   await db.query(
-    'insert into stories (user_id, user_name, message, sdg_number, photo_key) values ($1, $2, $3, $4, $5)',
-    [userId, user.username, `Completed: ${mission.title}`, mission.sdgNumber, photoKey],
+    'insert into stories (user_id, user_name, message, sdg_number, photo_key, verified) values ($1, $2, $3, $4, $5, $6)',
+    [
+      userId,
+      user.username,
+      `Completed: ${mission.title}`,
+      mission.sdgNumber,
+      verdict?.safe_to_share ? photoKey : null,
+      verified,
+    ],
   );
 
-  const award = await awardXp(db, userId, mission.xp, today);
+  const award = await awardXp(db, userId, mission.xp + bonusXp, today);
   const updated = await loadUser(db, userId);
   return c.json({
-    xp_earned: mission.xp,
+    xp_earned: mission.xp + bonusXp,
     streak_bonus: award.bonus,
     streak: award.streak,
     xp_before: award.xp_before,
     xp_after: award.xp_after,
     capped: false,
     impact: mission.impact ?? null,
+    photo_check: verdict
+      ? {
+          matches: verdict.matches,
+          safe_to_share: verdict.safe_to_share,
+          verified,
+          bonus_xp: bonusXp,
+          feedback: verdict.feedback,
+        }
+      : null,
     profile: toProfile(updated!, now),
   });
 });

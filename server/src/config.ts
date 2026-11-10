@@ -1,3 +1,6 @@
+import { createClaudePhotoChecker, type PhotoChecker } from './photo-check';
+import { loadObject } from './storage';
+
 export interface StorageConfig {
   endpoint: string; // e.g. https://<account>.r2.cloudflarestorage.com
   bucket: string;
@@ -11,6 +14,10 @@ export interface Mailer {
 }
 
 export interface AppConfig {
+  /** AI photo check (Claude vision); disabled when ANTHROPIC_API_KEY is unset. */
+  photoChecker?: PhotoChecker;
+  /** Loads an uploaded photo's bytes (defaults to S3 storage). */
+  loadPhoto?: (key: string) => Promise<Uint8Array | null>;
   jwtSecret: string;
   accessTokenTtlSeconds: number;
   refreshTokenTtlDays: number;
@@ -33,6 +40,7 @@ export interface EnvVars {
   S3_REGION?: string;
   S3_ACCESS_KEY_ID?: string;
   S3_SECRET_ACCESS_KEY?: string;
+  ANTHROPIC_API_KEY?: string;
 }
 
 /** Sends via Resend when configured; otherwise logs (local development). */
@@ -74,6 +82,8 @@ export function configFromEnv(env: EnvVars): AppConfig {
         }
       : undefined;
   return {
+    photoChecker: env.ANTHROPIC_API_KEY ? createClaudePhotoChecker(env.ANTHROPIC_API_KEY) : undefined,
+    loadPhoto: storage ? (key) => loadObject(storage, key) : undefined,
     jwtSecret: env.JWT_SECRET,
     accessTokenTtlSeconds: 60 * 60,
     refreshTokenTtlDays: 60,

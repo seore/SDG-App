@@ -120,6 +120,13 @@ class _StoryCard extends StatelessWidget {
                     ],
                   ),
                 ),
+                if (story.verified) ...[
+                  Tooltip(
+                    message: 'Photo checked and verified',
+                    child: Icon(Icons.verified_rounded, size: 18, color: AppColors.primary),
+                  ),
+                  const SizedBox(width: 6),
+                ],
                 if (sdg != null)
                   PillChip(label: 'SDG ${sdg.number}', color: sdg.color),
               ],

@@ -51,9 +51,10 @@ feed.get('/stories', async (c) => {
     message: string;
     sdg_number: number | null;
     photo_key: string | null;
+    verified: boolean;
     created_at: string | Date;
   }>(
-    `select id, user_name, message, sdg_number, photo_key, created_at
+    `select id, user_name, message, sdg_number, photo_key, verified, created_at
        from stories order by created_at desc limit 100`,
   );
   return c.json({

@@ -57,6 +57,9 @@ class LiveStory {
   final String? photoUrl;
   final DateTime createdAt;
 
+  /// The mission photo was confirmed by the AI photo check.
+  final bool verified;
+
   LiveStory({
     required this.id,
     required this.userName,
@@ -64,6 +67,7 @@ class LiveStory {
     this.sdgNumber,
     this.photoUrl,
     required this.createdAt,
+    this.verified = false,
   });
 
   factory LiveStory.fromMap(Map<String, dynamic> map) {
@@ -73,6 +77,7 @@ class LiveStory {
       message: (map['message'] ?? '').toString(),
       sdgNumber: map['sdg_number'] as int?,
       photoUrl: map['photo_url'] as String?,
+      verified: (map['verified'] as bool?) ?? false,
       createdAt: DateTime.tryParse(map['created_at']?.toString() ?? '')?.toLocal() ??
           DateTime.now(),
     );

@@ -212,7 +212,7 @@ class _MissionDetailScreenState extends State<MissionDetailScreen> {
           ),
           const SizedBox(height: 4),
           Text(
-            'Add a photo of your action to inspire others in the community.',
+            'Add a photo of your action. It is checked automatically: a matching photo earns +5 XP, and only photos without faces or personal details are shared with the community.',
             style: theme.textTheme.bodySmall
                 ?.copyWith(color: AppColors.textSecondary),
           ),
@@ -407,7 +407,13 @@ class _MissionDetailScreenState extends State<MissionDetailScreen> {
   }
 
   Future<void> _pickImage(ImageSource source) async {
-    final picked = await _picker.pickImage(source: source, imageQuality: 75);
+    // Downsized so uploads are quick and fit the AI photo check's limits.
+    final picked = await _picker.pickImage(
+      source: source,
+      imageQuality: 75,
+      maxWidth: 1600,
+      maxHeight: 1600,
+    );
     if (picked != null) {
       setState(() => _photo = picked);
     }
@@ -419,11 +425,13 @@ class _MissionDetailScreenState extends State<MissionDetailScreen> {
       context,
       CelebrationData(
         title: mission.title,
-        subtitle: switch (impactMetrics[mission.impactMetric]) {
-          final metric? =>
-            'Estimated impact: ${metric.describe(mission.impactAmount)}',
-          null => mission.sdg,
-        },
+        subtitle: award?.photoFeedback != null
+            ? '${award!.photoVerified ? 'Photo verified (+5 XP). ' : ''}${award.photoFeedback}'
+            : switch (impactMetrics[mission.impactMetric]) {
+                final metric? =>
+                  'Estimated impact: ${metric.describe(mission.impactAmount)}',
+                null => mission.sdg,
+              },
         color: color,
         xpEarned: mission.xp,
         streakBonus: award?.streakBonus ?? 0,

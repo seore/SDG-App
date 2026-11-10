@@ -31,6 +31,9 @@ export const missions: ReadonlyMap<string, MissionDef> = new Map(
   (catalog.missions as MissionDef[]).map((m) => [m.id, m]),
 );
 
+/** Extra XP when the AI photo check confirms the mission (never a penalty). */
+export const PHOTO_VERIFIED_BONUS_XP = 5;
+
 /** Matches the five daily missions shown in the app. */
 export const MAX_MISSIONS_PER_DAY = 5;
 
