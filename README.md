@@ -1,79 +1,82 @@
-#  🌍 SDG App (Mobile)
+# SDG Journey
 
-An educational, interactive Sustainable Development Goals (SDG) platform designed to visually explain all 17 United Nations SDGs through modern UI layouts, interactive sections, and accessible design. Built to help users explore global goals in a friendly, intuitive, and engaging way.
+A mobile app that helps young people learn about the UN **Sustainable
+Development Goals (SDGs)** and act on them through small daily missions, short
+lessons, games and team challenges.
 
----
+> Small actions. Global impact.
 
-## 📱 Platform
+## What it does
 
-- Mobile application (Android / iOS)
-- Runs directly on the device (APK / IPA), not in a browser
-- Flutter (Dart)
-- - React Native (TypeScript / JavaScript)
+| | |
+|---|---|
+| **Daily missions** | Five small real-world actions a day (53 in total, at least 3 per SDG). Each shows an estimated real-world impact, such as "≈ 40 L of water saved". |
+| **Learn** | A lesson for each of the 17 goals: what it means in everyday life, a real-world example, and what you can do. |
+| **Play** | Quiz (51 questions), SDG Match-Up, Trash Sorter, Water Guardian and Fix the City. |
+| **Progress** | XP, levels, streaks and achievements. Rewards are calculated on the server, with daily caps. |
+| **Impact** | Your totals and the community's (water, CO₂, plastics and more), charts, and a shareable "Your week" card. |
+| **Team challenges** | Classes or friends join with a code, share a weekly mission target and see a leaderboard. |
+| **Live map & community** | Actions taken around the world (locations rounded to about 1 km) and a story feed. |
+| **AI photo check** | Optional. Claude checks that a mission photo matches the mission and is safe to share before it appears publicly. |
+| **Personalisation** | Pick up to 3 focus SDGs to shape your daily missions; light or dark mode. |
 
----
+## Repository layout
 
-## 🚀 Features
+| Path | What it is |
+|---|---|
+| `goalquest/` | The Flutter app (iOS, Android; also builds for web and desktop). |
+| `server/` | The API: TypeScript + [Hono](https://hono.dev) on **Neon** Postgres. Runs on Cloudflare Workers or Node. See [server/README.md](server/README.md). |
+| `docs/` | A previously published Flutter web build (GitHub Pages). It is **out of date**. Rebuild it with `flutter build web --dart-define=API_URL=…` before publishing again. |
 
-- Interactive SDG cards
-- SDG UI color identity
-- Modern minimal responsive layout
-- Clear visual information hierarchy
-- SDG detail information per card
-- Accessible text and icons
-- Mobile-first responsive grid
-- Modular reusable component structure
+## Getting started
 
----
+**1. Run the API locally.** If `DATABASE_URL` isn't set, it uses an embedded
+Postgres, so nothing else needs installing:
 
-## 📍 Project Vision
+```bash
+cd server
+npm install
+npm run dev            # http://localhost:8787
+```
 
-The United Nations SDGs outline a universal blueprint for equality, sustainability, peace, and global well-being—but many students and younger users are unaware of the goals or what they represent.
+**2. Run the app** against it:
 
-This project aims to:
-- make SDG knowledge visually engaging
-- simplify sustainability learning
-- provide a clean intro for education
-- promote awareness through interaction
+```bash
+cd goalquest
+flutter pub get
+flutter run            # iOS simulator / Android emulator reach the local API automatically
+```
 
-Built with a focus on accessibility, modern visual UX, and minimal friction in navigation.
+To try the UI without any backend, run in demo mode with a fake signed-in
+profile:
 
----
+```bash
+flutter run --dart-define=DEMO=true
+# optional: --dart-define=DEMO_TAB=2  or  --dart-define=DEMO_ROUTE=/onboarding
+```
 
-## 🎯 Component Architecture
+To connect Neon, set up photo storage and email, or deploy to Cloudflare,
+see [server/README.md](server/README.md).
 
-- sdg-data.js: SDG information objects
-- sdg-card.js: reusable cards
-- detail-view.js: modal or details section
-- utilities: colors, spacing, typography
-- index.html
-- style.css
-- main.js: entry, UI rendering
+## Tests
 
----
+```bash
+cd server && npm test                    # API tests (in-memory Postgres)
+cd goalquest && flutter test             # app tests
+cd goalquest && flutter test test/api_integration_test.dart \
+    --dart-define=API_URL=http://localhost:8787   # app ↔ API end to end
+```
 
-## 🧠 Design Approach
+## Design notes
 
-The project began as a static SDG reference but evolved into a UI-driven learning interface. Each SDG follows the official color scheme and wording format—allowing familiarity with official SDG branding while offering simplified readability.
-
-Color accessibility and readability were priorities, along with building modular card components that can be expanded into:
-- language switching
-- quizzes
-- SDG facts
-- resource links
-- additional educational UI modules
-
----
-
-## 🚦 Running the Project
-
-- Clone the repository
-- Install dependencies: flutter pub get 
-- Navigate to folder: goalquest
-- Run app: flutter run -d android / ios
-
-## Preview
-
-https://github.com/user-attachments/assets/3ee4e436-7728-46c6-8c20-06acaa5dc7fb
-
-
+- **Look and feel:** neutral surfaces, one teal accent, and SDG colours used
+  as accents. The font is Inter. Animations use spring physics, and they're
+  turned off when the device's "reduce motion" setting is on.
+- **Content sources:**
+  - Missions, with their XP and impact estimates, live in
+    `goalquest/assets/content/missions.json`. The app and the server both
+    read this file.
+  - Lessons are in `lib/data/sdg_data.dart`.
+  - Quiz questions are in `lib/data/quiz_questions.dart`.
+- **Impact figures** are rough per-action estimates for awareness, and the
+  app labels them that way.
