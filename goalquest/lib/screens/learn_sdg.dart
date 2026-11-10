@@ -1,260 +1,441 @@
-// ignore_for_file: deprecated_member_use
-
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+
 import '../data/sdg_data.dart';
+import '../theme/app_theme.dart';
+import '../utils/sdg_utils.dart';
+import '../widgets/app_card.dart';
+import '../widgets/app_scaffold.dart';
+import '../widgets/motion.dart';
 
 class LearnSdgScreen extends StatefulWidget {
-  final int sdgNumber; 
+  final int sdgNumber;
 
-  const LearnSdgScreen({
-    super.key,
-    required this.sdgNumber,
-  });
+  const LearnSdgScreen({super.key, required this.sdgNumber});
 
   @override
   State<LearnSdgScreen> createState() => _LearnSdgScreenState();
 }
 
 class _LearnSdgScreenState extends State<LearnSdgScreen> {
-  late int _currentSdgNumber;
+  static const _chipExtent = 44.0 + AppSpacing.sm;
+
+  late int _index = (widget.sdgNumber - 1).clamp(0, sdgGoals.length - 1);
+  late final PageController _pages = PageController(initialPage: _index);
+  late final ScrollController _strip = ScrollController(
+    initialScrollOffset: (_index * _chipExtent - 120).clamp(0, double.infinity),
+  );
 
   @override
-  void initState() {
-    super.initState();
-    _currentSdgNumber = widget.sdgNumber;
+  void dispose() {
+    _pages.dispose();
+    _strip.dispose();
+    super.dispose();
   }
 
-  void _goToSdg(int number) {
-    setState(() {
-      _currentSdgNumber = number;
-    });
+  void _goTo(int index) {
+    if (index < 0 || index >= sdgGoals.length) return;
+    _pages.animateToPage(
+      index,
+      duration: AppDurations.spring,
+      curve: Curves.easeOutCubic,
+    );
   }
 
-  void _goToNext() {
-    if (_currentSdgNumber < 17) {
-      _goToSdg(_currentSdgNumber + 1);
-    }
-  }
-
-  void _goToPrevious() {
-    if (_currentSdgNumber > 1) {
-      _goToSdg(_currentSdgNumber - 1);
+  void _onPageChanged(int index) {
+    HapticFeedback.selectionClick();
+    setState(() => _index = index);
+    // Keep the selected chip roughly centred in the strip.
+    if (_strip.hasClients) {
+      final target = (index * _chipExtent -
+              (_strip.position.viewportDimension - _chipExtent) / 2)
+          .clamp(0.0, _strip.position.maxScrollExtent);
+      _strip.animateTo(
+        target,
+        duration: AppDurations.spring,
+        curve: Curves.easeOutCubic,
+      );
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final sdg = getSdgByNumber(_currentSdgNumber);
+    final current = sdgGoals[_index];
 
-    if (sdg == null) {
-      return Scaffold(
-        appBar: AppBar(
-          title: Text('SDG $_currentSdgNumber'),
-        ),
-        body: const Center(
-          child: Text('SDG data not found.'),
-        ),
-      );
-    }
-
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('SDG ${sdg.number}: ${sdg.shortTitle}'),
-        backgroundColor: sdg.color,
-      ),
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              sdg.color.withOpacity(0.08),
-              Colors.white,
-            ],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
+    return AppScaffold(
+      title: 'Learn',
+      body: Column(
+        children: [
+          // Goal selector
+          SizedBox(
+            height: 56,
+            child: ListView.separated(
+              controller: _strip,
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
+              itemCount: sdgGoals.length,
+              separatorBuilder: (_, __) => const SizedBox(width: AppSpacing.sm),
+              itemBuilder: (context, i) {
+                final g = sdgGoals[i];
+                final selected = i == _index;
+                return Tooltip(
+                  message: g.shortTitle,
+                  child: Pressable(
+                    onTap: () => _goTo(i),
+                    hoverLift: 1,
+                    child: AnimatedContainer(
+                      duration: AppDurations.medium,
+                      curve: Curves.easeOut,
+                      width: 44,
+                      decoration: BoxDecoration(
+                        color: selected ? g.color : AppColors.surface,
+                        borderRadius: BorderRadius.circular(AppRadius.md),
+                        border: Border.all(
+                          color: selected ? g.color : AppColors.border,
+                        ),
+                        boxShadow: selected ? AppShadows.card : null,
+                      ),
+                      alignment: Alignment.center,
+                      child: Text(
+                        '${g.number}',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w700,
+                          color: selected ? Colors.white : g.color,
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
           ),
-        ),
-        child: SafeArea(
-          child: Column(
-            children: [
-              SizedBox(
-                height: 80,
-                child: ListView.separated(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  scrollDirection: Axis.horizontal,
-                  itemCount: sdgGoals.length,
-                  separatorBuilder: (_, __) => const SizedBox(width: 8),
-                  itemBuilder: (context, index) {
-                    final g = sdgGoals[index];
-                    final isSelected = g.number == _currentSdgNumber;
-                    return GestureDetector(
-                      onTap: () => _goToSdg(g.number),
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 200),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 6,
-                        ),
-                        decoration: BoxDecoration(
-                          color: isSelected
-                              ? g.color
-                              : g.color.withOpacity(0.2),
-                          borderRadius: BorderRadius.circular(16),
-                          boxShadow: isSelected
-                              ? [
-                                  BoxShadow(
-                                    color: g.color.withOpacity(0.5),
-                                    blurRadius: 6,
-                                    offset: const Offset(0, 3),
-                                  )
-                                ]
-                              : [],
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
+          // Swipeable lessons
+          Expanded(
+            child: PageView.builder(
+              controller: _pages,
+              itemCount: sdgGoals.length,
+              onPageChanged: _onPageChanged,
+              itemBuilder: (context, i) => _LessonPage(goal: sdgGoals[i]),
+            ),
+          ),
+          // Footer navigation
+          Container(
+            decoration: const BoxDecoration(
+              color: AppColors.surface,
+              border: Border(top: BorderSide(color: AppColors.border)),
+            ),
+            child: SafeArea(
+              top: false,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(20, 12, 20, 12),
+                child: ContentWidth(
+                  child: Row(
+                    children: [
+                      IconButton.outlined(
+                        tooltip: 'Previous goal',
+                        onPressed: _index > 0 ? () => _goTo(_index - 1) : null,
+                        icon: const Icon(Icons.arrow_back_rounded),
+                      ),
+                      Expanded(
+                        child: Column(
                           children: [
-                            CircleAvatar(
-                              radius: 14,
-                              backgroundColor: Colors.white,
-                              child: Text(
-                                '${g.number}',
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 12,
-                                ),
+                            Text(
+                              'Goal ${current.number} of ${sdgGoals.length}',
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: AppColors.textSecondary,
                               ),
                             ),
-                            const SizedBox(width: 6),
-                            SizedBox(
-                              width: 120,
-                              child: Text(
-                                g.shortTitle,
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w600,
-                                  color: isSelected
-                                      ? Colors.white
-                                      : Colors.black87,
+                            const SizedBox(height: 6),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: AppSpacing.lg),
+                              child: ClipRRect(
+                                borderRadius:
+                                    BorderRadius.circular(AppRadius.pill),
+                                child: TweenAnimationBuilder<double>(
+                                  tween: Tween(
+                                      end: (_index + 1) / sdgGoals.length),
+                                  duration: AppDurations.spring,
+                                  curve: AppMotion.gentleSpring,
+                                  builder: (context, v, _) =>
+                                      LinearProgressIndicator(
+                                    value: v.clamp(0.0, 1.0),
+                                    minHeight: 4,
+                                    backgroundColor: AppColors.surfaceMuted,
+                                    valueColor:
+                                        AlwaysStoppedAnimation(current.color),
+                                  ),
                                 ),
                               ),
                             ),
                           ],
                         ),
                       ),
-                    );
-                  },
-                ),
-              ),
-
-              // Main content
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 20.0,
-                    vertical: 8,
-                  ),
-                  child: ListView(
-                    children: [
-                      Text(
-                        sdg.shortTitle,
-                        style: const TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                        ),
+                      IconButton.filled(
+                        tooltip: 'Next goal',
+                        onPressed: _index < sdgGoals.length - 1
+                            ? () => _goTo(_index + 1)
+                            : null,
+                        icon: const Icon(Icons.arrow_forward_rounded),
                       ),
-                      const SizedBox(height: 8),
-                      Text(
-                        sdg.fullTitle,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-
-                      const Text(
-                        'What this means in everyday life',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        sdg.everydayExplanation ??
-                            'Here you can add simple, story-style explanations for young people, '
-                                'with examples from school, home, community, and online.',
-                        style: const TextStyle(fontSize: 14),
-                      ),
-                      const SizedBox(height: 16),
-
-                      const Text(
-                        'Real-world example',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        sdg.example ??
-                            'For example: how solar panels helped power a school in a village, '
-                                'or how a local food bank helps reduce hunger in your city.',
-                        style: const TextStyle(fontSize: 14),
-                      ),
-                      const SizedBox(height: 16),
-
-                      const Text(
-                        'What you can do',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        sdg.actions ??
-                            '• Complete daily missions related to this goal.\n'
-                                '• Talk with friends, teachers, or family about this SDG.\n'
-                                '• Join local projects or online campaigns that support it.',
-                        style: const TextStyle(fontSize: 14),
-                      ),
-                      const SizedBox(height: 80),
                     ],
                   ),
                 ),
               ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
 
-              // UI buttons
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                child: Row(
+class _LessonPage extends StatelessWidget {
+  final SdgGoal goal;
+  const _LessonPage({required this.goal});
+
+  static const _defaultActions = [
+    'Complete daily missions related to this goal.',
+    'Talk with friends, teachers or family about it.',
+    'Join local projects or online campaigns that support it.',
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final hasLesson = goal.everydayExplanation != null;
+    final actions = goal.actions == null
+        ? _defaultActions
+        : goal.actions!
+            .split('\n')
+            .map((l) => l.replaceFirst(RegExp(r'^\s*•\s*'), '').trim())
+            .where((l) => l.isNotEmpty)
+            .toList();
+
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+      children: [
+        ContentWidth(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Header
+              AppCard(
+                padding: EdgeInsets.zero,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Expanded(
-                      child: OutlinedButton.icon(
-                        onPressed:
-                            _currentSdgNumber > 1 ? _goToPrevious : null,
-                        icon: const Icon(Icons.arrow_back),
-                        label: const Text('Previous'),
+                    Container(
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: goal.color,
+                        borderRadius: const BorderRadius.vertical(
+                          top: Radius.circular(AppRadius.lg),
+                        ),
                       ),
                     ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: ElevatedButton.icon(
-                        onPressed:
-                            _currentSdgNumber < 17 ? _goToNext : null,
-                        icon: const Icon(Icons.arrow_forward),
-                        label: const Text('Next'),
+                    Padding(
+                      padding: const EdgeInsets.all(20),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Container(
+                            width: 56,
+                            height: 56,
+                            decoration: BoxDecoration(
+                              color: goal.color,
+                              borderRadius:
+                                  BorderRadius.circular(AppRadius.md),
+                            ),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(iconForSdg(goal.number),
+                                    color: Colors.white, size: 20),
+                                Text(
+                                  '${goal.number}',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w800,
+                                    fontSize: 15,
+                                    height: 1.1,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: AppSpacing.lg),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'SDG ${goal.number}',
+                                  style: theme.textTheme.labelSmall?.copyWith(
+                                    color: goal.color,
+                                    fontWeight: FontWeight.w700,
+                                    letterSpacing: 1,
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  goal.shortTitle,
+                                  style: theme.textTheme.titleLarge?.copyWith(
+                                    fontWeight: FontWeight.w700,
+                                    letterSpacing: -0.4,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  goal.fullTitle,
+                                  style: theme.textTheme.bodyMedium?.copyWith(
+                                    color: AppColors.textSecondary,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
                     ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: AppSpacing.md),
+              if (hasLesson) ...[
+                _LessonSection(
+                  icon: Icons.lightbulb_outline_rounded,
+                  title: 'In everyday life',
+                  color: goal.color,
+                  child: Text(
+                    goal.everydayExplanation!,
+                    style: theme.textTheme.bodyMedium?.copyWith(height: 1.55),
+                  ),
+                ),
+                if (goal.example != null) ...[
+                  const SizedBox(height: AppSpacing.md),
+                  _LessonSection(
+                    icon: Icons.public_rounded,
+                    title: 'Real-world example',
+                    color: goal.color,
+                    child: Text(
+                      goal.example!,
+                      style:
+                          theme.textTheme.bodyMedium?.copyWith(height: 1.55),
+                    ),
+                  ),
+                ],
+              ] else
+                AppCard(
+                  color: AppColors.background,
+                  shadow: const [],
+                  child: Row(
+                    children: [
+                      const Icon(Icons.edit_note_rounded,
+                          color: AppColors.textSecondary),
+                      const SizedBox(width: AppSpacing.md),
+                      Expanded(
+                        child: Text(
+                          'A full lesson for this goal is coming soon.',
+                          style: theme.textTheme.bodyMedium
+                              ?.copyWith(color: AppColors.textSecondary),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              const SizedBox(height: AppSpacing.md),
+              _LessonSection(
+                icon: Icons.task_alt_rounded,
+                title: 'What you can do',
+                color: goal.color,
+                child: Column(
+                  children: [
+                    for (var i = 0; i < actions.length; i++)
+                      Padding(
+                        padding: EdgeInsets.only(
+                            bottom: i == actions.length - 1 ? 0 : 10),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Container(
+                              width: 22,
+                              height: 22,
+                              margin: const EdgeInsets.only(top: 1),
+                              decoration: BoxDecoration(
+                                color: goal.color.withValues(alpha: 0.1),
+                                shape: BoxShape.circle,
+                              ),
+                              alignment: Alignment.center,
+                              child: Text(
+                                '${i + 1}',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w700,
+                                  color: goal.color,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: AppSpacing.md),
+                            Expanded(
+                              child: Text(
+                                actions[i],
+                                style: theme.textTheme.bodyMedium
+                                    ?.copyWith(height: 1.45),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                   ],
                 ),
               ),
             ],
           ),
         ),
+      ],
+    );
+  }
+}
+
+class _LessonSection extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final Color color;
+  final Widget child;
+
+  const _LessonSection({
+    required this.icon,
+    required this.title,
+    required this.color,
+    required this.child,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return AppCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, size: 18, color: color),
+              const SizedBox(width: AppSpacing.sm),
+              Flexible(
+                child: Text(
+                  title,
+                  style: Theme.of(context)
+                      .textTheme
+                      .titleSmall
+                      ?.copyWith(fontWeight: FontWeight.w600),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.md),
+          child,
+        ],
       ),
     );
   }

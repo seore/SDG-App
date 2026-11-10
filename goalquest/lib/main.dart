@@ -3,6 +3,8 @@ import 'package:goalquest/services/owned_pack_service.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:app_links/app_links.dart';
 import 'services/profile_service.dart';
+import 'services/demo_mode.dart';
+import 'services/mission_progress_service.dart';
 import 'app.dart';
 
 Future<void> main() async {
@@ -37,10 +39,14 @@ Future<void> main() async {
   if (session != null) {
     await ProfileService.instance.loadCurrentUserProfile();
     await OwnedPackService.instance.loadOwnedPacks();
+    await MissionProgressService.instance.loadToday();
   }
 
   final String startRoute;
-  if (openResetPassword) {
+  if (DemoMode.enabled) {
+    ProfileService.instance.profileListenable.value = DemoMode.profile;
+    startRoute = '/home';
+  } else if (openResetPassword) {
     startRoute = '/resetPassword';
   } else {
     startRoute = session != null ? '/home' : '/auth';

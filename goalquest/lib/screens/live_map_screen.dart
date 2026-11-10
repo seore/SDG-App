@@ -1,15 +1,28 @@
-// ignore_for_file: deprecated_member_use
-
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 
+import '../data/sdg_data.dart';
 import '../services/live_data_service.dart';
 import '../services/location_service.dart';
-import '../data/sdg_data.dart';
+import '../services/profile_service.dart';
+import '../theme/app_theme.dart';
+import '../widgets/app_card.dart';
+import '../widgets/motion.dart';
 
 enum TimeFilter { today, week, month, all }
+
 enum AreaFilter { world, nearby }
+
+extension on TimeFilter {
+  String get label => switch (this) {
+        TimeFilter.today => 'Today',
+        TimeFilter.week => 'This week',
+        TimeFilter.month => 'This month',
+        TimeFilter.all => 'All time',
+      };
+}
 
 class LiveMapScreen extends StatefulWidget {
   const LiveMapScreen({super.key});
@@ -19,6 +32,15 @@ class LiveMapScreen extends StatefulWidget {
 }
 
 class _LiveMapScreenState extends State<LiveMapScreen> {
+  static const _mapTilerKey = '3rVFwyPIYfIsi40EV36l';
+  // Clean, readable basemap (labels, water, parks) that stays muted enough
+  // for SDG-coloured pins to stand out.
+  // MapTiler's default tiles are 512px; drawing them in flutter_map's 256px
+  // grid halves every label. Use the explicit 256px grid with an @2x variant
+  // ({r}) so labels are full size and sharp on high-DPI screens.
+  static const _tileUrl =
+      'https://api.maptiler.com/maps/basic-v2/256/{z}/{x}/{y}{r}.png?key=$_mapTilerKey';
+
   int? selectedSdg;
   TimeFilter _timeFilter = TimeFilter.all;
   AreaFilter _areaFilter = AreaFilter.world;
@@ -32,479 +54,473 @@ class _LiveMapScreenState extends State<LiveMapScreen> {
   @override
   void initState() {
     super.initState();
-    // Try to get user location once when opening the map
     _ensureUserLocation();
   }
+
+  bool get _filtersActive =>
+      _timeFilter != TimeFilter.all || _areaFilter != AreaFilter.world;
 
   @override
   Widget build(BuildContext context) {
     final liveData = LiveDataService.instance;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final myId = ProfileService.instance.currentProfile?.id;
 
-    const mapTilerKey = '3rVFwyPIYfIsi40EV36l';
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: SystemUiOverlayStyle.dark,
+      child: Scaffold(
+        backgroundColor: AppColors.background,
+        body: StreamBuilder<List<LiveMissionCompletion>>(
+          stream: liveData.completionsStream,
+          builder: (context, snapshot) {
+            var completions = (snapshot.data ?? [])
+                .where((c) => c.lat != null && c.lng != null)
+                .toList();
 
-    final tileUrl = isDark
-        ? 'https://api.maptiler.com/maps/outdoor-v2/{z}/{x}/{y}.png?key=$mapTilerKey'
-        : 'https://api.maptiler.com/maps/toner-v2/{z}/{x}/{y}.png?key=$mapTilerKey';
+            if (selectedSdg != null) {
+              completions =
+                  completions.where((c) => c.sdgNumber == selectedSdg).toList();
+            }
+            completions = completions.where(_matchesTimeFilter).toList();
+            if (_areaFilter == AreaFilter.nearby && _userLocation != null) {
+              completions = _filterNearby(completions, _userLocation!);
+            }
 
-    return Scaffold(
-      // Fancy gradient app bar
-      appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(70),
-        child: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              colors: [
-                Color(0xFF32C27C),
-                Color(0xFF2196F3),
-              ],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            borderRadius: BorderRadius.only(
-              bottomLeft: Radius.circular(2),
-              bottomRight: Radius.circular(2),
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black26,
-                blurRadius: 8,
-                offset: Offset(0, 3),
-              ),
-            ],
-          ),
-          child: AppBar(
-            backgroundColor: Colors.transparent,
-            elevation: 0,
-            automaticallyImplyLeading: true,
-            iconTheme: const IconThemeData(color: Colors.white),
-            title: const Text(
-              'Live Impact Map',
-              style: TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.w600,
-                fontSize: 20,
-              ),
-            ),
-            centerTitle: true,
-          ),
-        ),
-      ),
-      body: StreamBuilder<List<LiveMissionCompletion>>(
-        stream: liveData.completionsStream,
-        builder: (context, snapshot) {
-          var completions =
-              (snapshot.data ?? []).where((c) => c.lat != null && c.lng != null).toList();
+            final mapCenter = completions.isNotEmpty
+                ? LatLng(completions.first.lat!, completions.first.lng!)
+                : const LatLng(20.0, 0.0);
 
-          // SDG filter
-          if (selectedSdg != null) {
-            completions =
-                completions.where((c) => c.sdgNumber == selectedSdg).toList();
-          }
-
-          // Time filter
-          completions = completions.where(_matchesTimeFilter).toList();
-
-          // Area filter
-          if (_areaFilter == AreaFilter.nearby && _userLocation != null) {
-            completions = _filterNearby(completions, _userLocation!);
-          }
-
-          final mapCenter = completions.isNotEmpty
-              ? LatLng(completions.first.lat!, completions.first.lng!)
-              : const LatLng(10.0, 0.0);
-
-          // Heat circles
-          final heatCircles = completions.map((c) {
-            final sdg = getSdgByNumber(c.sdgNumber);
-            return CircleMarker(
-              point: LatLng(c.lat!, c.lng!),
-              radius: 25,
-              color: (sdg?.color ?? Colors.green).withOpacity(0.2),
-              useRadiusInMeter: false,
-            );
-          }).toList();
-
-          // Markers
-          final markers = completions.map((c) {
-            final sdg = getSdgByNumber(c.sdgNumber);
-            final isMine = c.userName == 'You';
-
-            return Marker(
-              point: LatLng(c.lat!, c.lng!),
-              width: isMine ? 48 : 40,
-              height: isMine ? 48 : 40,
-              child: TweenAnimationBuilder<double>(
-                tween: Tween(begin: 0.0, end: 1.0),
-                duration: const Duration(milliseconds: 500),
-                curve: Curves.easeOutBack,
-                builder: (context, scale, child) {
-                  return Transform.scale(
-                    scale: scale,
-                    child: child,
-                  );
-                },
-                child: GestureDetector(
+            final markers = completions.map((c) {
+              final isMine = (myId != null && c.userId == myId) ||
+                  c.userName == 'You';
+              final size = isMine ? 36.0 : 30.0;
+              return Marker(
+                point: LatLng(c.lat!, c.lng!),
+                width: size,
+                height: size,
+                child: _SdgPin(
+                  sdgNumber: c.sdgNumber,
+                  isMine: isMine,
                   onTap: () => _showCompletionDetails(context, c),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: (sdg?.color ?? Colors.green)
-                              .withOpacity(isMine ? 0.8 : 0.5),
-                          blurRadius: isMine ? 10 : 8,
-                          offset: const Offset(0, 3),
-                        ),
-                      ],
-                      border: isMine
-                          ? Border.all(
-                              color: Colors.white,
-                              width: 2,
-                            )
-                          : null,
-                    ),
-                    child: CircleAvatar(
-                      radius: isMine ? 22 : 18,
-                      backgroundColor: Colors.white,
-                      child: Stack(
-                        alignment: Alignment.center,
-                        children: [
-                          CircleAvatar(
-                            radius: isMine ? 19 : 15,
-                            backgroundColor: sdg?.color ?? Colors.green,
-                            child: Text(
-                              '${c.sdgNumber}',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 12,
-                              ),
-                            ),
-                          ),
-                          if (isMine)
-                            const Positioned(
-                              bottom: -1,
-                              right: -1,
-                              child: Icon(
-                                Icons.star,
-                                size: 14,
-                                color: Color.fromARGB(255, 230, 230, 28),
-                              ),
-                            ),
-                        ],
-                      ),
-                    ),
-                  ),
                 ),
-              ),
-            );
-          }).toList();
+              );
+            }).toList();
 
-          return Stack(
-            children: [
-              // MAP
-              FlutterMap(
-                mapController: _mapController,
-                options: MapOptions(
-                  initialCenter: mapCenter,
-                  initialZoom: 3.5,
-                ),
-                children: [
-                  TileLayer(
-                    urlTemplate: tileUrl,
-                    userAgentPackageName: 'com.example.goalquest',
-                    retinaMode: true,
+            return Stack(
+              children: [
+                FlutterMap(
+                  mapController: _mapController,
+                  options: MapOptions(
+                    initialCenter: mapCenter,
+                    initialZoom: 2.5,
+                    backgroundColor: AppColors.background,
                   ),
-                  if (heatCircles.isNotEmpty) CircleLayer(circles: heatCircles),
-                  MarkerLayer(markers: markers),
-                ],
-              ),
-
-              // FILTER CARD (top)
-              Positioned(
-                left: 12,
-                right: 12,
-                top: 12,
-                child: _buildFilterCard(),
-              ),
-
-              // SDG info pill (under filter)
-              Positioned(
-                left: 12,
-                right: 12,
-                top: 170,
-                child: _buildSdgInfoBanner(),
-              ),
-
-              // SUMMARY CARD (bottom)
-              Positioned(
-                left: 16,
-                right: 16,
-                bottom: 16,
-                child: _buildSummaryCard(completions),
-              ),
-
-              // ZOOM + LOCATION BUTTONS
-              Positioned(
-                right: 16,
-                bottom: 110,
-                child: Column(
                   children: [
-                    FloatingActionButton.small(
-                      heroTag: 'zoomIn',
-                      onPressed: _zoomIn,
-                      child: const Icon(Icons.add),
+                    TileLayer(
+                      urlTemplate: _tileUrl,
+                      userAgentPackageName: 'com.example.goalquest',
+                      retinaMode: RetinaMode.isHighDensity(context),
                     ),
-                    const SizedBox(height: 8),
-                    FloatingActionButton.small(
-                      heroTag: 'zoomOut',
-                      onPressed: _zoomOut,
-                      child: const Icon(Icons.remove),
-                    ),
-                    const SizedBox(height: 8),
-                    FloatingActionButton.small(
-                      heroTag: 'centerOnMe',
-                      onPressed: () {
-                        if (_userLocation == null) {
-                          _ensureUserLocation();
-                        } else {
-                          _centerOnUser();
-                        }
-                      },
-                      backgroundColor: _userLocation == null
-                          ? Colors.grey.shade400
-                          : Theme.of(context).colorScheme.primary,
-                      child: Icon(
-                        Icons.my_location,
-                        color: _userLocation == null
-                            ? Colors.white70
-                            : Colors.white,
-                      ),
-                    ),
+                    if (_userLocation != null)
+                      MarkerLayer(markers: [
+                        Marker(
+                          point: _userLocation!,
+                          width: 18,
+                          height: 18,
+                          child: const _UserDot(),
+                        ),
+                      ]),
+                    MarkerLayer(markers: markers),
                   ],
                 ),
-              ),
-            ],
-          );
-        },
+
+                // Top: title card + SDG filter strip
+                SafeArea(
+                  bottom: false,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                        child: FadeSlideIn(
+                          offsetY: -12,
+                          child: _buildHeaderCard(completions.length),
+                        ),
+                      ),
+                      const SizedBox(height: AppSpacing.sm + 2),
+                      FadeSlideIn(
+                        delay: const Duration(milliseconds: 80),
+                        offsetY: -8,
+                        child: _buildSdgStrip(),
+                      ),
+                      AnimatedSize(
+                        duration: AppDurations.spring,
+                        curve: AppMotion.gentleSpring,
+                        alignment: Alignment.topCenter,
+                        child: selectedSdg == null
+                            ? const SizedBox(width: double.infinity)
+                            : Padding(
+                                padding:
+                                    const EdgeInsets.fromLTRB(16, 10, 16, 0),
+                                child: _buildSdgInfo(selectedSdg!),
+                              ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                // Right: map controls
+                Positioned(
+                  right: 16,
+                  bottom: 96,
+                  child: _buildMapControls(),
+                ),
+
+                // Bottom: status
+                Positioned(
+                  left: 16,
+                  right: 16,
+                  bottom: 16,
+                  child: _buildStatusBar(completions, snapshot),
+                ),
+              ],
+            );
+          },
+        ),
       ),
     );
   }
 
   // ---------- UI BUILDERS ----------
 
-  Widget _buildFilterCard() {
-    return Card(
-      elevation: 6,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-      color: Colors.white.withOpacity(0.96),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-        child: Column(
-          children: [
-            // Row 1: SDG dropdown
-            Row(
-              children: [
-                const Icon(Icons.filter_list, size: 18),
-                const SizedBox(width: 8),
-                const Text(
-                  'SDG:',
-                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
-                ),
-                const SizedBox(width: 8),
-                DropdownButton<int?>(
-                  value: selectedSdg,
-                  hint: const Text('All', style: TextStyle(fontSize: 10)),
-                  underline: const SizedBox.shrink(),
-                  items: [
-                    const DropdownMenuItem<int?>(
-                      value: null,
-                      child: Text('All goals', style: TextStyle(fontSize: 15)),
-                    ),
-                    ...sdgGoals.map(
-                      (g) => DropdownMenuItem<int?>(
-                        value: g.number,
-                        child: Text('SDG ${g.number}', style: TextStyle(fontSize: 10)),
-                      ),
-                    ),
-                  ],
-                  onChanged: (value) {
-                    setState(() {
-                      selectedSdg = value;
-                    });
-                  },
-                ),
-              ],
-            ),
-            const SizedBox(height: 4),
+  Widget _buildHeaderCard(int count) {
+    final theme = Theme.of(context);
+    final scope = _areaFilter == AreaFilter.nearby ? 'Near you' : 'Worldwide';
 
-            // Row 2: Time filter chips
-            Row(
+    return _FloatingSurface(
+      padding: const EdgeInsets.fromLTRB(16, 12, 8, 12),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Time:',
-                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                Text(
+                  'Impact map',
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: -0.3,
+                  ),
                 ),
-                const SizedBox(width: 8),
-                Wrap(
-                  spacing: 6,
-                  children: [
-                    _timeChip('Today', TimeFilter.today,),
-                    _timeChip('Week', TimeFilter.week),
-                    _timeChip('Month', TimeFilter.month),
-                    _timeChip('All', TimeFilter.all),
-                  ],
+                const SizedBox(height: 2),
+                Text(
+                  '$count action${count == 1 ? '' : 's'} · $scope · ${_timeFilter.label}',
+                  style: theme.textTheme.bodySmall
+                      ?.copyWith(color: AppColors.textSecondary),
                 ),
               ],
             ),
-            const SizedBox(height: 4),
-
-            // Row 3: Area filter chips
-            Row(
-              children: [
-                const Text(
-                  'Area:',
-                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+          ),
+          Stack(
+            clipBehavior: Clip.none,
+            children: [
+              IconButton(
+                tooltip: 'Filters',
+                onPressed: _openFilters,
+                icon: const Icon(Icons.tune_rounded),
+                color: AppColors.textPrimary,
+              ),
+              if (_filtersActive)
+                const Positioned(
+                  right: 10,
+                  top: 10,
+                  child: CircleAvatar(
+                    radius: 4,
+                    backgroundColor: AppColors.primary,
+                  ),
                 ),
-                const SizedBox(width: 8),
-                Wrap(
-                  spacing: 6,
-                  children: [
-                    _areaChip('World', AreaFilter.world),
-                    _areaChip('Nearby', AreaFilter.nearby),
-                  ],
-                ),
-              ],
-            ),
-          ],
-        ),
+            ],
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildSummaryCard(List<LiveMissionCompletion> completions) {
+  Widget _buildSdgStrip() {
+    return SizedBox(
+      height: 38,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        itemCount: sdgGoals.length + 1,
+        separatorBuilder: (_, __) => const SizedBox(width: AppSpacing.sm),
+        itemBuilder: (context, i) {
+          if (i == 0) {
+            return _FilterChip(
+              label: 'All goals',
+              selected: selectedSdg == null,
+              onTap: () => setState(() => selectedSdg = null),
+            );
+          }
+          final g = sdgGoals[i - 1];
+          return _FilterChip(
+            label: '${g.number}',
+            tooltip: g.shortTitle,
+            color: g.color,
+            selected: selectedSdg == g.number,
+            onTap: () => setState(() =>
+                selectedSdg = selectedSdg == g.number ? null : g.number),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildSdgInfo(int number) {
+    final sdg = getSdgByNumber(number);
+    if (sdg == null) return const SizedBox.shrink();
+    return _FloatingSurface(
+      padding: const EdgeInsets.all(12),
+      child: Row(
+        children: [
+          Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              color: sdg.color,
+              borderRadius: BorderRadius.circular(AppRadius.sm),
+            ),
+            alignment: Alignment.center,
+            child: Text(
+              '${sdg.number}',
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+          const SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  sdg.shortTitle,
+                  style: const TextStyle(fontWeight: FontWeight.w600),
+                ),
+                Text(
+                  sdg.fullTitle,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          TextButton(
+            onPressed: () =>
+                Navigator.pushNamed(context, '/learnSdg', arguments: number),
+            child: const Text('Learn'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMapControls() {
+    final hasLocation = _userLocation != null;
+    return Column(
+      children: [
+        _FloatingSurface(
+          padding: EdgeInsets.zero,
+          child: Column(
+            children: [
+              _MapButton(icon: Icons.add_rounded, tooltip: 'Zoom in', onTap: _zoomIn),
+              const SizedBox(width: 40, child: Divider()),
+              _MapButton(
+                  icon: Icons.remove_rounded, tooltip: 'Zoom out', onTap: _zoomOut),
+            ],
+          ),
+        ),
+        const SizedBox(height: AppSpacing.sm),
+        _FloatingSurface(
+          padding: EdgeInsets.zero,
+          child: _MapButton(
+            icon: _isLocLoading
+                ? Icons.more_horiz_rounded
+                : Icons.my_location_rounded,
+            tooltip: 'My location',
+            color: hasLocation ? AppColors.primary : AppColors.textSecondary,
+            onTap: () =>
+                hasLocation ? _centerOnUser() : _ensureUserLocation(),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildStatusBar(
+    List<LiveMissionCompletion> completions,
+    AsyncSnapshot<List<LiveMissionCompletion>> snapshot,
+  ) {
     final isNearby = _areaFilter == AreaFilter.nearby;
 
-    return Card(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-      color: Colors.white.withOpacity(0.97),
-      elevation: 8,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (isNearby)
-              Row(
+    final (IconData icon, String text) = switch (true) {
+      _ when snapshot.hasError => (
+          Icons.cloud_off_rounded,
+          "Couldn't load live actions. Check your connection."
+        ),
+      _ when !snapshot.hasData => (Icons.sync_rounded, 'Loading live actions…'),
+      _ when isNearby && _userLocation == null => (
+          Icons.location_off_outlined,
+          _isLocLoading
+              ? 'Getting your location…'
+              : (_locError ?? 'Turn on location to see actions near you.')
+        ),
+      _ when completions.isEmpty => (
+          Icons.search_off_rounded,
+          'No actions match these filters yet.'
+        ),
+      _ => (
+          Icons.touch_app_outlined,
+          'Tap a pin to see the action${isNearby ? ' (within 50 km)' : ''}.'
+        ),
+    };
+
+    return _FloatingSurface(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      child: Row(
+        children: [
+          Icon(icon, size: 18, color: AppColors.textSecondary),
+          const SizedBox(width: AppSpacing.sm + 2),
+          Expanded(
+            child: AnimatedSwitcher(
+              duration: AppDurations.medium,
+              child: Text(
+                text,
+                key: ValueKey(text),
+                style: const TextStyle(
+                  fontSize: 13,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _openFilters() async {
+    await showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: AppColors.surface,
+      showDragHandle: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (sheetContext) => StatefulBuilder(
+        builder: (sheetContext, setSheet) {
+          void update(VoidCallback fn) {
+            setState(fn);
+            setSheet(() {});
+          }
+
+          return SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Icon(Icons.location_on, size: 18),
-                  const SizedBox(width: 6),
-                  Expanded(
-                    child: Text(
-                      _userLocation == null
-                          ? (_isLocLoading
-                              ? 'Getting your location...'
-                              : _locError ??
-                                  'Turn on location to see missions near you.')
-                          : 'Showing missions within ~50km of you.',
-                      style: const TextStyle(fontSize: 10),
+                  Text(
+                    'Filters',
+                    style: Theme.of(context)
+                        .textTheme
+                        .titleMedium
+                        ?.copyWith(fontWeight: FontWeight.w700),
+                  ),
+                  const SizedBox(height: AppSpacing.lg),
+                  const _SheetLabel('Time'),
+                  SizedBox(
+                    width: double.infinity,
+                    child: SegmentedButton<TimeFilter>(
+                      showSelectedIcon: false,
+                      segments: [
+                        for (final f in TimeFilter.values)
+                          ButtonSegment(
+                            value: f,
+                            label: Text(
+                              f == TimeFilter.week
+                                  ? 'Week'
+                                  : f == TimeFilter.month
+                                      ? 'Month'
+                                      : f == TimeFilter.all
+                                          ? 'All'
+                                          : 'Today',
+                            ),
+                          ),
+                      ],
+                      selected: {_timeFilter},
+                      onSelectionChanged: (s) =>
+                          update(() => _timeFilter = s.first),
                     ),
+                  ),
+                  const SizedBox(height: AppSpacing.lg),
+                  const _SheetLabel('Area'),
+                  SizedBox(
+                    width: double.infinity,
+                    child: SegmentedButton<AreaFilter>(
+                      showSelectedIcon: false,
+                      segments: const [
+                        ButtonSegment(
+                          value: AreaFilter.world,
+                          icon: Icon(Icons.public_rounded, size: 18),
+                          label: Text('Worldwide'),
+                        ),
+                        ButtonSegment(
+                          value: AreaFilter.nearby,
+                          icon: Icon(Icons.near_me_outlined, size: 18),
+                          label: Text('Near me'),
+                        ),
+                      ],
+                      selected: {_areaFilter},
+                      onSelectionChanged: (s) async {
+                        final f = s.first;
+                        if (f == AreaFilter.nearby && _userLocation == null) {
+                          await _ensureUserLocation();
+                        }
+                        update(() => _areaFilter = f);
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.xl),
+                  Row(
+                    children: [
+                      TextButton(
+                        onPressed: _filtersActive || selectedSdg != null
+                            ? () => update(() {
+                                  _timeFilter = TimeFilter.all;
+                                  _areaFilter = AreaFilter.world;
+                                  selectedSdg = null;
+                                })
+                            : null,
+                        child: const Text('Reset'),
+                      ),
+                      const Spacer(),
+                      FilledButton(
+                        onPressed: () => Navigator.pop(sheetContext),
+                        child: const Text('Done'),
+                      ),
+                    ],
                   ),
                 ],
               ),
-            if (isNearby) const SizedBox(height: 8),
-            Row(
-              children: [
-                const Icon(Icons.public, size: 20),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    completions.isEmpty
-                        ? 'No missions matching these filters yet.'
-                        : '${completions.length} mission(s) '
-                            '${isNearby ? "near you " : ""}'
-                            'in the selected filters.',
-                    style: const TextStyle(fontSize: 13),
-                  ),
-                ),
-              ],
             ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _timeChip(String label, TimeFilter filter) {
-    final isSelected = _timeFilter == filter;
-    return ChoiceChip(
-      label: Text(label, style: TextStyle(fontSize: 10)),
-      selected: isSelected,
-      onSelected: (_) {
-        setState(() {
-          _timeFilter = filter;
-        });
-      },
-      visualDensity: VisualDensity.compact,
-    );
-  }
-
-  Widget _areaChip(String label, AreaFilter filter) {
-    final isSelected = _areaFilter == filter;
-    return ChoiceChip(
-      label: Text(label, style: TextStyle(fontSize: 10)),
-      selected: isSelected,
-      onSelected: (_) async {
-        if (filter == AreaFilter.nearby && _userLocation == null) {
-          await _ensureUserLocation();
-        }
-        setState(() {
-          _areaFilter = filter;
-        });
-      },
-      visualDensity: VisualDensity.compact,
-    );
-  }
-
-  // ---------- SDG INFO BANNER ----------
-
-  Widget _buildSdgInfoBanner() {
-    if (selectedSdg == null) {
-      return Card(
-        color: Colors.white.withOpacity(0.92),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: const Padding(
-          padding: EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-          child: Text(
-            'Each colored circle is a real SDG action. '
-            'Use the filters to explore different goals, dates and areas.',
-            style: TextStyle(fontSize: 12),
-          ),
-        ),
-      );
-    }
-
-    final sdg = getSdgByNumber(selectedSdg!);
-    if (sdg == null) return const SizedBox.shrink();
-
-    return Card(
-      color: sdg.color.withOpacity(0.9),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-        child: Text(
-          'SDG ${sdg.number}: ${sdg.shortTitle}\n${sdg.fullTitle}',
-          style: const TextStyle(
-            fontSize: 11,
-            color: Colors.white,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
+          );
+        },
       ),
     );
   }
@@ -533,16 +549,11 @@ class _LiveMapScreenState extends State<LiveMapScreen> {
     LatLng center,
   ) {
     const radiusKm = 50.0;
-    final distance = Distance();
-
+    final distance = const Distance();
     return completions.where((c) {
       if (c.lat == null || c.lng == null) return false;
-      final d = distance.as(
-        LengthUnit.Kilometer,
-        center,
-        LatLng(c.lat!, c.lng!),
-      );
-      return d <= radiusKm;
+      return distance.as(LengthUnit.Kilometer, center, LatLng(c.lat!, c.lng!)) <=
+          radiusKm;
     }).toList();
   }
 
@@ -562,11 +573,7 @@ class _LiveMapScreenState extends State<LiveMapScreen> {
     } catch (_) {
       _locError = 'Error getting location.';
     } finally {
-      if (mounted) {
-        setState(() {
-          _isLocLoading = false;
-        });
-      }
+      if (mounted) setState(() => _isLocLoading = false);
     }
   }
 
@@ -587,95 +594,118 @@ class _LiveMapScreenState extends State<LiveMapScreen> {
     _mapController.move(camera.center, camera.zoom - 1);
   }
 
-  void _showCompletionDetails(
-    BuildContext context,
-    LiveMissionCompletion c,
-  ) {
+  void _showCompletionDetails(BuildContext context, LiveMissionCompletion c) {
     final sdg = getSdgByNumber(c.sdgNumber);
+    final color = sdg?.color ?? AppColors.primary;
 
-    showModalBottomSheet(
+    showModalBottomSheet<void>(
       context: context,
+      backgroundColor: AppColors.surface,
+      showDragHandle: true,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(
-          top: Radius.circular(24),
-        ),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (_) => Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Wrap(
-          runSpacing: 8,
-          children: [
-            Row(
-              children: [
-                if (sdg != null)
-                  CircleAvatar(
-                    radius: 16,
-                    backgroundColor: sdg.color,
+      builder: (sheetContext) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: color,
+                      borderRadius: BorderRadius.circular(AppRadius.md),
+                    ),
+                    alignment: Alignment.center,
                     child: Text(
-                      '${sdg.number}',
+                      '${c.sdgNumber}',
                       style: const TextStyle(
                         color: Colors.white,
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
                       ),
                     ),
                   ),
-                if (sdg != null) const SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    c.missionTitle,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
+                  const SizedBox(width: AppSpacing.md),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          c.missionTitle,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        if (sdg != null)
+                          Text(
+                            'SDG ${sdg.number} · ${sdg.shortTitle}',
+                            style: const TextStyle(
+                              fontSize: 13,
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                      ],
                     ),
                   ),
-                ),
-              ],
-            ),
-            if (sdg != null)
-              Text(
-                'SDG ${sdg.number}: ${sdg.shortTitle}',
-                style: const TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                ),
+                ],
               ),
-            Text(
-              '${c.userName} • ${_timeAgo(c.createdAt)} • ${c.xp} XP',
-              style: const TextStyle(
-                fontSize: 12,
-                color: Colors.grey,
+              const SizedBox(height: AppSpacing.lg),
+              Wrap(
+                spacing: AppSpacing.sm,
+                runSpacing: AppSpacing.sm,
+                children: [
+                  PillChip(
+                    label: c.userName,
+                    color: AppColors.textSecondary,
+                    icon: Icons.person_outline_rounded,
+                  ),
+                  PillChip(
+                    label: _timeAgo(c.createdAt),
+                    color: AppColors.textSecondary,
+                    icon: Icons.schedule_rounded,
+                  ),
+                  PillChip(
+                    label: '+${c.xp} XP',
+                    color: AppColors.xp,
+                    icon: Icons.bolt_rounded,
+                  ),
+                ],
               ),
-            ),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                TextButton.icon(
-                  onPressed: () {
-                    if (sdg != null) {
-                      Navigator.pop(context);
-                      Navigator.pushNamed(
-                        context,
-                        '/learnSdg',
-                        arguments: sdg.number,
-                      );
-                    }
-                  },
-                  icon: const Icon(Icons.menu_book),
-                  label: const Text('Learn this SDG'),
-                ),
-                const SizedBox(width: 8),
-                TextButton.icon(
-                  onPressed: () {
-                    Navigator.pop(context);
-                    Navigator.pushNamed(context, '/dailyMissions');
-                  },
-                  icon: const Icon(Icons.flag),
-                  label: const Text('Try a mission'),
-                ),
-              ],
-            ),
-          ],
+              const SizedBox(height: AppSpacing.xl),
+              Row(
+                children: [
+                  if (sdg != null)
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () {
+                          Navigator.pop(sheetContext);
+                          Navigator.pushNamed(context, '/learnSdg',
+                              arguments: sdg.number);
+                        },
+                        child: const Text('Learn this SDG'),
+                      ),
+                    ),
+                  if (sdg != null) const SizedBox(width: AppSpacing.sm),
+                  Expanded(
+                    child: FilledButton(
+                      onPressed: () {
+                        Navigator.pop(sheetContext);
+                        Navigator.pushNamed(context, '/dailyMissions');
+                      },
+                      child: const Text('Try a mission'),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -687,5 +717,264 @@ class _LiveMapScreenState extends State<LiveMapScreen> {
     if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
     if (diff.inHours < 24) return '${diff.inHours}h ago';
     return '${diff.inDays}d ago';
+  }
+}
+
+/// White floating panel used over the map.
+class _FloatingSurface extends StatelessWidget {
+  final Widget child;
+  final EdgeInsetsGeometry padding;
+
+  const _FloatingSurface({required this.child, required this.padding});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: padding,
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        border: Border.all(color: AppColors.border),
+        boxShadow: AppShadows.raised,
+      ),
+      child: child,
+    );
+  }
+}
+
+class _MapButton extends StatelessWidget {
+  final IconData icon;
+  final String tooltip;
+  final VoidCallback onTap;
+  final Color color;
+
+  const _MapButton({
+    required this.icon,
+    required this.tooltip,
+    required this.onTap,
+    this.color = AppColors.textPrimary,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: tooltip,
+      child: Pressable(
+        onTap: onTap,
+        pressedScale: 0.9,
+        hoverLift: 0,
+        child: SizedBox(
+          width: 44,
+          height: 44,
+          child: Icon(icon, size: 22, color: color),
+        ),
+      ),
+    );
+  }
+}
+
+class _FilterChip extends StatelessWidget {
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+  final Color? color;
+  final String? tooltip;
+
+  const _FilterChip({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+    this.color,
+    this.tooltip,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final chip = Pressable(
+      onTap: onTap,
+      hoverLift: 1,
+      child: AnimatedContainer(
+        duration: AppDurations.medium,
+        curve: Curves.easeOut,
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: selected ? AppColors.textPrimary : AppColors.surface,
+          borderRadius: BorderRadius.circular(AppRadius.pill),
+          border: Border.all(
+            color: selected ? AppColors.textPrimary : AppColors.border,
+          ),
+          boxShadow: AppShadows.card,
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (color != null) ...[
+              Container(
+                width: 10,
+                height: 10,
+                decoration: BoxDecoration(
+                  color: color,
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: selected ? Colors.white : Colors.transparent,
+                    width: 1.5,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 6),
+            ],
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: selected ? Colors.white : AppColors.textPrimary,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+    return tooltip == null ? chip : Tooltip(message: tooltip!, child: chip);
+  }
+}
+
+/// Map pin: white ring, SDG-coloured fill, springs in on first appearance.
+class _SdgPin extends StatelessWidget {
+  final int sdgNumber;
+  final bool isMine;
+  final VoidCallback onTap;
+
+  const _SdgPin({
+    required this.sdgNumber,
+    required this.isMine,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final color = getSdgByNumber(sdgNumber)?.color ?? AppColors.primary;
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0, end: 1),
+      duration: AppDurations.spring,
+      curve: AppMotion.spring,
+      builder: (context, scale, child) =>
+          Transform.scale(scale: scale, child: child),
+      child: Pressable(
+        onTap: onTap,
+        pressedScale: 0.88,
+        hoverLift: 0,
+        child: Container(
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: Colors.white,
+            border: Border.all(
+              color: isMine ? AppColors.textPrimary : Colors.white,
+              width: isMine ? 2 : 0,
+            ),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x33101828),
+                blurRadius: 6,
+                offset: Offset(0, 2),
+              ),
+            ],
+          ),
+          padding: const EdgeInsets.all(2.5),
+          child: Container(
+            decoration: BoxDecoration(shape: BoxShape.circle, color: color),
+            alignment: Alignment.center,
+            child: Text(
+              '$sdgNumber',
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w700,
+                fontSize: 11,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Pulsing "you are here" dot.
+class _UserDot extends StatefulWidget {
+  const _UserDot();
+
+  @override
+  State<_UserDot> createState() => _UserDotState();
+}
+
+class _UserDotState extends State<_UserDot>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _pulse = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 1800),
+  );
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!reduceMotion(context) && !_pulse.isAnimating) _pulse.repeat();
+  }
+
+  @override
+  void dispose() {
+    _pulse.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _pulse,
+      builder: (context, _) => Stack(
+        clipBehavior: Clip.none,
+        alignment: Alignment.center,
+        children: [
+          Transform.scale(
+            scale: 1 + _pulse.value * 1.6,
+            child: Container(
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: const Color(0xFF2563EB)
+                    .withValues(alpha: 0.35 * (1 - _pulse.value)),
+              ),
+            ),
+          ),
+          Container(
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: const Color(0xFF2563EB),
+              border: Border.all(color: Colors.white, width: 3),
+              boxShadow: AppShadows.card,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SheetLabel extends StatelessWidget {
+  final String text;
+  const _SheetLabel(this.text);
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+      child: Text(
+        text,
+        style: const TextStyle(
+          fontSize: 13,
+          fontWeight: FontWeight.w600,
+          color: AppColors.textSecondary,
+        ),
+      ),
+    );
   }
 }

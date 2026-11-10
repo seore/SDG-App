@@ -1,11 +1,16 @@
-// ignore_for_file: unreachable_switch_default, deprecated_member_use
-
 import 'package:flutter/material.dart';
-import '../models/mission.dart';
-import '../services/mission_progress_service.dart';
-import '../services/mission_catalog.dart';
-import '../utils/sdg_utils.dart';
+
 import '../data/sdg_data.dart';
+import '../models/mission.dart';
+import '../services/mission_catalog.dart';
+import '../services/mission_progress_service.dart';
+import '../theme/app_theme.dart';
+import '../utils/sdg_utils.dart';
+import '../widgets/app_card.dart';
+import '../widgets/app_scaffold.dart';
+import '../widgets/motion.dart';
+import '../widgets/progress_widgets.dart';
+import 'mission_detail_screen.dart';
 
 class DailyMissionsScreen extends StatelessWidget {
   const DailyMissionsScreen({super.key});
@@ -13,245 +18,220 @@ class DailyMissionsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final progress = MissionProgressService.instance;
-    final theme = Theme.of(context);
     final missions = MissionCatalogService.instance.missionsForToday(count: 5);
 
-    return Scaffold(
-      appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(70),
-        child: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              colors: [
-                Color(0xFF32C27C),
-                Color(0xFF2196F3),
-              ],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            borderRadius: BorderRadius.only(
-              bottomLeft: Radius.circular(2),
-              bottomRight: Radius.circular(2),
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black26,
-                blurRadius: 8,
-                offset: Offset(0, 3),
-              ),
-            ],
-          ),
-          child: AppBar(
-            backgroundColor: Colors.transparent,
-            elevation: 0,
-            automaticallyImplyLeading: true,
-            iconTheme: const IconThemeData(color: Colors.white),
-            title: const Text(
-              'Today\'s Missions',
-              style: TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.w600,
-                fontSize: 20,
-              ),
-            ),
-            centerTitle: true,
-          ),
-        ),
-      ),
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              Color(0xFF32C27C),
-              Color(0xFF2196F3),
-            ],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-        ),
-        child: SafeArea(
-          child: ValueListenableBuilder<Map<String, MissionStatus>>(
-            valueListenable: progress.notifier,
-            builder: (context, state, _) {
-              return LayoutBuilder(
-                builder: (context, constraints) {
-                  final maxWidth = constraints.maxWidth > 480
-                      ? 480.0
-                      : constraints.maxWidth * 0.95;
+    return AppScaffold(
+      title: 'Missions',
+      body: ValueListenableBuilder<Map<String, MissionStatus>>(
+        valueListenable: progress.notifier,
+        builder: (context, state, _) {
+          final done = missions
+              .where((m) => progress.statusFor(m.id) == MissionStatus.completed)
+              .length;
 
-                  return Center(
-                    child: SingleChildScrollView(
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          const SizedBox(height: 16),
-                          Container(
-                            width: maxWidth,
-                            decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.97),
-                              borderRadius: BorderRadius.circular(24),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.18),
-                                  blurRadius: 20,
-                                  offset: const Offset(0, 12),
-                                ),
-                              ],
-                            ),
-                            child: ListView.separated(
-                              shrinkWrap: true,
-                              physics: const NeverScrollableScrollPhysics(),
-                              itemCount: missions.length,
-                              separatorBuilder: (_, __) => const Divider(
-                                height: 1,
-                                color: Color(0xFFE2E8F0),
-                              ),
-                              itemBuilder: (context, index) {
-                                final Mission m = missions[index];
-                                final status = progress.statusFor(m.id);
-
-                                final sdgNumber = extractSdgNumber(m.sdg);
-                                final sdg = sdgNumber != null
-                                    ? getSdgByNumber(sdgNumber)
-                                    : null;
-                                final icon = sdgNumber != null
-                                    ? iconForSdg(sdgNumber)
-                                    : Icons.flag_rounded;
-
-                                Color statusColor;
-                                String statusText;
-                                IconData statusIcon;
-
-                                switch (status) {
-                                  case MissionStatus.completed:
-                                    statusColor = const Color(0xFF22C55E);
-                                    statusText = 'Completed';
-                                    statusIcon = Icons.check_circle;
-                                    break;
-                                  case MissionStatus.inProgress:
-                                    statusColor = const Color(0xFFF59E0B);
-                                    statusText = 'In progress';
-                                    statusIcon = Icons.timelapse;
-                                    break;
-                                  case MissionStatus.notStarted:
-                                  default:
-                                    statusColor = Colors.grey;
-                                    statusText = 'Not started';
-                                    statusIcon = Icons.radio_button_unchecked;
-                                    break;
-                                }
-
-                                return InkWell(
-                                  borderRadius: index == 0
-                                      ? const BorderRadius.vertical(
-                                          top: Radius.circular(24),
-                                        )
-                                      : index == missions.length - 1
-                                          ? const BorderRadius.vertical(
-                                              bottom: Radius.circular(24),
-                                            )
-                                          : BorderRadius.zero,
-                                  onTap: () {
-                                    Navigator.pushNamed(
-                                      context,
-                                      '/missionDetail',
-                                      arguments: m,
-                                    );
-                                  },
-                                  child: Padding(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 16,
-                                      vertical: 14,
-                                    ),
-                                    child: Row(
-                                      children: [
-                                        CircleAvatar(
-                                          radius: 20,
-                                          backgroundColor: (sdg?.color ??
-                                                  const Color(0xFF32C27C))
-                                              .withOpacity(0.12),
-                                          child: Icon(
-                                            icon,
-                                            color:
-                                                sdg?.color ?? const Color(0xFF32C27C),
-                                          ),
-                                        ),
-                                        const SizedBox(width: 12),
-                                        Expanded(
-                                          child: Column(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
-                                            children: [
-                                              Text(
-                                                m.title,
-                                                style: theme
-                                                    .textTheme.titleSmall
-                                                    ?.copyWith(
-                                                  fontWeight: FontWeight.w700,
-                                                  fontSize: 14,
-                                                ),
-                                              ),
-                                              const SizedBox(height: 4),
-                                              Text(
-                                                '${m.sdg} • ${m.xp} XP',
-                                                style: theme
-                                                    .textTheme.bodySmall
-                                                    ?.copyWith(
-                                                  color: Colors.grey[600],
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                        const SizedBox(width: 8),
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 8,
-                                            vertical: 4,
-                                          ),
-                                          decoration: BoxDecoration(
-                                            color: statusColor.withOpacity(0.08),
-                                            borderRadius:
-                                                BorderRadius.circular(999),
-                                          ),
-                                          child: Row(
-                                            mainAxisSize: MainAxisSize.min,
-                                            children: [
-                                              Icon(
-                                                statusIcon,
-                                                size: 14,
-                                                color: statusColor,
-                                              ),
-                                              const SizedBox(width: 4),
-                                              Text(
-                                                statusText,
-                                                style: TextStyle(
-                                                  fontSize: 11,
-                                                  fontWeight: FontWeight.w600,
-                                                  color: statusColor,
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                );
-                              },
+          return RefreshIndicator(
+            color: AppColors.primary,
+            onRefresh: progress.loadToday,
+            child: ListView(
+              padding: const EdgeInsets.fromLTRB(20, 4, 20, 32),
+              children: [
+                ContentWidth(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      FadeSlideIn(
+                        child: _DailyProgressCard(
+                          done: done,
+                          total: missions.length,
+                        ),
+                      ),
+                      const SizedBox(height: AppSpacing.xl),
+                      const FadeSlideIn(
+                        delay: Duration(milliseconds: 60),
+                        child: SectionHeader(
+                          title: 'Today',
+                          subtitle: 'A new set of missions every day',
+                        ),
+                      ),
+                      for (var i = 0; i < missions.length; i++)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: AppSpacing.sm + 2),
+                          child: FadeSlideIn(
+                            delay: Duration(milliseconds: 100 + i * 50),
+                            child: MissionListCard(
+                              mission: missions[i],
+                              status: progress.statusFor(missions[i].id),
+                              heroPrefix: 'missions-list',
                             ),
                           ),
-                        ],
-                      ),
-                    ),
-                  );
-                },
-              );
-            },
+                        ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _DailyProgressCard extends StatelessWidget {
+  final int done;
+  final int total;
+  const _DailyProgressCard({required this.done, required this.total});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final allDone = total > 0 && done == total;
+    return AppCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  allDone ? 'All missions complete' : 'Daily progress',
+                  style: theme.textTheme.titleSmall
+                      ?.copyWith(fontWeight: FontWeight.w600),
+                ),
+              ),
+              Text(
+                '$done / $total',
+                style: theme.textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w700,
+                  fontFeatures: const [FontFeature.tabularFigures()],
+                ),
+              ),
+            ],
           ),
+          const SizedBox(height: AppSpacing.md),
+          SpringProgressBar(
+            value: total == 0 ? 0 : done / total,
+            color: allDone ? AppColors.success : AppColors.primary,
+            height: 8,
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          Text(
+            allDone
+                ? 'Great work. New missions arrive tomorrow.'
+                : 'Complete small real-world actions to earn XP.',
+            style: theme.textTheme.bodySmall
+                ?.copyWith(color: AppColors.textSecondary),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Mission row card used in the Missions tab.
+class MissionListCard extends StatelessWidget {
+  final Mission mission;
+  final MissionStatus status;
+  final String heroPrefix;
+
+  const MissionListCard({
+    super.key,
+    required this.mission,
+    required this.status,
+    required this.heroPrefix,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final sdgNumber = extractSdgNumber(mission.sdg);
+    final sdg = sdgNumber != null ? getSdgByNumber(sdgNumber) : null;
+    final color = sdg?.color ?? AppColors.primary;
+    final icon = sdgNumber != null ? iconForSdg(sdgNumber) : Icons.flag_rounded;
+    final heroTag = '$heroPrefix-${mission.id}';
+    final (statusColor, statusText, statusIcon) = statusStyle(status);
+    final completed = status == MissionStatus.completed;
+
+    return Pressable(
+      pressedScale: 0.985,
+      onTap: () => Navigator.pushNamed(
+        context,
+        '/missionDetail',
+        arguments: MissionRouteArgs(mission, heroTag: heroTag),
+      ),
+      builder: (context, state) => AppCard(
+        padding: const EdgeInsets.all(14),
+        shadow: state == PressState.hovered ? AppShadows.raised : null,
+        child: Row(
+          children: [
+            Hero(tag: heroTag, child: IconTile(icon: icon, color: color, size: 44)),
+            const SizedBox(width: AppSpacing.md),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    mission.title,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: completed
+                          ? AppColors.textTertiary
+                          : AppColors.textPrimary,
+                      decoration: completed ? TextDecoration.lineThrough : null,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    sdg != null
+                        ? 'SDG ${sdg.number} · ${sdg.shortTitle}'
+                        : mission.sdg,
+                    style: theme.textTheme.bodySmall
+                        ?.copyWith(color: AppColors.textSecondary),
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
+                  Wrap(
+                    spacing: 6,
+                    runSpacing: 6,
+                    children: [
+                      PillChip(
+                        label: '+${mission.xp} XP',
+                        color: AppColors.xp,
+                        fontSize: 10,
+                      ),
+                      AnimatedSwitcher(
+                        duration: AppDurations.medium,
+                        switchInCurve: AppMotion.spring,
+                        transitionBuilder: (child, anim) =>
+                            ScaleTransition(scale: anim, child: child),
+                        child: PillChip(
+                          key: ValueKey(status),
+                          label: statusText,
+                          color: statusColor,
+                          icon: statusIcon,
+                          fontSize: 10,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            const Icon(Icons.chevron_right_rounded,
+                color: AppColors.textTertiary),
+          ],
         ),
       ),
     );
+  }
+}
+
+(Color, String, IconData) statusStyle(MissionStatus status) {
+  switch (status) {
+    case MissionStatus.completed:
+      return (AppColors.success, 'Completed', Icons.check_circle_rounded);
+    case MissionStatus.inProgress:
+      return (AppColors.warning, 'In progress', Icons.timelapse_rounded);
+    case MissionStatus.notStarted:
+      return (AppColors.textSecondary, 'Not started', Icons.circle_outlined);
   }
 }

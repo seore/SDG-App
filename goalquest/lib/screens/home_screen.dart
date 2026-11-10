@@ -1,519 +1,533 @@
-// ignore_for_file: deprecated_member_use
-
 import 'package:flutter/material.dart';
-import '../services/profile_service.dart';
 
-class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+import '../data/sdg_data.dart';
+import '../models/mission.dart';
+import '../services/mission_catalog.dart';
+import '../services/mission_progress_service.dart';
+import '../services/profile_service.dart';
+import '../theme/app_theme.dart';
+import '../utils/sdg_utils.dart';
+import '../widgets/app_card.dart';
+import '../widgets/app_scaffold.dart';
+import '../widgets/motion.dart';
+import '../widgets/progress_widgets.dart';
+import 'mission_detail_screen.dart';
+
+/// Home dashboard tab. [onOpenTab] switches the bottom navigation tab.
+class HomeScreen extends StatelessWidget {
+  final ValueChanged<int>? onOpenTab;
+
+  const HomeScreen({super.key, this.onOpenTab});
 
   @override
-  State<HomeScreen> createState() => _HomeScreenState();
+  Widget build(BuildContext context) {
+    final profileService = ProfileService.instance;
+
+    return AppScaffold(
+      showAppBar: false,
+      body: ValueListenableBuilder<UserProfile?>(
+        valueListenable: profileService.profileListenable,
+        builder: (context, profile, _) {
+          if (profile == null) return const _LoggedOutState();
+
+          return RefreshIndicator(
+            color: AppColors.primary,
+            onRefresh: () async {
+              await Future.wait([
+                profileService.loadCurrentUserProfile(),
+                MissionProgressService.instance.loadToday(),
+              ]);
+            },
+            child: ListView(
+              padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
+              children: [
+                ContentWidth(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      FadeSlideIn(
+                        child: _Header(
+                          profile: profile,
+                          onAvatarTap: () => onOpenTab?.call(4),
+                        ),
+                      ),
+                      const SizedBox(height: AppSpacing.xl),
+                      FadeSlideIn(
+                        delay: const Duration(milliseconds: 60),
+                        child: _ProgressCard(profile: profile),
+                      ),
+                      const SizedBox(height: AppSpacing.xxl),
+                      FadeSlideIn(
+                        delay: const Duration(milliseconds: 120),
+                        child: _TodaySection(
+                          onSeeAll: () => onOpenTab?.call(1),
+                        ),
+                      ),
+                      const SizedBox(height: AppSpacing.xxl),
+                      const FadeSlideIn(
+                        delay: Duration(milliseconds: 180),
+                        child: SectionHeader(title: 'Explore'),
+                      ),
+                      const _ExploreGrid(),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
 }
 
-class _HomeScreenState extends State<HomeScreen> {
-  final _profileService = ProfileService.instance;
+String _greetingForNow() {
+  final h = DateTime.now().hour;
+  if (h < 12) return 'Good morning';
+  if (h < 18) return 'Good afternoon';
+  return 'Good evening';
+}
 
-  @override
-  void initState() {
-    super.initState();
-    _profileService.loadCurrentUserProfile();
-    // OwnedPackService.instance.loadOwnedPacks(); 
-  }
+class _Header extends StatelessWidget {
+  final UserProfile profile;
+  final VoidCallback onAvatarTap;
+  const _Header({required this.profile, required this.onAvatarTap});
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-
-    return Scaffold(
-      appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(70),
-        child: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              colors: [Color(0xFF32C27C), Color(0xFF2196F3)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black26,
-                blurRadius: 8,
-                offset: Offset(0, 3),
+    final name =
+        profile.username.trim().isNotEmpty ? profile.username.trim() : 'Explorer';
+    return Row(
+      children: [
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                _greetingForNow(),
+                style: theme.textTheme.bodyMedium
+                    ?.copyWith(color: AppColors.textSecondary),
               ),
-            ],
-          ),
-          child: AppBar(
-            backgroundColor: Colors.transparent,
-            elevation: 0,
-            automaticallyImplyLeading: false,
-            title: const Text(
-              "Home",
-              style: TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.w700,
-                fontSize: 20,
-              ),
-            ),
-            centerTitle: true,
-            actions: [
-              Padding(
-                padding: const EdgeInsets.only(right: 12.0),
-                child: GestureDetector(
-                  onTap: () => Navigator.pushNamed(context, '/profile'),
-                  child: ValueListenableBuilder<UserProfile?>(
-                    valueListenable: _profileService.profileListenable,
-                    builder: (context, profile, _) {
-                      // Simple avatar, no cosmetic frame
-                      if (profile == null) {
-                        return CircleAvatar(
-                          radius: 18,
-                          backgroundColor: Colors.white.withOpacity(0.15),
-                          child: const Icon(Icons.person, color: Colors.white),
-                        );
-                      }
-
-                      if (profile.avatarUrl != null) {
-                        return CircleAvatar(
-                          radius: 18,
-                          backgroundColor: Colors.white.withOpacity(0.15),
-                          child: ClipOval(
-                            child: Image.network(
-                              profile.avatarUrl!,
-                              width: 36,
-                              height: 36,
-                              fit: BoxFit.cover,
-                            ),
-                          ),
-                        );
-                      }
-
-                      final hasUsername = profile.username.trim().isNotEmpty;
-                      final initials = hasUsername
-                          ? profile.username.trim()[0].toUpperCase()
-                          : null;
-
-                      return CircleAvatar(
-                        radius: 18,
-                        backgroundColor: Colors.white.withOpacity(0),
-                        child: Icon(Icons.person, color: Colors.white),
-                      );
-                    },
-                  ),
+              const SizedBox(height: 2),
+              Text(
+                name,
+                style: theme.textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: -0.5,
                 ),
               ),
             ],
           ),
         ),
-      ),
-
-      // ========================= BODY =========================
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Color(0xFF32C27C), Color(0xFF2196F3)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
+        Pressable(
+          onTap: onAvatarTap,
+          child: SizedBox(
+            width: 40,
+            height: 40,
+            child: ProfileAvatar(profile: profile, fontSize: 16),
           ),
         ),
-        child: SafeArea(
-          child: ValueListenableBuilder<UserProfile?>(
-            valueListenable: _profileService.profileListenable,
-            builder: (context, profile, _) {
-              if (profile == null) return _buildLoggedOutState(theme);
+      ],
+    );
+  }
+}
 
-              final xp = profile.xp;
-              const xpPerLevel = 100;
-              final level = xp ~/ xpPerLevel;
-              final xpInLevel = xp % xpPerLevel;
-              final progress = xpInLevel / xpPerLevel;
-              final streak = profile.streak;
+class _ProgressCard extends StatelessWidget {
+  final UserProfile profile;
+  const _ProgressCard({required this.profile});
 
-              return LayoutBuilder(
-                builder: (context, constraints) {
-                  final maxWidth = constraints.maxWidth > 480
-                      ? 480.0
-                      : constraints.maxWidth * 0.95;
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final info = LevelInfo(profile.xp);
 
-                  return Center(
-                    child: SingleChildScrollView(
-                      padding: const EdgeInsets.symmetric(vertical: 24),
-                      child: Column(
-                        children: [
-                          // ---------- Header ----------
-                          Text(
-                            'Your SDG Journey',
-                            style: theme.textTheme.headlineSmall?.copyWith(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w800,
-                            ),
+    return AppCard(
+      padding: EdgeInsets.zero,
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(AppSpacing.lg + 4),
+            child: Row(
+              children: [
+                XpRing(
+                  progress: info.progress,
+                  size: 72,
+                  child: Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          'LVL',
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            color: AppColors.textSecondary,
+                            fontSize: 9,
+                            letterSpacing: 0.8,
                           ),
-                          const SizedBox(height: 24),
-
-                          // ---------- XP + STREAK CARD ----------
-                          Container(
-                            width: maxWidth,
-                            decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.97),
-                              borderRadius: BorderRadius.circular(24),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.18),
-                                  blurRadius: 20,
-                                  offset: const Offset(0, 12),
-                                ),
-                              ],
-                            ),
-                            child: Padding(
-                              padding: const EdgeInsets.all(18.0),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    children: [
-                                      // Simple avatar (no frame)
-                                      CircleAvatar(
-                                        radius: 26,
-                                        backgroundColor:
-                                            const Color(0xFF32C27C)
-                                                .withOpacity(0.12),
-                                        child: profile.avatarUrl != null
-                                            ? ClipOval(
-                                                child: Image.network(
-                                                  profile.avatarUrl!,
-                                                  width: 52,
-                                                  height: 52,
-                                                  fit: BoxFit.cover,
-                                                ),
-                                              )
-                                            : const Text(
-                                                '🌍',
-                                                style:
-                                                    TextStyle(fontSize: 26),
-                                              ),
-                                      ),
-                                      const SizedBox(width: 12),
-
-                                      // Username + welcome text
-                                      Expanded(
-                                        child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            Text(
-                                              'Welcome back,',
-                                              style: theme.textTheme.bodySmall
-                                                  ?.copyWith(
-                                                color: Colors.grey[600],
-                                              ),
-                                            ),
-                                            Text(
-                                              profile.username.isNotEmpty
-                                                  ? profile.username
-                                                  : 'Explorer',
-                                              style: theme
-                                                  .textTheme.titleMedium
-                                                  ?.copyWith(
-                                                fontWeight: FontWeight.w700,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-
-                                      // Level Chip
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 10,
-                                          vertical: 6,
-                                        ),
-                                        decoration: BoxDecoration(
-                                          color: const Color(0xFF32C27C)
-                                              .withOpacity(0.08),
-                                          borderRadius:
-                                              BorderRadius.circular(999),
-                                        ),
-                                        child: Row(
-                                          children: const [
-                                            Icon(
-                                              Icons.stars_rounded,
-                                              size: 16,
-                                              color: Color(0xFF32C27C),
-                                            ),
-                                            SizedBox(width: 4),
-                                            Text(
-                                              'Level',
-                                              style: TextStyle(
-                                                fontSize: 12,
-                                                fontWeight: FontWeight.w600,
-                                                color: Color(0xFF32C27C),
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-
-                                  const SizedBox(height: 16),
-
-                                  // XP label, animated
-                                  Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      const Text(
-                                        'Impact XP',
-                                        style: TextStyle(
-                                          fontSize: 13,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                      AnimatedSwitcher(
-                                        duration:
-                                            const Duration(milliseconds: 400),
-                                        transitionBuilder: (child, anim) =>
-                                            ScaleTransition(
-                                          scale: anim,
-                                          child: child,
-                                        ),
-                                        child: Text(
-                                          '$xp XP',
-                                          key: ValueKey<int>(xp),
-                                          style: const TextStyle(
-                                            fontSize: 14,
-                                            fontWeight: FontWeight.w700,
-                                            color: Color(0xFF32C27C),
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-
-                                  const SizedBox(height: 8),
-
-                                  // Animated progress bar
-                                  TweenAnimationBuilder<double>(
-                                    tween: Tween<double>(
-                                      begin: 0,
-                                      end: progress.clamp(0.0, 1.0),
-                                    ),
-                                    duration:
-                                        const Duration(milliseconds: 600),
-                                    builder: (context, value, _) {
-                                      return ClipRRect(
-                                        borderRadius:
-                                            BorderRadius.circular(999),
-                                        child: LinearProgressIndicator(
-                                          value: value,
-                                          minHeight: 8,
-                                          backgroundColor:
-                                              Colors.grey.shade300,
-                                          valueColor:
-                                              const AlwaysStoppedAnimation(
-                                            Color(0xFF32C27C),
-                                          ),
-                                        ),
-                                      );
-                                    },
-                                  ),
-                                  const SizedBox(height: 6),
-                                  Text(
-                                    '$xpInLevel / $xpPerLevel XP to next level',
-                                    style: const TextStyle(
-                                      fontSize: 11,
-                                      color: Colors.grey,
-                                    ),
-                                  ),
-
-                                  const SizedBox(height: 16),
-
-                                  // Streak row
-                                  Row(
-                                    children: [
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 10,
-                                          vertical: 6,
-                                        ),
-                                        decoration: BoxDecoration(
-                                          color:
-                                              Colors.orange.withOpacity(0.08),
-                                          borderRadius:
-                                              BorderRadius.circular(999),
-                                        ),
-                                        child: Row(
-                                          children: [
-                                            const Icon(
-                                              Icons.local_fire_department,
-                                              size: 16,
-                                              color: Colors.orange,
-                                            ),
-                                            const SizedBox(width: 4),
-                                            Text(
-                                              '$streak day streak',
-                                              style: const TextStyle(
-                                                fontSize: 12,
-                                                fontWeight: FontWeight.w600,
-                                                color: Colors.orange,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                      const Spacer(),
-                                      TextButton.icon(
-                                        onPressed: () => Navigator.pushNamed(
-                                            context, '/impactDashboard'),
-                                        icon: const Icon(
-                                          Icons.auto_graph,
-                                          size: 16,
-                                        ),
-                                        label: const Text(
-                                          'View impact',
-                                          style: TextStyle(fontSize: 12),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                            ),
+                        ),
+                        Text(
+                          '${info.level}',
+                          style: theme.textTheme.titleLarge?.copyWith(
+                            fontWeight: FontWeight.w700,
+                            height: 1.1,
                           ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.lg + 4),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Impact XP',
+                        style: theme.textTheme.bodySmall
+                            ?.copyWith(color: AppColors.textSecondary),
+                      ),
+                      AnimatedCount(
+                        value: profile.xp,
+                        style: theme.textTheme.headlineMedium?.copyWith(
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: -1,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      SpringProgressBar(value: info.progress),
+                      const SizedBox(height: 6),
+                      Text(
+                        '${info.xpToNext} XP to level ${info.level + 1}',
+                        style: theme.textTheme.bodySmall
+                            ?.copyWith(color: AppColors.textSecondary),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const Divider(),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 6, 8, 6),
+            child: Row(
+              children: [
+                StreakFlame(streak: profile.streak),
+                const Spacer(),
+                TextButton(
+                  onPressed: () =>
+                      Navigator.pushNamed(context, '/impactDashboard'),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text('View impact'),
+                      SizedBox(width: 2),
+                      Icon(Icons.arrow_forward_rounded, size: 16),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
 
-                          const SizedBox(height: 24),
+/// Avatar image, or the user's initial on a neutral circle.
+class ProfileAvatar extends StatelessWidget {
+  final UserProfile profile;
+  final double fontSize;
+  const ProfileAvatar({super.key, required this.profile, this.fontSize = 22});
 
-                          // -------------- NAVIGATION TILES --------------
-                          Container(
-                            width: maxWidth,
-                            decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.97),
-                              borderRadius: BorderRadius.circular(24),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.15),
-                                  blurRadius: 18,
-                                  offset: const Offset(0, 10),
-                                ),
-                              ],
-                            ),
-                            child: Column(
-                              children: [
-                                _HomeNavTile(
-                                  icon: Icons.flag_rounded,
-                                  iconColor: const Color.fromARGB(255, 137, 197, 18),
-                                  title: 'Daily Missions',
-                                  subtitle:
-                                      'Small real-world actions you can do today.',
-                                  onTap: () => Navigator.pushNamed(
-                                      context, '/dailyMissions'),
-                                ),
-                                const Divider(
-                                    height: 1, color: Color(0xFFE2E8F0)),
+  @override
+  Widget build(BuildContext context) {
+    final url = profile.avatarUrl;
+    if (url != null && url.isNotEmpty) {
+      return ClipOval(
+        child: Image.network(
+          url,
+          fit: BoxFit.cover,
+          errorBuilder: (_, __, ___) => _initial(),
+        ),
+      );
+    }
+    return _initial();
+  }
 
-                                _HomeNavTile(
-                                  icon: Icons.videogame_asset_rounded,
-                                  iconColor: const Color(0xFF6366F1),
-                                  title: 'Mini Games & Quizzes',
-                                  subtitle:
-                                      'Play & learn about the SDGs.',
-                                  onTap: () =>
-                                      Navigator.pushNamed(context, '/miniGames'),
-                                ),
-                                const Divider(
-                                    height: 1, color: Color(0xFFE2E8F0)),
+  Widget _initial() {
+    final name = profile.username.trim();
+    return Container(
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: AppColors.primarySoft,
+        border: Border.all(color: AppColors.border),
+      ),
+      alignment: Alignment.center,
+      child: Text(
+        name.isNotEmpty ? name[0].toUpperCase() : '?',
+        style: TextStyle(
+          color: AppColors.primaryDark,
+          fontSize: fontSize,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
+    );
+  }
+}
 
-                                _HomeNavTile(
-                                  icon: Icons.shopping_bag_outlined,
-                                  iconColor: const Color.fromARGB(255, 220, 19, 19),
-                                  title: 'SDG Shop',
-                                  subtitle:
-                                      'Unlock themes & bonus packs (cosmetics coming later).',
-                                  onTap: () =>
-                                      Navigator.pushNamed(context, '/shop'),
-                                ),
-                                const Divider(
-                                    height: 1, color: Color(0xFFE2E8F0)),
+class _TodaySection extends StatelessWidget {
+  final VoidCallback onSeeAll;
+  const _TodaySection({required this.onSeeAll});
 
-                                _HomeNavTile(
-                                  icon: Icons.public,
-                                  iconColor: const Color(0xFF0EA5E9),
-                                  title: 'Live Impact Map',
-                                  subtitle:
-                                      'See other young changemakers near you.',
-                                  onTap: () =>
-                                      Navigator.pushNamed(context, '/liveMap'),
-                                ),
-                                const Divider(
-                                    height: 1, color: Color(0xFFE2E8F0)),
+  @override
+  Widget build(BuildContext context) {
+    final progress = MissionProgressService.instance;
+    final missions = MissionCatalogService.instance.missionsForToday(count: 5);
 
-                                _HomeNavTile(
-                                  icon: Icons.groups_rounded,
-                                  iconColor: const Color(0xFFEC4899),
-                                  title: 'Community Stories',
-                                  subtitle:
-                                      'Share your wins & read others’ stories.',
-                                  onTap: () =>
-                                      Navigator.pushNamed(context, '/community'),
-                                ),
-                                const Divider(
-                                    height: 1, color: Color(0xFFE2E8F0)),
+    return ValueListenableBuilder<Map<String, MissionStatus>>(
+      valueListenable: progress.notifier,
+      builder: (context, _, __) {
+        final done = missions
+            .where((m) => progress.statusFor(m.id) == MissionStatus.completed)
+            .length;
+        final preview = missions.take(3).toList();
 
-                                _HomeNavTile(
-                                  icon: Icons.menu_book_rounded,
-                                  iconColor: const Color(0xFFF97316),
-                                  title: 'Learn the SDGs',
-                                  subtitle: 'Short lessons for each goal.',
-                                  onTap: () =>
-                                      Navigator.pushNamed(context, '/learnSdg'),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            SectionHeader(
+              title: "Today's missions",
+              subtitle: '$done of ${missions.length} completed',
+              trailing: TextButton(
+                onPressed: onSeeAll,
+                child: const Text('View all'),
+              ),
+            ),
+            AppCard(
+              padding: EdgeInsets.zero,
+              child: Column(
+                children: [
+                  for (var i = 0; i < preview.length; i++) ...[
+                    if (i > 0) const Divider(indent: 68),
+                    _MissionRow(
+                      mission: preview[i],
+                      status: progress.statusFor(preview[i].id),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _MissionRow extends StatelessWidget {
+  final Mission mission;
+  final MissionStatus status;
+  const _MissionRow({required this.mission, required this.status});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final sdgNumber = extractSdgNumber(mission.sdg);
+    final sdg = sdgNumber != null ? getSdgByNumber(sdgNumber) : null;
+    final color = sdg?.color ?? AppColors.primary;
+    final icon = sdgNumber != null ? iconForSdg(sdgNumber) : Icons.flag_rounded;
+    final heroTag = 'home-${mission.id}';
+    final completed = status == MissionStatus.completed;
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () => Navigator.pushNamed(
+          context,
+          '/missionDetail',
+          arguments: MissionRouteArgs(mission, heroTag: heroTag),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          child: Row(
+            children: [
+              Hero(tag: heroTag, child: IconTile(icon: icon, color: color)),
+              const SizedBox(width: AppSpacing.md),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      mission.title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                        color: completed
+                            ? AppColors.textTertiary
+                            : AppColors.textPrimary,
+                        decoration:
+                            completed ? TextDecoration.lineThrough : null,
                       ),
                     ),
-                  );
-                },
-              );
-            },
+                    const SizedBox(height: 2),
+                    Text(
+                      sdg != null
+                          ? 'SDG ${sdg.number} · ${sdg.shortTitle}'
+                          : mission.sdg,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.bodySmall
+                          ?.copyWith(color: AppColors.textSecondary),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              AnimatedSwitcher(
+                duration: AppDurations.medium,
+                switchInCurve: AppMotion.spring,
+                transitionBuilder: (c, a) =>
+                    ScaleTransition(scale: a, child: c),
+                child: completed
+                    ? const Icon(Icons.check_circle_rounded,
+                        key: ValueKey('done'), color: AppColors.success)
+                    : Text(
+                        '+${mission.xp} XP',
+                        key: const ValueKey('xp'),
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.xp,
+                        ),
+                      ),
+              ),
+            ],
           ),
         ),
       ),
     );
   }
+}
 
-  Widget _buildLoggedOutState(ThemeData theme) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24.0),
+class _ExploreGrid extends StatelessWidget {
+  const _ExploreGrid();
+
+  @override
+  Widget build(BuildContext context) {
+    const tiles = [
+      _ExploreTileData(
+        title: 'Learn',
+        subtitle: 'Lessons on all 17 goals',
+        icon: Icons.menu_book_rounded,
+        color: Color(0xFFC2410C),
+        route: '/learnSdg',
+      ),
+      _ExploreTileData(
+        title: 'Community',
+        subtitle: 'Stories from others',
+        icon: Icons.forum_rounded,
+        color: Color(0xFFBE185D),
+        route: '/community',
+      ),
+      _ExploreTileData(
+        title: 'Your impact',
+        subtitle: 'Progress over time',
+        icon: Icons.insights_rounded,
+        color: Color(0xFF0369A1),
+        route: '/impactDashboard',
+      ),
+      _ExploreTileData(
+        title: 'Shop',
+        subtitle: 'Frames and packs',
+        icon: Icons.storefront_rounded,
+        color: Color(0xFF6D28D9),
+        route: '/shop',
+      ),
+    ];
+
+    return GridView.count(
+      crossAxisCount: 2,
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      padding: EdgeInsets.zero,
+      mainAxisSpacing: AppSpacing.md,
+      crossAxisSpacing: AppSpacing.md,
+      childAspectRatio: 1.35,
+      children: [
+        for (var i = 0; i < tiles.length; i++)
+          FadeSlideIn(
+            delay: Duration(milliseconds: 220 + i * 50),
+            child: _ExploreTile(data: tiles[i]),
+          ),
+      ],
+    );
+  }
+}
+
+class _ExploreTileData {
+  final String title;
+  final String subtitle;
+  final IconData icon;
+  final Color color;
+  final String route;
+
+  const _ExploreTileData({
+    required this.title,
+    required this.subtitle,
+    required this.icon,
+    required this.color,
+    required this.route,
+  });
+}
+
+class _ExploreTile extends StatelessWidget {
+  final _ExploreTileData data;
+  const _ExploreTile({required this.data});
+
+  @override
+  Widget build(BuildContext context) {
+    return Pressable(
+      onTap: () => Navigator.pushNamed(context, data.route),
+      builder: (context, state) => AppCard(
+        padding: const EdgeInsets.all(14),
+        shadow: state == PressState.hovered ? AppShadows.raised : null,
         child: Column(
-          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'You\'re not signed in',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-                color: Colors.white,
-              ),
+            Row(
+              children: [
+                IconTile(icon: data.icon, color: data.color, size: 36),
+                const Spacer(),
+                AnimatedSlide(
+                  offset: state == PressState.hovered
+                      ? const Offset(0.15, 0)
+                      : Offset.zero,
+                  duration: AppDurations.medium,
+                  curve: AppMotion.spring,
+                  child: const Icon(Icons.arrow_outward_rounded,
+                      size: 16, color: AppColors.textTertiary),
+                ),
+              ],
             ),
-            const SizedBox(height: 8),
+            const Spacer(),
             Text(
-              'Log in or sign up to start earning XP and tracking your SDG impact.',
-              textAlign: TextAlign.center,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: Colors.white.withOpacity(0.9),
+              data.title,
+              style: const TextStyle(
+                fontWeight: FontWeight.w600,
+                fontSize: 14,
               ),
             ),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.pushNamedAndRemoveUntil(
-                    context, '/auth', (route) => false);
-              },
-              child: const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 24.0, vertical: 10),
-                child: Text('Go to login'),
+            const SizedBox(height: 2),
+            Text(
+              data.subtitle,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                color: AppColors.textSecondary,
+                fontSize: 12,
               ),
             ),
           ],
@@ -523,63 +537,41 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
-class _HomeNavTile extends StatelessWidget {
-  final IconData icon;
-  final Color iconColor;
-  final String title;
-  final String subtitle;
-  final VoidCallback onTap;
-
-  const _HomeNavTile({
-    required this.icon,
-    required this.iconColor,
-    required this.title,
-    required this.subtitle,
-    required this.onTap,
-  });
+class _LoggedOutState extends StatelessWidget {
+  const _LoggedOutState();
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(24),
+    return Center(
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-        child: Row(
+        padding: const EdgeInsets.all(AppSpacing.xl),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Container(
-              width: 42,
-              height: 42,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: iconColor.withOpacity(0.12),
-              ),
-              child: Icon(icon, color: iconColor),
+            const IconTile(
+                icon: Icons.lock_outline_rounded,
+                color: AppColors.primary,
+                size: 56),
+            const SizedBox(height: AppSpacing.lg),
+            Text(
+              "You're not signed in",
+              style: theme.textTheme.titleMedium
+                  ?.copyWith(fontWeight: FontWeight.w600),
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: theme.textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    subtitle,
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: Colors.grey[600],
-                    ),
-                  ),
-                ],
-              ),
+            const SizedBox(height: AppSpacing.sm),
+            Text(
+              'Log in or sign up to start earning XP and tracking your SDG impact.',
+              textAlign: TextAlign.center,
+              style: theme.textTheme.bodyMedium
+                  ?.copyWith(color: AppColors.textSecondary),
             ),
-            const SizedBox(width: 8),
-            const Icon(Icons.chevron_right, color: Colors.black45),
+            const SizedBox(height: AppSpacing.lg),
+            FilledButton(
+              onPressed: () => Navigator.pushNamedAndRemoveUntil(
+                  context, '/auth', (route) => false),
+              child: const Text('Go to login'),
+            ),
           ],
         ),
       ),

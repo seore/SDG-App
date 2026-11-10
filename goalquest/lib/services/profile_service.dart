@@ -3,6 +3,10 @@
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../theme/app_theme.dart';
+import 'demo_mode.dart';
+import 'mission_progress_service.dart';
+
 class UserProfile {
   final String id;
   final String email;
@@ -64,6 +68,26 @@ class UserProfile {
   }
 }
 
+/// Outcome of an XP award, used to drive celebrations in the UI.
+class XpAward {
+  final int baseXp;
+  final int streakBonus;
+  final int streak;
+  final int levelBefore;
+  final int levelAfter;
+
+  const XpAward({
+    required this.baseXp,
+    required this.streakBonus,
+    required this.streak,
+    required this.levelBefore,
+    required this.levelAfter,
+  });
+
+  int get total => baseXp + streakBonus;
+  bool get leveledUp => levelAfter > levelBefore;
+}
+
 class ProfileService {
   ProfileService._internal();
   static final ProfileService instance = ProfileService._internal();
@@ -76,6 +100,10 @@ class ProfileService {
   UserProfile? get currentProfile => profileListenable.value;
 
   Future<void> loadCurrentUserProfile() async {
+    if (DemoMode.enabled) {
+      profileListenable.value ??= DemoMode.profile;
+      return;
+    }
     final session = _client.auth.currentSession;
 
     if (session == null) {
@@ -119,11 +147,13 @@ class ProfileService {
     profileListenable.value = UserProfile.fromMap(row, email: email);
   }
 
-  Future<void> addXp(int amount) async {
+  /// Adds XP (plus any streak bonus) and returns what was awarded,
+  /// or null when no user is signed in.
+  Future<XpAward?> addXp(int amount) async {
     final client = Supabase.instance.client;
     final profile = currentProfile;
 
-    if (profile == null) return;
+    if (profile == null) return null;
 
     final now = DateTime.now();
     final lastActive = profile.lastActive;
@@ -155,6 +185,21 @@ class ProfileService {
     final totalToAdd =  amount + bonus;
     final updatedXp = profile.xp + totalToAdd; 
 
+    if (DemoMode.enabled) {
+      profileListenable.value = profile.copyWith(
+        xp: updatedXp,
+        streak: newStreak,
+        lastActive: now,
+      );
+      return XpAward(
+        baseXp: amount,
+        streakBonus: bonus,
+        streak: newStreak,
+        levelBefore: LevelInfo(profile.xp).level,
+        levelAfter: LevelInfo(updatedXp).level,
+      );
+    }
+
     final res = await client
         .from('users')
         .update({
@@ -176,6 +221,14 @@ class ProfileService {
       );
       profileListenable.value = updatedProfile;
     }
+
+    return XpAward(
+      baseXp: amount,
+      streakBonus: bonus,
+      streak: newStreak,
+      levelBefore: LevelInfo(profile.xp).level,
+      levelAfter: LevelInfo(updatedXp).level,
+    );
   }
 
   Future<void> setStreak(int newStreak) async {
@@ -226,7 +279,8 @@ class ProfileService {
   }
 
   Future<void> signOut() async {
-    await _client.auth.signOut();
+    if (!DemoMode.enabled) await _client.auth.signOut();
     profileListenable.value = null;
+    MissionProgressService.instance.reset();
   }
 }

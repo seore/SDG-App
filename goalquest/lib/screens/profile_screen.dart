@@ -1,9 +1,14 @@
-// ignore_for_file: unnecessary_type_check, deprecated_member_use
-
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+
+import '../data/sdg_data.dart';
 import '../services/profile_service.dart';
-// import '../services/owned_pack_service.dart'; 
+import '../theme/app_theme.dart';
+import '../widgets/app_card.dart';
+import '../widgets/app_scaffold.dart';
+import '../widgets/motion.dart';
+import '../widgets/progress_widgets.dart';
+import 'home_screen.dart' show ProfileAvatar;
 
 class _QuizSummary {
   final int attempts;
@@ -23,41 +28,78 @@ class _QuizSummary {
   );
 }
 
-// ───────────────── Avatar frame definitions (DISABLED) ───────────────
-// class AvatarFrameDef {
-//   final String id;
-//   final String name;
-//   final String description;
-//   final List<Color> colors;
-//
-//   const AvatarFrameDef({
-//     required this.id,
-//     required this.name,
-//     required this.description,
-//     required this.colors,
-//   });
-// }
-//
-// const List<AvatarFrameDef> kAvatarFrames = [
-//   AvatarFrameDef(
-//     id: 'cosmetic_eco_frame',
-//     name: 'Eco Glow',
-//     description: 'Green aura for eco warriors.',
-//     colors: [Color(0xFF22C55E), Color(0xFF4ADE80)],
-//   ),
-//   AvatarFrameDef(
-//     id: 'cosmetic_sunrise_frame',
-//     name: 'Sunrise Blaze',
-//     description: 'Warm sunrise ring for early birds.',
-//     colors: [Color(0xFFF97316), Color(0xFFFACC15)],
-//   ),
-//   AvatarFrameDef(
-//     id: 'cosmetic_ocean_frame',
-//     name: 'Ocean Wave',
-//     description: 'Cool blue frame for water guardians.',
-//     colors: [Color(0xFF0EA5E9), Color(0xFF38BDF8)],
-//   ),
-// ];
+/// An achievement with a target, shown as earned or locked with progress.
+class _Achievement {
+  final String title;
+  final IconData icon;
+  final Color color;
+  final int current;
+  final int target;
+  final String unit;
+
+  const _Achievement({
+    required this.title,
+    required this.icon,
+    required this.color,
+    required this.current,
+    required this.target,
+    required this.unit,
+  });
+
+  bool get earned => current >= target;
+  double get progress => (current / target).clamp(0.0, 1.0);
+}
+
+List<_Achievement> _achievementsFor(UserProfile p) => [
+      _Achievement(
+        title: 'First steps',
+        icon: Icons.flag_rounded,
+        color: AppColors.primary,
+        current: p.xp,
+        target: 1,
+        unit: 'XP',
+      ),
+      _Achievement(
+        title: '3-day streak',
+        icon: Icons.local_fire_department_rounded,
+        color: AppColors.streak,
+        current: p.streak,
+        target: 3,
+        unit: 'days',
+      ),
+      _Achievement(
+        title: '7-day streak',
+        icon: Icons.whatshot_rounded,
+        color: const Color(0xFFDC2626),
+        current: p.streak,
+        target: 7,
+        unit: 'days',
+      ),
+      _Achievement(
+        title: '500 XP',
+        icon: Icons.star_rounded,
+        color: const Color(0xFFB45309),
+        current: p.xp,
+        target: 500,
+        unit: 'XP',
+      ),
+      _Achievement(
+        title: '14-day streak',
+        icon: Icons.bolt_rounded,
+        color: const Color(0xFF7C3AED),
+        current: p.streak,
+        target: 14,
+        unit: 'days',
+      ),
+      _Achievement(
+        title: '1,000 XP',
+        icon: Icons.workspace_premium_rounded,
+        color: const Color(0xFF0369A1),
+        current: p.xp,
+        target: 1000,
+        unit: 'XP',
+      ),
+    ];
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -68,7 +110,6 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   final _profileService = ProfileService.instance;
-  // final _ownedService = OwnedPackService.instance; 
 
   bool _loading = true;
   late Future<_QuizSummary> _quizSummaryFuture;
@@ -80,25 +121,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
     _load();
   }
 
-  // Avatar frames disabled, so this is unused
-  // AvatarFrameDef? _frameById(String? id) { ... }
-
   Future<void> _load() async {
-    await _profileService.loadCurrentUserProfile();
-    if (mounted) {
-      setState(() {
-        _loading = false;
-      });
+    try {
+      await _profileService.loadCurrentUserProfile();
+    } finally {
+      if (mounted) setState(() => _loading = false);
     }
   }
 
   Future<_QuizSummary> _getQuizSummary() async {
     final client = Supabase.instance.client;
     final session = client.auth.currentSession;
-
-    if (session == null) {
-      return _QuizSummary.empty;
-    }
+    if (session == null) return _QuizSummary.empty;
 
     try {
       final res = await client
@@ -106,30 +140,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
           .select('score, total_questions, xp_earned')
           .eq('user_id', session.user.id);
 
-      if (res is! List || res.isEmpty) {
-        return _QuizSummary.empty;
-      }
+      if (res.isEmpty) return _QuizSummary.empty;
 
-      int attempts = res.length;
       double totalPercent = 0;
       int totalXp = 0;
-
       for (final row in res) {
         final score = (row['score'] ?? 0) as int;
         final totalQuestions = (row['total_questions'] ?? 0) as int;
         final xpEarned = (row['xp_earned'] ?? 0) as int;
-
         if (totalQuestions > 0) {
           totalPercent += (score / totalQuestions) * 100.0;
         }
         totalXp += xpEarned;
       }
 
-      final avgPercent = totalPercent / attempts;
-
       return _QuizSummary(
-        attempts: attempts,
-        averagePercent: avgPercent,
+        attempts: res.length,
+        averagePercent: totalPercent / res.length,
         totalXp: totalXp,
       );
     } catch (_) {
@@ -138,6 +165,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> _signOut() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Sign out?'),
+        content: const Text('You can sign back in at any time.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Sign out'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+
     await _profileService.signOut();
     if (!mounted) return;
     Navigator.pushNamedAndRemoveUntil(context, '/auth', (route) => false);
@@ -145,674 +191,565 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    if (_loading) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
-    }
-
-    return Scaffold(
-      appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(70),
-        child: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              colors: [
-                Color(0xFF32C27C),
-                Color(0xFF2196F3),
-              ],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
+    return AppScaffold(
+      title: 'Profile',
+      body: _loading
+          ? const Center(
+              child: CircularProgressIndicator(color: AppColors.primary),
+            )
+          : ValueListenableBuilder<UserProfile?>(
+              valueListenable: _profileService.profileListenable,
+              builder: (context, profile, _) {
+                if (profile == null) return const _NoProfileState();
+                return _buildContent(context, profile);
+              },
             ),
-            borderRadius: BorderRadius.only(
-              bottomLeft: Radius.circular(2),
-              bottomRight: Radius.circular(2),
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black26,
-                blurRadius: 8,
-                offset: Offset(0, 3),
-              ),
-            ],
-          ),
-          child: AppBar(
-            backgroundColor: Colors.transparent,
-            elevation: 0,
-            automaticallyImplyLeading: true,
-            iconTheme: const IconThemeData(color: Colors.white),
-            title: const Text(
-              "My SDG Profile",
-              style: TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.w600,
-                fontSize: 20,
-              ),
-            ),
-            centerTitle: true,
-          ),
-        ),
-      ),
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              Color(0xFF32C27C),
-              Color(0xFF2196F3),
-            ],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-        ),
-        child: SafeArea(
-          child: ValueListenableBuilder<UserProfile?>(
-            valueListenable: _profileService.profileListenable,
-            builder: (context, profile, _) {
-              if (profile == null) {
-                return _buildNoProfileState(theme);
-              }
-
-              final level = profile.xp ~/ 100;
-              final xpInLevel = profile.xp % 100;
-              const xpPerLevel = 100;
-
-              // With frames off, we don’t need ownedIds here
-              final headerBadges = _buildHeaderBadges(profile);
-
-              return Center(
-                child: LayoutBuilder(
-                  builder: (context, constraints) {
-                    final maxWidth = constraints.maxWidth > 480
-                        ? 420.0
-                        : constraints.maxWidth * 0.9;
-
-                    return SingleChildScrollView(
-                      padding: const EdgeInsets.symmetric(vertical: 24),
-                      child: Column(
-                        children: [
-                          Container(
-                            width: maxWidth,
-                            decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.97),
-                              borderRadius: BorderRadius.circular(24),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0),
-                                  blurRadius: 20,
-                                  offset: const Offset(0, 12),
-                                ),
-                              ],
-                            ),
-                            child: Padding(
-                              padding: const EdgeInsets.all(20.0),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  // Header: avatar + name + sign out
-                                  Row(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      _AvatarPreview(profile: profile),
-                                      const SizedBox(width: 14),
-                                      Expanded(
-                                        child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            Text(
-                                              profile.username.isNotEmpty
-                                                  ? profile.username
-                                                  : 'Explorer',
-                                              style: theme.textTheme.titleMedium
-                                                  ?.copyWith(
-                                                fontWeight: FontWeight.w700,
-                                              ),
-                                            ),
-                                            const SizedBox(height: 4),
-                                            Text(
-                                              profile.email,
-                                              style: theme.textTheme.bodySmall
-                                                  ?.copyWith(
-                                                color: Colors.grey[600],
-                                              ),
-                                            ),
-                                            if (headerBadges.isNotEmpty)
-                                              Padding(
-                                                padding: const EdgeInsets.only(
-                                                    top: 6.0),
-                                                child: Wrap(
-                                                  spacing: 4,
-                                                  runSpacing: 4,
-                                                  children: headerBadges,
-                                                ),
-                                              ),
-                                          ],
-                                        ),
-                                      ),
-                                      IconButton(
-                                        onPressed: _signOut,
-                                        tooltip: 'Sign out',
-                                        icon: const Icon(Icons.logout),
-                                      ),
-                                    ],
-                                  ),
-
-                                  const SizedBox(height: 16),
-
-                                  // ───── Avatar frames selector (DISABLED FOR NOW) ─────
-                                  // const Text('Avatar frames', ...);
-                                  // Wrap(
-                                  //   children: kAvatarFrames.map((frame) => _FrameChip(...))
-                                  // );
-                                  // TextButton.icon(
-                                  //   onPressed: () => Navigator.pushNamed(context, '/shop'),
-                                  //   icon: const Icon(Icons.shopping_bag_outlined, size: 18),
-                                  //   label: const Text('Open Shop', style: TextStyle(fontSize: 13)),
-                                  // ),
-
-                                  // Level + XP progress
-                                  Container(
-                                    padding: const EdgeInsets.all(16),
-                                    decoration: BoxDecoration(
-                                      color: const Color(0xFFF5F7FB),
-                                      borderRadius: BorderRadius.circular(18),
-                                    ),
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Row(
-                                          children: [
-                                            Container(
-                                              padding:
-                                                  const EdgeInsets.symmetric(
-                                                horizontal: 10,
-                                                vertical: 6,
-                                              ),
-                                              decoration: BoxDecoration(
-                                                color: const Color(0xFF32C27C)
-                                                    .withOpacity(0.1),
-                                                borderRadius:
-                                                    BorderRadius.circular(999),
-                                              ),
-                                              child: Row(
-                                                children: const [
-                                                  Icon(
-                                                    Icons.stars_rounded,
-                                                    size: 16,
-                                                    color: Color(0xFF32C27C),
-                                                  ),
-                                                  SizedBox(width: 4),
-                                                  Text(
-                                                    'Level',
-                                                    style: TextStyle(
-                                                      fontSize: 12,
-                                                      fontWeight: FontWeight.w600,
-                                                      color: Color(0xFF32C27C),
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
-                                            const Spacer(),
-                                            Text(
-                                              'Level $level • ${profile.xp} XP',
-                                              style: const TextStyle(
-                                                fontWeight: FontWeight.w700,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                        const SizedBox(height: 10),
-                                        Text(
-                                          '$xpInLevel / $xpPerLevel XP to next level',
-                                          style: const TextStyle(
-                                            fontSize: 12,
-                                            color: Colors.grey,
-                                          ),
-                                        ),
-                                        const SizedBox(height: 8),
-                                        ClipRRect(
-                                          borderRadius:
-                                              BorderRadius.circular(999),
-                                          child: LinearProgressIndicator(
-                                            value: xpInLevel / xpPerLevel,
-                                            minHeight: 8,
-                                            backgroundColor:
-                                                Colors.grey.shade300,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-
-                                  const SizedBox(height: 16),
-
-                                  // User Stats
-                                  Row(
-                                    children: [
-                                      Expanded(
-                                        child: _StatCard(
-                                          title: 'Daily streak',
-                                          value: '${profile.streak}',
-                                          subtitle: 'Days in a row',
-                                          icon: Icons.local_fire_department,
-                                          iconColor: Colors.orangeAccent,
-                                        ),
-                                      ),
-                                      const SizedBox(width: 12),
-                                      Expanded(
-                                        child: _StatCard(
-                                          title: 'Impact XP',
-                                          value: '${profile.xp}',
-                                          subtitle: 'From missions',
-                                          icon: Icons.public,
-                                          iconColor: Colors.blueAccent,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 16),
-
-                                  // Quiz stats
-                                  FutureBuilder<_QuizSummary>(
-                                    future: _quizSummaryFuture,
-                                    builder: (context, snapshot) {
-                                      final data =
-                                          snapshot.data ?? _QuizSummary.empty;
-
-                                      return Container(
-                                        width: double.infinity,
-                                        padding: const EdgeInsets.all(16),
-                                        decoration: BoxDecoration(
-                                          color: const Color(0xFFF5F7FB),
-                                          borderRadius:
-                                              BorderRadius.circular(18),
-                                        ),
-                                        child: Row(
-                                          children: [
-                                            CircleAvatar(
-                                              radius: 18,
-                                              backgroundColor:
-                                                  const Color(0xFF6366F1)
-                                                      .withOpacity(0.12),
-                                              child: const Icon(
-                                                Icons.quiz_outlined,
-                                                color: Color(0xFF6366F1),
-                                              ),
-                                            ),
-                                            const SizedBox(width: 12),
-                                            Expanded(
-                                              child: Column(
-                                                crossAxisAlignment:
-                                                    CrossAxisAlignment.start,
-                                                children: [
-                                                  const Text(
-                                                    'Quiz History',
-                                                    style: TextStyle(
-                                                      fontSize: 13,
-                                                      fontWeight:
-                                                          FontWeight.w600,
-                                                    ),
-                                                  ),
-                                                  const SizedBox(height: 4),
-                                                  if (!snapshot.hasData)
-                                                    const Text(
-                                                      'Loading your quiz stats...',
-                                                      style: TextStyle(
-                                                        fontSize: 12,
-                                                        color: Colors.grey,
-                                                      ),
-                                                    )
-                                                  else if (data.attempts == 0)
-                                                    const Text(
-                                                      'No quizzes played yet.',
-                                                      style: TextStyle(
-                                                        fontSize: 12,
-                                                        color: Colors.grey,
-                                                      ),
-                                                    )
-                                                  else
-                                                    Text(
-                                                      '${data.attempts} quiz attempt(s) • avg score ${data.averagePercent.toStringAsFixed(0)}% • ${data.totalXp} XP earned',
-                                                      style: const TextStyle(
-                                                        fontSize: 12,
-                                                        color: Colors.grey,
-                                                      ),
-                                                    ),
-                                                ],
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      );
-                                    },
-                                  ),
-
-                                  const SizedBox(height: 16),
-
-                                  // User SDG chips
-                                  const Text(
-                                    'Your focus SDGs',
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 8),
-                                  Wrap(
-                                    spacing: 5,
-                                    runSpacing: 5,
-                                    children: const [
-                                      _SdgChip(
-                                        label: 'No Poverty',
-                                        color: 0xFFE5243B,
-                                      ),
-                                      _SdgChip(
-                                        label: 'Climate Action',
-                                        color: 0xFF3F7E44,
-                                      ),
-                                    ],
-                                  ),
-
-                                  const SizedBox(height: 18),
-
-                                  // Placeholder for upcoming features
-                                  Container(
-                                    padding: const EdgeInsets.all(16),
-                                    decoration: BoxDecoration(
-                                      color: const Color(0xFFF5F7FB),
-                                      borderRadius: BorderRadius.circular(18),
-                                    ),
-                                    child: const Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          'Badges & Achievements',
-                                          style: TextStyle(
-                                            fontSize: 14,
-                                            fontWeight: FontWeight.w600,
-                                          ),
-                                        ),
-                                        SizedBox(height: 8),
-                                        Text(
-                                          'Soon you\'ll unlock badges for streaks, favourite SDGs, and global challenges.',
-                                          style: TextStyle(
-                                            fontSize: 12,
-                                            color: Colors.grey,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    );
-                  },
-                ),
-              );
-            },
-          ),
-        ),
-      ),
     );
   }
 
-  /// Build small header badges under username (frames removed)
-  List<Widget> _buildHeaderBadges(UserProfile profile) {
-    final badges = <Widget>[];
+  Widget _buildContent(BuildContext context, UserProfile profile) {
+    final achievements = _achievementsFor(profile);
+    final earned = achievements.where((a) => a.earned).length;
 
-    // Streak-based badges
-    if (profile.streak >= 3) {
-      badges.add(
-        const _BadgeChip(
-          label: '3+ day streak',
-          icon: Icons.local_fire_department,
-          color: Colors.orange,
-        ),
-      );
-    }
-    if (profile.streak >= 7) {
-      badges.add(
-        const _BadgeChip(
-          label: '7 day streak',
-          icon: Icons.whatshot,
-          color: Colors.deepOrange,
-        ),
-      );
-    }
+    Widget section(int i, Widget child) => FadeSlideIn(
+          delay: Duration(milliseconds: 60 * i),
+          child: child,
+        );
 
-    // XP-based badge
-    if (profile.xp >= 500) {
-      badges.add(
-        const _BadgeChip(
-          label: '500+ XP',
-          icon: Icons.stars_rounded,
-          color: Color(0xFF32C27C),
-        ),
-      );
-    }
-
-    // No cosmetic / frame ownership badges for now
-    return badges;
-  }
-
-  Widget _buildNoProfileState(ThemeData theme) {
-    return Container(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            Color(0xFF32C27C),
-            Color(0xFF2196F3),
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-      ),
-      child: SafeArea(
-        child: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(24.0),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(
-                  Icons.person_outline,
-                  size: 56,
-                  color: Colors.white,
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(20, 4, 20, 32),
+      children: [
+        ContentWidth(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              section(0, _IdentityCard(profile: profile)),
+              const SizedBox(height: AppSpacing.md),
+              section(1, _buildStatsGrid(profile)),
+              const SizedBox(height: AppSpacing.xxl),
+              section(
+                2,
+                SectionHeader(
+                  title: 'Achievements',
+                  subtitle: '$earned of ${achievements.length} earned',
                 ),
-                const SizedBox(height: 12),
-                const Text(
-                  'No profile found yet',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.white,
+              ),
+              section(3, _AchievementGrid(achievements: achievements)),
+              const SizedBox(height: AppSpacing.xxl),
+              section(4, const SectionHeader(title: 'Focus SDGs')),
+              section(5, const _FocusSdgs()),
+              const SizedBox(height: AppSpacing.xxl),
+              section(6, const SectionHeader(title: 'Account')),
+              section(
+                7,
+                AppCard(
+                  padding: EdgeInsets.zero,
+                  child: Column(
+                    children: [
+                      _SettingsRow(
+                        icon: Icons.mail_outline_rounded,
+                        label: 'Email',
+                        value: profile.email,
+                      ),
+                      const Divider(indent: 52),
+                      _SettingsRow(
+                        icon: Icons.insights_rounded,
+                        label: 'Impact dashboard',
+                        onTap: () =>
+                            Navigator.pushNamed(context, '/impactDashboard'),
+                      ),
+                      const Divider(indent: 52),
+                      _SettingsRow(
+                        icon: Icons.storefront_rounded,
+                        label: 'Shop',
+                        onTap: () => Navigator.pushNamed(context, '/shop'),
+                      ),
+                      const Divider(indent: 52),
+                      _SettingsRow(
+                        icon: Icons.logout_rounded,
+                        label: 'Sign out',
+                        destructive: true,
+                        onTap: _signOut,
+                      ),
+                    ],
                   ),
                 ),
-                const SizedBox(height: 8),
-                Text(
-                  'Log in or sign up, then come back here to see your SDG stats.',
-                  textAlign: TextAlign.center,
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: Colors.white.withOpacity(0.9),
-                  ),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
-      ),
+      ],
+    );
+  }
+
+  Widget _buildStatsGrid(UserProfile profile) {
+    final info = LevelInfo(profile.xp);
+
+    return FutureBuilder<_QuizSummary>(
+      future: _quizSummaryFuture,
+      builder: (context, snapshot) {
+        final quiz = snapshot.data ?? _QuizSummary.empty;
+        final quizValue = !snapshot.hasData
+            ? '–'
+            : quiz.attempts == 0
+                ? '–'
+                : '${quiz.averagePercent.toStringAsFixed(0)}%';
+        final quizCaption = !snapshot.hasData
+            ? 'Loading…'
+            : quiz.attempts == 0
+                ? 'No quizzes yet'
+                : '${quiz.attempts} attempt${quiz.attempts == 1 ? '' : 's'}';
+
+        final tiles = [
+          _StatTile(
+            label: 'Level',
+            value: '${info.level}',
+            caption: '${info.xpToNext} XP to next',
+            icon: Icons.military_tech_rounded,
+            color: AppColors.primary,
+            progress: info.progress,
+          ),
+          _StatTile(
+            label: 'Impact XP',
+            value: '${profile.xp}',
+            caption: 'Total earned',
+            icon: Icons.bolt_rounded,
+            color: AppColors.xp,
+            animateValue: profile.xp,
+          ),
+          _StatTile(
+            label: 'Streak',
+            value: '${profile.streak}',
+            caption: profile.streak == 1 ? 'day in a row' : 'days in a row',
+            icon: Icons.local_fire_department_rounded,
+            color: AppColors.streak,
+          ),
+          _StatTile(
+            label: 'Quiz average',
+            value: quizValue,
+            caption: quizCaption,
+            icon: Icons.quiz_rounded,
+            color: const Color(0xFF4F46E5),
+          ),
+        ];
+
+        return GridView(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          padding: EdgeInsets.zero,
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 2,
+            mainAxisSpacing: AppSpacing.md,
+            crossAxisSpacing: AppSpacing.md,
+            mainAxisExtent: 116,
+          ),
+          children: tiles,
+        );
+      },
     );
   }
 }
 
-class _StatCard extends StatelessWidget {
-  final String title;
-  final String value;
-  final String subtitle;
-  final IconData icon;
-  final Color iconColor;
+class _IdentityCard extends StatelessWidget {
+  final UserProfile profile;
+  const _IdentityCard({required this.profile});
 
-  const _StatCard({
-    required this.title,
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final info = LevelInfo(profile.xp);
+    final name =
+        profile.username.trim().isNotEmpty ? profile.username.trim() : 'Explorer';
+
+    return AppCard(
+      padding: const EdgeInsets.all(20),
+      child: Row(
+        children: [
+          XpRing(
+            progress: info.progress,
+            size: 76,
+            strokeWidth: 4,
+            child: ProfileAvatar(profile: profile, fontSize: 24),
+          ),
+          const SizedBox(width: AppSpacing.lg),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  name,
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: -0.4,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  profile.email,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.bodySmall
+                      ?.copyWith(color: AppColors.textSecondary),
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                PillChip(
+                  label: 'Level ${info.level} · ${_rankFor(info.level)}',
+                  color: AppColors.primary,
+                  icon: Icons.verified_rounded,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  static String _rankFor(int level) {
+    if (level >= 20) return 'Global Leader';
+    if (level >= 10) return 'Changemaker';
+    if (level >= 5) return 'Advocate';
+    if (level >= 2) return 'Explorer';
+    return 'Newcomer';
+  }
+}
+
+class _StatTile extends StatelessWidget {
+  final String label;
+  final String value;
+  final String caption;
+  final IconData icon;
+  final Color color;
+  final double? progress;
+  final int? animateValue;
+
+  const _StatTile({
+    required this.label,
     required this.value,
-    required this.subtitle,
+    required this.caption,
     required this.icon,
-    required this.iconColor,
+    required this.color,
+    this.progress,
+    this.animateValue,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    final theme = Theme.of(context);
+    final valueStyle = theme.textTheme.headlineSmall?.copyWith(
+      fontWeight: FontWeight.w700,
+      letterSpacing: -0.6,
+    );
+
+    return AppCard(
       padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF5F7FB),
-        borderRadius: BorderRadius.circular(18),
-      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              CircleAvatar(
-                radius: 14,
-                backgroundColor: iconColor.withOpacity(0.12),
-                child: Icon(icon, size: 16, color: iconColor),
-              ),
+              Icon(icon, size: 16, color: color),
               const SizedBox(width: 6),
-              Text(
-                title,
-                style: const TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
+              Expanded(
+                child: Text(
+                  label,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: AppColors.textSecondary,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 6),
-          Text(
-            value,
-            style: const TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.w700,
+          const Spacer(),
+          animateValue != null
+              ? AnimatedCount(value: animateValue!, style: valueStyle)
+              : Text(value, style: valueStyle),
+          const SizedBox(height: 2),
+          if (progress != null)
+            Padding(
+              padding: const EdgeInsets.only(top: 4, bottom: 2),
+              child: SpringProgressBar(value: progress!, height: 4),
+            )
+          else
+            Text(
+              caption,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: theme.textTheme.bodySmall
+                  ?.copyWith(color: AppColors.textTertiary, fontSize: 11),
             ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            subtitle,
-            style: const TextStyle(
-              fontSize: 11,
-              color: Colors.grey,
-            ),
-          ),
         ],
       ),
     );
   }
 }
 
-class _SdgChip extends StatelessWidget {
-  final String label;
-  final int color;
-
-  const _SdgChip({required this.label, required this.color});
+class _AchievementGrid extends StatelessWidget {
+  final List<_Achievement> achievements;
+  const _AchievementGrid({required this.achievements});
 
   @override
   Widget build(BuildContext context) {
-    return Chip(
-      label: Text(
-        label,
-        style: const TextStyle(
-          fontSize: 11,
-          fontWeight: FontWeight.w600,
-          color: Colors.white,
+    return AppCard(
+      padding: const EdgeInsets.all(AppSpacing.md),
+      child: GridView(
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        padding: EdgeInsets.zero,
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 3,
+          mainAxisSpacing: AppSpacing.sm,
+          crossAxisSpacing: AppSpacing.sm,
+          mainAxisExtent: 116,
+        ),
+        children: [
+          for (final a in achievements) _AchievementTile(achievement: a),
+        ],
+      ),
+    );
+  }
+}
+
+class _AchievementTile extends StatelessWidget {
+  final _Achievement achievement;
+  const _AchievementTile({required this.achievement});
+
+  @override
+  Widget build(BuildContext context) {
+    final a = achievement;
+    final color = a.earned ? a.color : AppColors.textTertiary;
+
+    return Tooltip(
+      message: a.earned
+          ? 'Earned'
+          : '${a.current.clamp(0, a.target)} / ${a.target} ${a.unit}',
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 10),
+        decoration: BoxDecoration(
+          color: a.earned ? a.color.withValues(alpha: 0.06) : AppColors.background,
+          borderRadius: BorderRadius.circular(AppRadius.md),
+          border: Border.all(
+            color: a.earned ? a.color.withValues(alpha: 0.2) : AppColors.border,
+          ),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            SizedBox(
+              width: 44,
+              height: 44,
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  // Ring shows progress towards locked achievements.
+                  TweenAnimationBuilder<double>(
+                    tween: Tween(end: a.progress),
+                    duration: AppDurations.slow,
+                    curve: AppMotion.gentleSpring,
+                    builder: (context, v, _) => CircularProgressIndicator(
+                      value: v.clamp(0.0, 1.0),
+                      strokeWidth: 3,
+                      strokeCap: StrokeCap.round,
+                      backgroundColor: AppColors.border,
+                      valueColor: AlwaysStoppedAnimation(color),
+                    ),
+                  ),
+                  Center(
+                    child: Icon(
+                      a.earned ? a.icon : Icons.lock_outline_rounded,
+                      size: 20,
+                      color: color,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            Text(
+              a.title,
+              textAlign: TextAlign.center,
+              maxLines: 2,
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                color: a.earned ? AppColors.textPrimary : AppColors.textSecondary,
+              ),
+            ),
+          ],
         ),
       ),
-      backgroundColor: Color(color),
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
     );
   }
 }
 
-class _AvatarPreview extends StatelessWidget {
-  final UserProfile profile;
-
-  const _AvatarPreview({required this.profile});
+/// Placeholder focus goals until the user can choose their own.
+class _FocusSdgs extends StatelessWidget {
+  const _FocusSdgs();
 
   @override
   Widget build(BuildContext context) {
-    final hasUsername = profile.username.trim().isNotEmpty;
-    final initials =
-        hasUsername ? profile.username.trim()[0].toUpperCase() : null;
+    final goals = [1, 13]
+        .map(getSdgByNumber)
+        .whereType<SdgGoal>()
+        .toList();
 
-    return CircleAvatar(
-      radius: 32,
-      backgroundImage:
-          profile.avatarUrl != null ? NetworkImage(profile.avatarUrl!) : null,
-      backgroundColor: const Color(0xFF32C27C).withOpacity(0.1),
-      child: profile.avatarUrl != null
-          ? null
-          : (hasUsername
-              ? Text(
-                  initials!,
-                  style: const TextStyle(
-                    fontSize: 26,
-                    fontWeight: FontWeight.w600,
+    return AppCard(
+      padding: EdgeInsets.zero,
+      child: Column(
+        children: [
+          for (var i = 0; i < goals.length; i++) ...[
+            if (i > 0) const Divider(indent: 64),
+            Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: () => Navigator.pushNamed(
+                  context,
+                  '/learnSdg',
+                  arguments: goals[i].number,
+                ),
+                child: Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 36,
+                        height: 36,
+                        decoration: BoxDecoration(
+                          color: goals[i].color,
+                          borderRadius: BorderRadius.circular(AppRadius.sm),
+                        ),
+                        alignment: Alignment.center,
+                        child: Text(
+                          '${goals[i].number}',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: AppSpacing.md),
+                      Expanded(
+                        child: Text(
+                          goals[i].shortTitle,
+                          style: const TextStyle(fontWeight: FontWeight.w600),
+                        ),
+                      ),
+                      const Icon(Icons.chevron_right_rounded,
+                          color: AppColors.textTertiary),
+                    ],
                   ),
-                )
-              : const Icon(
-                  Icons.person,
-                  size: 28,
-                  color: Color(0xFF32C27C),
-                )),
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
     );
   }
 }
 
-/// Small badge chip used under the username
-class _BadgeChip extends StatelessWidget {
-  final String label;
+class _SettingsRow extends StatelessWidget {
   final IconData icon;
-  final Color color;
+  final String label;
+  final String? value;
+  final VoidCallback? onTap;
+  final bool destructive;
 
-  const _BadgeChip({
-    required this.label,
+  const _SettingsRow({
     required this.icon,
-    required this.color,
+    required this.label,
+    this.value,
+    this.onTap,
+    this.destructive = false,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding:
-          const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.08),
-        borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: color.withOpacity(0.3), width: 0.8),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 12, color: color),
-          const SizedBox(width: 4),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 10,
-              fontWeight: FontWeight.w600,
-              color: color,
-            ),
+    final color = destructive ? const Color(0xFFDC2626) : AppColors.textPrimary;
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          child: Row(
+            children: [
+              Icon(icon,
+                  size: 20,
+                  color: destructive ? color : AppColors.textSecondary),
+              const SizedBox(width: AppSpacing.md + 4),
+              Expanded(
+                child: Text(
+                  label,
+                  style: TextStyle(
+                    fontWeight: FontWeight.w500,
+                    color: color,
+                  ),
+                ),
+              ),
+              if (value != null)
+                Flexible(
+                  child: Text(
+                    value!,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: AppColors.textSecondary,
+                      fontSize: 13,
+                    ),
+                  ),
+                ),
+              if (onTap != null && !destructive)
+                const Icon(Icons.chevron_right_rounded,
+                    color: AppColors.textTertiary),
+            ],
           ),
-        ],
+        ),
+      ),
+    );
+  }
+}
+
+class _NoProfileState extends StatelessWidget {
+  const _NoProfileState();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.xl),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const IconTile(
+              icon: Icons.person_outline_rounded,
+              color: AppColors.primary,
+              size: 56,
+            ),
+            const SizedBox(height: AppSpacing.lg),
+            Text(
+              'No profile yet',
+              style: theme.textTheme.titleMedium
+                  ?.copyWith(fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            Text(
+              'Log in or sign up to see your SDG stats.',
+              textAlign: TextAlign.center,
+              style: theme.textTheme.bodyMedium
+                  ?.copyWith(color: AppColors.textSecondary),
+            ),
+            const SizedBox(height: AppSpacing.lg),
+            FilledButton(
+              onPressed: () => Navigator.pushNamedAndRemoveUntil(
+                  context, '/auth', (route) => false),
+              child: const Text('Go to login'),
+            ),
+          ],
+        ),
       ),
     );
   }

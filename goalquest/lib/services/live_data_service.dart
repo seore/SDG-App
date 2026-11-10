@@ -3,6 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 class LiveMissionCompletion {
   final String id;
+  final String? userId;
   final String userName;
   final String missionId;
   final String missionTitle;
@@ -14,6 +15,7 @@ class LiveMissionCompletion {
 
   LiveMissionCompletion({
     required this.id,
+    this.userId,
     required this.userName,
     required this.missionId,
     required this.missionTitle,
@@ -38,6 +40,7 @@ class LiveMissionCompletion {
 
     return LiveMissionCompletion(
       id: map['id'].toString(),
+      userId: map['user_id']?.toString(),
       userName: (map['user_name'] ?? 'Someone').toString(),
       missionId: (map['mission_id'] ?? '').toString(),
       missionTitle: (map['mission_title'] ?? '').toString(),
