@@ -20,6 +20,11 @@ me.patch('/', async (c) => {
       username: z.string().trim().min(2).max(24).optional(),
       avatar_url: z.string().url().max(500).nullable().optional(),
       active_avatar_frame: z.string().max(64).nullable().optional(),
+      focus_sdgs: z
+        .array(z.number().int().min(1).max(17))
+        .max(3)
+        .transform((a) => [...new Set(a)])
+        .optional(),
     })
     .safeParse(await c.req.json().catch(() => null));
   if (!body.success) throw apiError(400, 'invalid_input', 'Check your profile details.');
@@ -29,7 +34,8 @@ me.patch('/', async (c) => {
   for (const [key, value] of Object.entries(body.data)) {
     if (value === undefined) continue;
     params.push(value);
-    sets.push(`${key} = $${params.length}`);
+    const cast = key === 'focus_sdgs' ? '::smallint[]' : '';
+    sets.push(`${key} = $${params.length}${cast}`);
   }
   if (sets.length) {
     await c.get('db').query(`update users set ${sets.join(', ')} where id = $1`, params);

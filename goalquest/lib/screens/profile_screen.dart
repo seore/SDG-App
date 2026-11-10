@@ -22,11 +22,7 @@ class _QuizSummary {
     required this.totalXp,
   });
 
-  static const empty = _QuizSummary(
-    attempts: 0,
-    averagePercent: 0,
-    totalXp: 0,
-  );
+  static const empty = _QuizSummary(attempts: 0, averagePercent: 0, totalXp: 0);
 }
 
 /// An achievement with a target, shown as earned or locked with progress.
@@ -52,55 +48,55 @@ class _Achievement {
 }
 
 List<_Achievement> _achievementsFor(UserProfile p) => [
-      _Achievement(
-        title: 'First steps',
-        icon: Icons.flag_rounded,
-        color: AppColors.primary,
-        current: p.xp,
-        target: 1,
-        unit: 'XP',
-      ),
-      _Achievement(
-        title: '3-day streak',
-        icon: Icons.local_fire_department_rounded,
-        color: AppColors.streak,
-        current: p.streak,
-        target: 3,
-        unit: 'days',
-      ),
-      _Achievement(
-        title: '7-day streak',
-        icon: Icons.whatshot_rounded,
-        color: const Color(0xFFDC2626),
-        current: p.streak,
-        target: 7,
-        unit: 'days',
-      ),
-      _Achievement(
-        title: '500 XP',
-        icon: Icons.star_rounded,
-        color: const Color(0xFFB45309),
-        current: p.xp,
-        target: 500,
-        unit: 'XP',
-      ),
-      _Achievement(
-        title: '14-day streak',
-        icon: Icons.bolt_rounded,
-        color: const Color(0xFF7C3AED),
-        current: p.streak,
-        target: 14,
-        unit: 'days',
-      ),
-      _Achievement(
-        title: '1,000 XP',
-        icon: Icons.workspace_premium_rounded,
-        color: const Color(0xFF0369A1),
-        current: p.xp,
-        target: 1000,
-        unit: 'XP',
-      ),
-    ];
+  _Achievement(
+    title: 'First steps',
+    icon: Icons.flag_rounded,
+    color: AppColors.primary,
+    current: p.xp,
+    target: 1,
+    unit: 'XP',
+  ),
+  _Achievement(
+    title: '3-day streak',
+    icon: Icons.local_fire_department_rounded,
+    color: AppColors.streak,
+    current: p.streak,
+    target: 3,
+    unit: 'days',
+  ),
+  _Achievement(
+    title: '7-day streak',
+    icon: Icons.whatshot_rounded,
+    color: const Color(0xFFDC2626),
+    current: p.streak,
+    target: 7,
+    unit: 'days',
+  ),
+  _Achievement(
+    title: '500 XP',
+    icon: Icons.star_rounded,
+    color: const Color(0xFFB45309),
+    current: p.xp,
+    target: 500,
+    unit: 'XP',
+  ),
+  _Achievement(
+    title: '14-day streak',
+    icon: Icons.bolt_rounded,
+    color: const Color(0xFF7C3AED),
+    current: p.streak,
+    target: 14,
+    unit: 'days',
+  ),
+  _Achievement(
+    title: '1,000 XP',
+    icon: Icons.workspace_premium_rounded,
+    color: const Color(0xFF0369A1),
+    current: p.xp,
+    target: 1000,
+    unit: 'XP',
+  ),
+];
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -194,9 +190,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final earned = achievements.where((a) => a.earned).length;
 
     Widget section(int i, Widget child) => FadeSlideIn(
-          delay: Duration(milliseconds: 60 * i),
-          child: child,
-        );
+      delay: Duration(milliseconds: 60 * i),
+      child: child,
+    );
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 4, 20, 32),
@@ -219,7 +215,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               section(3, _AchievementGrid(achievements: achievements)),
               const SizedBox(height: AppSpacing.xxl),
               section(4, const SectionHeader(title: 'Focus SDGs')),
-              section(5, const _FocusSdgs()),
+              section(5, _FocusSdgs(focus: profile.focusSdgs)),
               const SizedBox(height: AppSpacing.xxl),
               section(6, const SectionHeader(title: 'Account')),
               section(
@@ -274,13 +270,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
         final quizValue = !snapshot.hasData
             ? '–'
             : quiz.attempts == 0
-                ? '–'
-                : '${quiz.averagePercent.toStringAsFixed(0)}%';
+            ? '–'
+            : '${quiz.averagePercent.toStringAsFixed(0)}%';
         final quizCaption = !snapshot.hasData
             ? 'Loading…'
             : quiz.attempts == 0
-                ? 'No quizzes yet'
-                : '${quiz.attempts} attempt${quiz.attempts == 1 ? '' : 's'}';
+            ? 'No quizzes yet'
+            : '${quiz.attempts} attempt${quiz.attempts == 1 ? '' : 's'}';
 
         final tiles = [
           _StatTile(
@@ -340,8 +336,9 @@ class _IdentityCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final info = LevelInfo(profile.xp);
-    final name =
-        profile.username.trim().isNotEmpty ? profile.username.trim() : 'Explorer';
+    final name = profile.username.trim().isNotEmpty
+        ? profile.username.trim()
+        : 'Explorer';
 
     return AppCard(
       padding: const EdgeInsets.all(20),
@@ -370,8 +367,9 @@ class _IdentityCard extends StatelessWidget {
                   profile.email,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.bodySmall
-                      ?.copyWith(color: AppColors.textSecondary),
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: AppColors.textSecondary,
+                  ),
                 ),
                 const SizedBox(height: AppSpacing.sm),
                 PillChip(
@@ -459,8 +457,10 @@ class _StatTile extends StatelessWidget {
               caption,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: theme.textTheme.bodySmall
-                  ?.copyWith(color: AppColors.textTertiary, fontSize: 11),
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: AppColors.textTertiary,
+                fontSize: 11,
+              ),
             ),
         ],
       ),
@@ -510,7 +510,9 @@ class _AchievementTile extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 10),
         decoration: BoxDecoration(
-          color: a.earned ? a.color.withValues(alpha: 0.06) : AppColors.background,
+          color: a.earned
+              ? a.color.withValues(alpha: 0.06)
+              : AppColors.background,
           borderRadius: BorderRadius.circular(AppRadius.md),
           border: Border.all(
             color: a.earned ? a.color.withValues(alpha: 0.2) : AppColors.border,
@@ -556,7 +558,9 @@ class _AchievementTile extends StatelessWidget {
               style: TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.w600,
-                color: a.earned ? AppColors.textPrimary : AppColors.textSecondary,
+                color: a.earned
+                    ? AppColors.textPrimary
+                    : AppColors.textSecondary,
               ),
             ),
           ],
@@ -566,16 +570,39 @@ class _AchievementTile extends StatelessWidget {
   }
 }
 
-/// Placeholder focus goals until the user can choose their own.
+/// The user's chosen focus goals, with an editor.
 class _FocusSdgs extends StatelessWidget {
-  const _FocusSdgs();
+  final List<int> focus;
+  const _FocusSdgs({required this.focus});
 
   @override
   Widget build(BuildContext context) {
-    final goals = [1, 13]
-        .map(getSdgByNumber)
-        .whereType<SdgGoal>()
-        .toList();
+    final goals = focus.map(getSdgByNumber).whereType<SdgGoal>().toList();
+
+    if (goals.isEmpty) {
+      return AppCard(
+        child: Row(
+          children: [
+            const IconTile(
+              icon: Icons.track_changes_rounded,
+              color: AppColors.primary,
+              size: 40,
+            ),
+            const SizedBox(width: AppSpacing.md),
+            const Expanded(
+              child: Text(
+                'Pick up to 3 goals you care about. Your daily missions will include them.',
+                style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
+              ),
+            ),
+            TextButton(
+              onPressed: () => showFocusSdgPicker(context),
+              child: const Text('Choose'),
+            ),
+          ],
+        ),
+      );
+    }
 
     return AppCard(
       padding: EdgeInsets.zero,
@@ -592,26 +619,13 @@ class _FocusSdgs extends StatelessWidget {
                   arguments: goals[i].number,
                 ),
                 child: Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
                   child: Row(
                     children: [
-                      Container(
-                        width: 36,
-                        height: 36,
-                        decoration: BoxDecoration(
-                          color: goals[i].color,
-                          borderRadius: BorderRadius.circular(AppRadius.sm),
-                        ),
-                        alignment: Alignment.center,
-                        child: Text(
-                          '${goals[i].number}',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      ),
+                      _GoalNumber(goal: goals[i]),
                       const SizedBox(width: AppSpacing.md),
                       Expanded(
                         child: Text(
@@ -619,15 +633,241 @@ class _FocusSdgs extends StatelessWidget {
                           style: const TextStyle(fontWeight: FontWeight.w600),
                         ),
                       ),
-                      const Icon(Icons.chevron_right_rounded,
-                          color: AppColors.textTertiary),
+                      const Icon(
+                        Icons.chevron_right_rounded,
+                        color: AppColors.textTertiary,
+                      ),
                     ],
                   ),
                 ),
               ),
             ),
           ],
+          const Divider(),
+          SizedBox(
+            width: double.infinity,
+            child: TextButton.icon(
+              onPressed: () => showFocusSdgPicker(context),
+              icon: const Icon(Icons.edit_rounded, size: 16),
+              label: const Text('Edit focus goals'),
+            ),
+          ),
         ],
+      ),
+    );
+  }
+}
+
+class _GoalNumber extends StatelessWidget {
+  final SdgGoal goal;
+  const _GoalNumber({required this.goal});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 36,
+      height: 36,
+      decoration: BoxDecoration(
+        color: goal.color,
+        borderRadius: BorderRadius.circular(AppRadius.sm),
+      ),
+      alignment: Alignment.center,
+      child: Text(
+        '${goal.number}',
+        style: const TextStyle(
+          color: Colors.white,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
+    );
+  }
+}
+
+/// Bottom sheet for choosing up to three focus SDGs.
+Future<void> showFocusSdgPicker(BuildContext context) {
+  return showModalBottomSheet<void>(
+    context: context,
+    isScrollControlled: true,
+    showDragHandle: true,
+    backgroundColor: AppColors.surface,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+    ),
+    builder: (_) => const _FocusPicker(),
+  );
+}
+
+class _FocusPicker extends StatefulWidget {
+  const _FocusPicker();
+
+  @override
+  State<_FocusPicker> createState() => _FocusPickerState();
+}
+
+class _FocusPickerState extends State<_FocusPicker> {
+  static const _max = 3;
+  late final List<int> _selected = List.of(
+    ProfileService.instance.currentProfile?.focusSdgs ?? const [],
+  );
+  bool _saving = false;
+
+  void _toggle(int n) {
+    setState(() {
+      if (_selected.contains(n)) {
+        _selected.remove(n);
+      } else if (_selected.length < _max) {
+        _selected.add(n);
+      }
+    });
+  }
+
+  Future<void> _save() async {
+    final messenger = ScaffoldMessenger.of(context);
+    final navigator = Navigator.of(context);
+    setState(() => _saving = true);
+    try {
+      await ProfileService.instance.setFocusSdgs(_selected);
+      navigator.pop();
+    } catch (e) {
+      messenger.showSnackBar(SnackBar(content: Text('$e')));
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Your focus goals',
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              'Choose up to $_max. Up to 2 of your daily missions will come from these.',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: AppColors.textSecondary,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.lg),
+            Flexible(
+              child: SingleChildScrollView(
+                child: Wrap(
+                  spacing: AppSpacing.sm,
+                  runSpacing: AppSpacing.sm,
+                  children: [
+                    for (final g in sdgGoals)
+                      _FocusChip(
+                        goal: g,
+                        selected: _selected.contains(g.number),
+                        disabled:
+                            !_selected.contains(g.number) &&
+                            _selected.length >= _max,
+                        onTap: () => _toggle(g.number),
+                      ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: AppSpacing.lg),
+            Row(
+              children: [
+                Text(
+                  '${_selected.length} of $_max selected',
+                  style: const TextStyle(color: AppColors.textSecondary),
+                ),
+                const Spacer(),
+                FilledButton(
+                  onPressed: _saving ? null : _save,
+                  child: Text(_saving ? 'Saving…' : 'Save'),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _FocusChip extends StatelessWidget {
+  final SdgGoal goal;
+  final bool selected;
+  final bool disabled;
+  final VoidCallback onTap;
+
+  const _FocusChip({
+    required this.goal,
+    required this.selected,
+    required this.disabled,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Opacity(
+      opacity: disabled ? 0.4 : 1,
+      child: Pressable(
+        onTap: disabled ? null : onTap,
+        hoverLift: 1,
+        child: AnimatedContainer(
+          duration: AppDurations.medium,
+          padding: const EdgeInsets.fromLTRB(6, 6, 12, 6),
+          decoration: BoxDecoration(
+            color: selected
+                ? goal.color.withValues(alpha: 0.1)
+                : AppColors.surface,
+            borderRadius: BorderRadius.circular(AppRadius.pill),
+            border: Border.all(
+              color: selected ? goal.color : AppColors.border,
+              width: selected ? 1.6 : 1,
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 24,
+                height: 24,
+                decoration: BoxDecoration(
+                  color: goal.color,
+                  shape: BoxShape.circle,
+                ),
+                alignment: Alignment.center,
+                child: selected
+                    ? const Icon(
+                        Icons.check_rounded,
+                        size: 14,
+                        color: Colors.white,
+                      )
+                    : Text(
+                        '${goal.number}',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+              ),
+              const SizedBox(width: 6),
+              Text(
+                goal.shortTitle,
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -659,17 +899,16 @@ class _SettingsRow extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           child: Row(
             children: [
-              Icon(icon,
-                  size: 20,
-                  color: destructive ? color : AppColors.textSecondary),
+              Icon(
+                icon,
+                size: 20,
+                color: destructive ? color : AppColors.textSecondary,
+              ),
               const SizedBox(width: AppSpacing.md + 4),
               Expanded(
                 child: Text(
                   label,
-                  style: TextStyle(
-                    fontWeight: FontWeight.w500,
-                    color: color,
-                  ),
+                  style: TextStyle(fontWeight: FontWeight.w500, color: color),
                 ),
               ),
               if (value != null)
@@ -684,8 +923,10 @@ class _SettingsRow extends StatelessWidget {
                   ),
                 ),
               if (onTap != null && !destructive)
-                const Icon(Icons.chevron_right_rounded,
-                    color: AppColors.textTertiary),
+                const Icon(
+                  Icons.chevron_right_rounded,
+                  color: AppColors.textTertiary,
+                ),
             ],
           ),
         ),
@@ -714,20 +955,25 @@ class _NoProfileState extends StatelessWidget {
             const SizedBox(height: AppSpacing.lg),
             Text(
               'No profile yet',
-              style: theme.textTheme.titleMedium
-                  ?.copyWith(fontWeight: FontWeight.w600),
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
             ),
             const SizedBox(height: AppSpacing.sm),
             Text(
               'Log in or sign up to see your SDG stats.',
               textAlign: TextAlign.center,
-              style: theme.textTheme.bodyMedium
-                  ?.copyWith(color: AppColors.textSecondary),
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: AppColors.textSecondary,
+              ),
             ),
             const SizedBox(height: AppSpacing.lg),
             FilledButton(
               onPressed: () => Navigator.pushNamedAndRemoveUntil(
-                  context, '/auth', (route) => false),
+                context,
+                '/auth',
+                (route) => false,
+              ),
               child: const Text('Go to login'),
             ),
           ],

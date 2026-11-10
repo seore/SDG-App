@@ -4,6 +4,8 @@ import 'dart:math';
 import 'package:flutter/services.dart' show rootBundle;
 
 import '../models/mission.dart';
+import '../utils/sdg_utils.dart';
+import 'profile_service.dart';
 
 /// Missions come from assets/content/missions.json, which the server also
 /// reads – so mission IDs and XP values have a single source of truth.
@@ -30,15 +32,34 @@ class MissionCatalogService {
     _byId = {for (final m in _missions) m.id: m};
   }
 
-  /// Deterministic subset of missions for today, so every app open on the
-  /// same day shows the same missions.
-  List<Mission> missionsForToday({int count = 5}) {
+  /// Deterministic set of missions for today, so every app open on the same
+  /// day shows the same missions. Up to [maxFocus] come from the user's
+  /// focus SDGs; the rest keep the mix varied across all goals.
+  List<Mission> missionsForToday({
+    int count = 5,
+    List<int>? focusSdgs,
+    int maxFocus = 2,
+    DateTime? date,
+  }) {
     if (_missions.length <= count) return List<Mission>.from(_missions);
 
-    final now = DateTime.now();
+    final focus = (focusSdgs ?? ProfileService.instance.currentProfile?.focusSdgs ?? const [])
+        .toSet();
+    final now = date ?? DateTime.now();
     // Stable across runs and platforms (unlike String.hashCode).
     final seed = now.year * 10000 + now.month * 100 + now.day;
     final shuffled = List<Mission>.from(_missions)..shuffle(Random(seed));
-    return shuffled.take(count).toList();
+
+    final picked = <Mission>[];
+    if (focus.isNotEmpty) {
+      picked.addAll(shuffled
+          .where((m) => focus.contains(extractSdgNumber(m.sdg)))
+          .take(maxFocus));
+    }
+    for (final m in shuffled) {
+      if (picked.length >= count) break;
+      if (!picked.contains(m)) picked.add(m);
+    }
+    return picked;
   }
 }

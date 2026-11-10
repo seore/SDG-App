@@ -15,6 +15,9 @@ class UserProfile {
   final DateTime? lastActive;
   final String? activeAvatarFrame;
 
+  /// Up to three SDGs the user wants to focus on.
+  final List<int> focusSdgs;
+
   const UserProfile({
     required this.id,
     required this.email,
@@ -24,6 +27,7 @@ class UserProfile {
     this.avatarUrl,
     this.lastActive,
     this.activeAvatarFrame,
+    this.focusSdgs = const [],
   });
 
   factory UserProfile.fromJson(Map<String, dynamic> map) {
@@ -37,6 +41,9 @@ class UserProfile {
       avatarUrl: map['avatar_url'] as String?,
       lastActive: last == null ? null : DateTime.tryParse(last),
       activeAvatarFrame: map['active_avatar_frame'] as String?,
+      focusSdgs: ((map['focus_sdgs'] as List?) ?? const [])
+          .map((e) => (e as num).toInt())
+          .toList(),
     );
   }
 
@@ -48,6 +55,7 @@ class UserProfile {
     DateTime? lastActive,
     String? activeAvatarFrame,
     bool clearAvatarFrame = false,
+    List<int>? focusSdgs,
   }) {
     return UserProfile(
       id: id,
@@ -59,6 +67,7 @@ class UserProfile {
       lastActive: lastActive ?? this.lastActive,
       activeAvatarFrame:
           clearAvatarFrame ? null : (activeAvatarFrame ?? this.activeAvatarFrame),
+      focusSdgs: focusSdgs ?? this.focusSdgs,
     );
   }
 }
@@ -184,6 +193,17 @@ class ProfileService {
     };
     if (body.isEmpty) return;
     final json = await _api.patch('/me', body) as Map<String, dynamic>;
+    profileListenable.value = UserProfile.fromJson(json);
+  }
+
+  /// Saves up to three focus SDGs (local only in demo mode).
+  Future<void> setFocusSdgs(List<int> sdgs) async {
+    final unique = sdgs.toSet().take(3).toList();
+    if (DemoMode.enabled) {
+      profileListenable.value = currentProfile?.copyWith(focusSdgs: unique);
+      return;
+    }
+    final json = await _api.patch('/me', {'focus_sdgs': unique}) as Map<String, dynamic>;
     profileListenable.value = UserProfile.fromJson(json);
   }
 

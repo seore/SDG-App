@@ -54,7 +54,8 @@ auth.post('/signup', async (c) => {
 
   const [user] = await db.query<UserRow>(
     `insert into users (email, password_hash, username) values ($1, $2, $3)
-     returning id, email, username, xp, streak, last_active_on, avatar_url, active_avatar_frame`,
+     returning id, email, username, xp, streak, last_active_on, avatar_url, active_avatar_frame,
+               focus_sdgs`,
     [body.data.email, await hashPassword(body.data.password), body.data.username],
   );
   return c.json(await issueSession(c, user!), 201);
@@ -70,7 +71,7 @@ auth.post('/login', async (c) => {
     .get('db')
     .query<UserRow & { password_hash: string }>(
       `select id, email, username, xp, streak, last_active_on, avatar_url, active_avatar_frame,
-              password_hash
+              focus_sdgs, password_hash
          from users where lower(email) = $1`,
       [body.data.email],
     );

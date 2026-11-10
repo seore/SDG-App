@@ -4,6 +4,7 @@ import '../data/sdg_data.dart';
 import '../models/mission.dart';
 import '../services/mission_catalog.dart';
 import '../services/mission_progress_service.dart';
+import '../services/profile_service.dart';
 import '../theme/app_theme.dart';
 import '../utils/sdg_utils.dart';
 import '../widgets/app_card.dart';
@@ -18,60 +19,71 @@ class DailyMissionsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final progress = MissionProgressService.instance;
-    final missions = MissionCatalogService.instance.missionsForToday(count: 5);
 
     return AppScaffold(
       title: 'Missions',
-      body: ValueListenableBuilder<Map<String, MissionStatus>>(
-        valueListenable: progress.notifier,
-        builder: (context, state, _) {
-          final done = missions
-              .where((m) => progress.statusFor(m.id) == MissionStatus.completed)
-              .length;
+      body: ValueListenableBuilder(
+        // Today's set depends on the user's focus goals.
+        valueListenable: ProfileService.instance.profileListenable,
+        builder: (context, _, __) =>
+            ValueListenableBuilder<Map<String, MissionStatus>>(
+              valueListenable: progress.notifier,
+              builder: (context, state, _) {
+                final missions = MissionCatalogService.instance
+                    .missionsForToday(count: 5);
+                final done = missions
+                    .where(
+                      (m) =>
+                          progress.statusFor(m.id) == MissionStatus.completed,
+                    )
+                    .length;
 
-          return RefreshIndicator(
-            color: AppColors.primary,
-            onRefresh: progress.loadToday,
-            child: ListView(
-              padding: const EdgeInsets.fromLTRB(20, 4, 20, 32),
-              children: [
-                ContentWidth(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                return RefreshIndicator(
+                  color: AppColors.primary,
+                  onRefresh: progress.loadToday,
+                  child: ListView(
+                    padding: const EdgeInsets.fromLTRB(20, 4, 20, 32),
                     children: [
-                      FadeSlideIn(
-                        child: _DailyProgressCard(
-                          done: done,
-                          total: missions.length,
-                        ),
-                      ),
-                      const SizedBox(height: AppSpacing.xl),
-                      const FadeSlideIn(
-                        delay: Duration(milliseconds: 60),
-                        child: SectionHeader(
-                          title: 'Today',
-                          subtitle: 'A new set of missions every day',
-                        ),
-                      ),
-                      for (var i = 0; i < missions.length; i++)
-                        Padding(
-                          padding: const EdgeInsets.only(bottom: AppSpacing.sm + 2),
-                          child: FadeSlideIn(
-                            delay: Duration(milliseconds: 100 + i * 50),
-                            child: MissionListCard(
-                              mission: missions[i],
-                              status: progress.statusFor(missions[i].id),
-                              heroPrefix: 'missions-list',
+                      ContentWidth(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            FadeSlideIn(
+                              child: _DailyProgressCard(
+                                done: done,
+                                total: missions.length,
+                              ),
                             ),
-                          ),
+                            const SizedBox(height: AppSpacing.xl),
+                            const FadeSlideIn(
+                              delay: Duration(milliseconds: 60),
+                              child: SectionHeader(
+                                title: 'Today',
+                                subtitle: 'A new set of missions every day',
+                              ),
+                            ),
+                            for (var i = 0; i < missions.length; i++)
+                              Padding(
+                                padding: const EdgeInsets.only(
+                                  bottom: AppSpacing.sm + 2,
+                                ),
+                                child: FadeSlideIn(
+                                  delay: Duration(milliseconds: 100 + i * 50),
+                                  child: MissionListCard(
+                                    mission: missions[i],
+                                    status: progress.statusFor(missions[i].id),
+                                    heroPrefix: 'missions-list',
+                                  ),
+                                ),
+                              ),
+                          ],
                         ),
+                      ),
                     ],
                   ),
-                ),
-              ],
+                );
+              },
             ),
-          );
-        },
       ),
     );
   }
@@ -95,8 +107,9 @@ class _DailyProgressCard extends StatelessWidget {
               Expanded(
                 child: Text(
                   allDone ? 'All missions complete' : 'Daily progress',
-                  style: theme.textTheme.titleSmall
-                      ?.copyWith(fontWeight: FontWeight.w600),
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
               Text(
@@ -119,8 +132,9 @@ class _DailyProgressCard extends StatelessWidget {
             allDone
                 ? 'Great work. New missions arrive tomorrow.'
                 : 'Complete small real-world actions to earn XP.',
-            style: theme.textTheme.bodySmall
-                ?.copyWith(color: AppColors.textSecondary),
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: AppColors.textSecondary,
+            ),
           ),
         ],
       ),
@@ -164,7 +178,10 @@ class MissionListCard extends StatelessWidget {
         shadow: state == PressState.hovered ? AppShadows.raised : null,
         child: Row(
           children: [
-            Hero(tag: heroTag, child: IconTile(icon: icon, color: color, size: 44)),
+            Hero(
+              tag: heroTag,
+              child: IconTile(icon: icon, color: color, size: 44),
+            ),
             const SizedBox(width: AppSpacing.md),
             Expanded(
               child: Column(
@@ -185,8 +202,9 @@ class MissionListCard extends StatelessWidget {
                     sdg != null
                         ? 'SDG ${sdg.number} · ${sdg.shortTitle}'
                         : mission.sdg,
-                    style: theme.textTheme.bodySmall
-                        ?.copyWith(color: AppColors.textSecondary),
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: AppColors.textSecondary,
+                    ),
                   ),
                   const SizedBox(height: AppSpacing.sm),
                   Wrap(
@@ -216,8 +234,10 @@ class MissionListCard extends StatelessWidget {
                 ],
               ),
             ),
-            const Icon(Icons.chevron_right_rounded,
-                color: AppColors.textTertiary),
+            const Icon(
+              Icons.chevron_right_rounded,
+              color: AppColors.textTertiary,
+            ),
           ],
         ),
       ),

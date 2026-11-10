@@ -10,6 +10,7 @@ export interface UserRow {
   last_active_on: string | Date | null;
   avatar_url: string | null;
   active_avatar_frame: string | null;
+  focus_sdgs: number[] | null;
 }
 
 function dayString(v: string | Date | null): string | null {
@@ -29,12 +30,14 @@ export function toProfile(u: UserRow, now: Date) {
     last_active_on: lastActive,
     avatar_url: u.avatar_url,
     active_avatar_frame: u.active_avatar_frame,
+    focus_sdgs: (u.focus_sdgs ?? []).map(Number),
   };
 }
 
 export async function loadUser(db: Db, id: string): Promise<UserRow | undefined> {
   const [u] = await db.query<UserRow>(
-    `select id, email, username, xp, streak, last_active_on, avatar_url, active_avatar_frame
+    `select id, email, username, xp, streak, last_active_on, avatar_url, active_avatar_frame,
+            focus_sdgs
        from users where id = $1`,
     [id],
   );

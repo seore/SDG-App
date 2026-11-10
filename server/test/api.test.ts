@@ -231,6 +231,16 @@ describe('feeds and profile', () => {
     expect(stories.json.stories[0].message).toBe('Completed: Walk or Cycle Instead');
   });
 
+  it('stores up to three focus SDGs', async () => {
+    const s = await newUser();
+    expect(s.user.focus_sdgs).toEqual([]);
+    const upd = await call('PATCH', '/me', { focus_sdgs: [13, 6, 13] }, s.access_token);
+    expect(upd.json.focus_sdgs).toEqual([13, 6]);
+    expect((await call('PATCH', '/me', { focus_sdgs: [1, 2, 3, 4] }, s.access_token)).status).toBe(400);
+    expect((await call('PATCH', '/me', { focus_sdgs: [18] }, s.access_token)).status).toBe(400);
+    expect((await call('GET', '/me', undefined, s.access_token)).json.focus_sdgs).toEqual([13, 6]);
+  });
+
   it('updates the username and validates shop packs', async () => {
     const s = await newUser();
     const upd = await call('PATCH', '/me', { username: 'Eco Hero' }, s.access_token);
