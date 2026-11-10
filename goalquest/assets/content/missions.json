@@ -216,6 +216,214 @@
       "sdgNumber": 17,
       "sdg": "SDG 17: Partnerships for the Goals",
       "xp": 20
+    },
+    {
+      "id": "m_donate_item",
+      "title": "Donate Something Useful",
+      "description": "Find one item in good condition – clothes, a book or a toy – and set it aside to donate to a charity or shelter.",
+      "sdgNumber": 1,
+      "sdg": "SDG 1: No Poverty",
+      "xp": 25
+    },
+    {
+      "id": "m_learn_poverty",
+      "title": "Learn Why Poverty Happens",
+      "description": "Read or watch something short about one cause of poverty, then explain it to someone in one sentence.",
+      "sdgNumber": 1,
+      "sdg": "SDG 1: No Poverty",
+      "xp": 20
+    },
+    {
+      "id": "m_support_local",
+      "title": "Support a Local Fundraiser",
+      "description": "Find out about a food drive, fundraiser or charity event near you and share it with your family or friends.",
+      "sdgNumber": 1,
+      "sdg": "SDG 1: No Poverty",
+      "xp": 20
+    },
+    {
+      "id": "m_zero_waste_plate",
+      "title": "Clean Plate Challenge",
+      "description": "Serve yourself only what you will eat at every meal today, so no food goes in the bin.",
+      "sdgNumber": 2,
+      "sdg": "SDG 2: Zero Hunger",
+      "xp": 20
+    },
+    {
+      "id": "m_use_leftovers",
+      "title": "Use the Leftovers",
+      "description": "Help make one meal or snack today from leftovers already in the fridge.",
+      "sdgNumber": 2,
+      "sdg": "SDG 2: Zero Hunger",
+      "xp": 25
+    },
+    {
+      "id": "m_food_bank_list",
+      "title": "Food Bank Shopping List",
+      "description": "Find out what your local food bank needs most and write a short list to share with your family.",
+      "sdgNumber": 2,
+      "sdg": "SDG 2: Zero Hunger",
+      "xp": 20
+    },
+    {
+      "id": "m_thank_worker",
+      "title": "Thank a Worker",
+      "description": "Say a real thank-you to someone whose work helps you – a bus driver, cleaner, cook or shop worker.",
+      "sdgNumber": 8,
+      "sdg": "SDG 8: Decent Work & Economic Growth",
+      "xp": 15
+    },
+    {
+      "id": "m_fair_trade_check",
+      "title": "Spot a Fair-Trade Label",
+      "description": "Look for a fair-trade or ethical label on products at home or in a shop and learn what it means.",
+      "sdgNumber": 8,
+      "sdg": "SDG 8: Decent Work & Economic Growth",
+      "xp": 20
+    },
+    {
+      "id": "m_skill_practice",
+      "title": "Practise a Future Skill",
+      "description": "Spend 20 minutes practising a skill you might use in a job one day – typing, coding, cooking or a language.",
+      "sdgNumber": 8,
+      "sdg": "SDG 8: Decent Work & Economic Growth",
+      "xp": 25
+    },
+    {
+      "id": "m_repair_tutorial",
+      "title": "Learn a Repair",
+      "description": "Watch a short tutorial and learn how to fix something simple, like a loose button or a bike chain.",
+      "sdgNumber": 9,
+      "sdg": "SDG 9: Industry, Innovation & Infrastructure",
+      "xp": 25
+    },
+    {
+      "id": "m_invention_idea",
+      "title": "Invent a Solution",
+      "description": "Sketch an idea for an invention that could solve a problem in your school or neighbourhood.",
+      "sdgNumber": 9,
+      "sdg": "SDG 9: Industry, Innovation & Infrastructure",
+      "xp": 20
+    },
+    {
+      "id": "m_help_online",
+      "title": "Help Someone Get Online",
+      "description": "Help a family member or neighbour with something online they find tricky, like a video call.",
+      "sdgNumber": 9,
+      "sdg": "SDG 9: Industry, Innovation & Infrastructure",
+      "xp": 25
+    },
+    {
+      "id": "m_share_chores",
+      "title": "Share the Chores",
+      "description": "Do a household chore today that someone else usually does, so the work is shared more fairly.",
+      "sdgNumber": 5,
+      "sdg": "SDG 5: Gender Equality",
+      "xp": 20
+    },
+    {
+      "id": "m_inspiring_woman",
+      "title": "Learn About an Inspiring Woman",
+      "description": "Read about a woman who changed science, sport, politics or the arts, and tell someone about her.",
+      "sdgNumber": 5,
+      "sdg": "SDG 5: Gender Equality",
+      "xp": 20
+    },
+    {
+      "id": "m_kind_disagreement",
+      "title": "Disagree Kindly",
+      "description": "When you disagree with someone today, listen first and explain your view calmly without insults.",
+      "sdgNumber": 16,
+      "sdg": "SDG 16: Peace, Justice & Strong Institutions",
+      "xp": 20
+    },
+    {
+      "id": "m_learn_rights",
+      "title": "Learn Your Rights",
+      "description": "Read about one of the rights in the UN Convention on the Rights of the Child and what it means for you.",
+      "sdgNumber": 16,
+      "sdg": "SDG 16: Peace, Justice & Strong Institutions",
+      "xp": 20
+    },
+    {
+      "id": "m_skip_plastic_straw",
+      "title": "Skip Single-Use Plastic",
+      "description": "Avoid single-use plastic today – no straws, plastic cutlery or plastic bags.",
+      "sdgNumber": 14,
+      "sdg": "SDG 14: Life Below Water",
+      "xp": 20
+    },
+    {
+      "id": "m_ocean_fact",
+      "title": "Share an Ocean Fact",
+      "description": "Learn one surprising fact about ocean life or ocean pollution and share it with a friend.",
+      "sdgNumber": 14,
+      "sdg": "SDG 14: Life Below Water",
+      "xp": 15
+    },
+    {
+      "id": "m_learn_culture",
+      "title": "Learn About Another Culture",
+      "description": "Learn about a tradition, food or festival from a culture different from your own.",
+      "sdgNumber": 10,
+      "sdg": "SDG 10: Reduced Inequalities",
+      "xp": 20
+    },
+    {
+      "id": "m_stand_up",
+      "title": "Stand Up for Someone",
+      "description": "If you see someone being left out or treated unfairly today, speak up or include them.",
+      "sdgNumber": 10,
+      "sdg": "SDG 10: Reduced Inequalities",
+      "xp": 25
+    },
+    {
+      "id": "m_natural_light",
+      "title": "Use Natural Light",
+      "description": "Keep the lights off during daylight hours and open curtains or blinds instead.",
+      "sdgNumber": 7,
+      "sdg": "SDG 7: Affordable & Clean Energy",
+      "xp": 15
+    },
+    {
+      "id": "m_read_20",
+      "title": "Read for 20 Minutes",
+      "description": "Read a book, article or comic for 20 minutes just for fun.",
+      "sdgNumber": 4,
+      "sdg": "SDG 4: Quality Education",
+      "xp": 15
+    },
+    {
+      "id": "m_sdg_poster",
+      "title": "Make an SDG Poster",
+      "description": "Create a small poster or post about one SDG and display or share it.",
+      "sdgNumber": 17,
+      "sdg": "SDG 17: Partnerships for the Goals",
+      "xp": 25
+    },
+    {
+      "id": "m_bug_hotel",
+      "title": "Make Space for Wildlife",
+      "description": "Leave a small wild corner, put out water for birds or build a simple bug hotel.",
+      "sdgNumber": 15,
+      "sdg": "SDG 15: Life on Land",
+      "xp": 30
+    },
+    {
+      "id": "m_energy_audit",
+      "title": "Do a Home Energy Check",
+      "description": "Walk around your home and count devices left on standby, then switch off the ones that can be.",
+      "sdgNumber": 13,
+      "sdg": "SDG 13: Climate Action",
+      "xp": 25
+    },
+    {
+      "id": "m_public_transport",
+      "title": "Take Public Transport",
+      "description": "Use a bus, train or tram instead of a car for one trip today.",
+      "sdgNumber": 11,
+      "sdg": "SDG 11: Sustainable Cities & Communities",
+      "xp": 25
     }
   ]
 }

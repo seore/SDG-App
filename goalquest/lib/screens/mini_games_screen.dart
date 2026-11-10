@@ -82,7 +82,7 @@ const List<MiniGameConfig> _miniGames = [
     subtitle: 'Upgrade roads & parks for a greener, fairer city',
     sdgNumber: 11,
     icon: Icons.location_city,
-    available: false,
+    available: true,
     routeName: '/cityFixGame',
   ),
 
@@ -92,7 +92,7 @@ const List<MiniGameConfig> _miniGames = [
     subtitle: 'Choose water-saving actions in everyday scenes.',
     sdgNumber: 6,
     icon: Icons.water_drop_outlined,
-    available: false,
+    available: true,
     routeName: '/waterGuardianGame',
   ),
 

@@ -20,10 +20,28 @@ class _QuizGameScreenState extends State<QuizGameScreen> {
   static const _questionsPerRound = 10;
   static const _xpPerCorrect = 10;
 
-  late final List<QuizQuestion> _questions =
-      (List<QuizQuestion>.from(sdgQuizQuestions)..shuffle(Random()))
-          .take(_questionsPerRound)
-          .toList();
+  late final List<QuizQuestion> _questions = _buildRound();
+
+  /// Random questions, each with its answers shuffled so the correct option
+  /// isn't always in the same position.
+  static List<QuizQuestion> _buildRound() {
+    final rng = Random();
+    final picked = (List<QuizQuestion>.from(sdgQuizQuestions)..shuffle(rng))
+        .take(_questionsPerRound);
+    return [
+      for (final q in picked)
+        () {
+          final order = List<int>.generate(q.options.length, (i) => i)..shuffle(rng);
+          return QuizQuestion(
+            sdgNumber: q.sdgNumber,
+            question: q.question,
+            options: [for (final i in order) q.options[i]],
+            correctIndex: order.indexOf(q.correctIndex),
+            difficulty: q.difficulty,
+          );
+        }(),
+    ];
+  }
 
   int _index = 0;
   int _score = 0;
