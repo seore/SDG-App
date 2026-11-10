@@ -1,5 +1,5 @@
 {
-  "version": 1,
+  "version": 2,
   "missions": [
     {
       "id": "m_unplug",
@@ -7,7 +7,11 @@
       "description": "Turn off and unplug non-essential devices for one hour today.",
       "sdgNumber": 7,
       "sdg": "SDG 7: Affordable & Clean Energy",
-      "xp": 20
+      "xp": 20,
+      "impact": {
+        "metric": "co2_kg",
+        "amount": 0.05
+      }
     },
     {
       "id": "m_lights_off_evening",
@@ -15,7 +19,11 @@
       "description": "Use lights only in rooms you are inside for an entire evening.",
       "sdgNumber": 7,
       "sdg": "SDG 7: Affordable & Clean Energy",
-      "xp": 20
+      "xp": 20,
+      "impact": {
+        "metric": "co2_kg",
+        "amount": 0.1
+      }
     },
     {
       "id": "m_walk_instead",
@@ -23,7 +31,11 @@
       "description": "Replace one short car ride with walking, cycling, or public transport today.",
       "sdgNumber": 13,
       "sdg": "SDG 13: Climate Action",
-      "xp": 30
+      "xp": 30,
+      "impact": {
+        "metric": "co2_kg",
+        "amount": 0.8
+      }
     },
     {
       "id": "m_fan_not_ac",
@@ -31,7 +43,11 @@
       "description": "Use a fan or natural ventilation instead of air conditioning for at least two hours.",
       "sdgNumber": 13,
       "sdg": "SDG 13: Climate Action",
-      "xp": 25
+      "xp": 25,
+      "impact": {
+        "metric": "co2_kg",
+        "amount": 0.8
+      }
     },
     {
       "id": "m_reusable_bottle",
@@ -39,7 +55,11 @@
       "description": "Avoid all single-use plastic bottles today by using a reusable bottle.",
       "sdgNumber": 12,
       "sdg": "SDG 12: Responsible Consumption & Production",
-      "xp": 20
+      "xp": 20,
+      "impact": {
+        "metric": "plastic_items",
+        "amount": 2
+      }
     },
     {
       "id": "m_trash_sorter",
@@ -47,7 +67,11 @@
       "description": "Find 5 items and sort them correctly into recycling, compost, or trash.",
       "sdgNumber": 12,
       "sdg": "SDG 12: Responsible Consumption & Production",
-      "xp": 25
+      "xp": 25,
+      "impact": {
+        "metric": "waste_items",
+        "amount": 5
+      }
     },
     {
       "id": "m_no_impulse_buy",
@@ -55,7 +79,11 @@
       "description": "Avoid unnecessary online or in-store purchases for the entire day.",
       "sdgNumber": 12,
       "sdg": "SDG 12: Responsible Consumption & Production",
-      "xp": 20
+      "xp": 20,
+      "impact": {
+        "metric": "co2_kg",
+        "amount": 0.5
+      }
     },
     {
       "id": "m_fix_item",
@@ -63,7 +91,11 @@
       "description": "Repair or creatively reuse something you were planning to throw away.",
       "sdgNumber": 12,
       "sdg": "SDG 12: Responsible Consumption & Production",
-      "xp": 30
+      "xp": 30,
+      "impact": {
+        "metric": "waste_items",
+        "amount": 1
+      }
     },
     {
       "id": "m_meat_free_meal",
@@ -71,7 +103,11 @@
       "description": "Have at least one fully plant-based meal today.",
       "sdgNumber": 12,
       "sdg": "SDG 12: Responsible Consumption & Production",
-      "xp": 25
+      "xp": 25,
+      "impact": {
+        "metric": "co2_kg",
+        "amount": 1.5
+      }
     },
     {
       "id": "m_short_shower",
@@ -79,7 +115,11 @@
       "description": "Reduce your shower time by at least 3 minutes to save water.",
       "sdgNumber": 6,
       "sdg": "SDG 6: Clean Water & Sanitation",
-      "xp": 20
+      "xp": 20,
+      "impact": {
+        "metric": "water_l",
+        "amount": 40
+      }
     },
     {
       "id": "m_turn_off_tap",
@@ -87,7 +127,11 @@
       "description": "Brush your teeth while keeping the tap off except when rinsing.",
       "sdgNumber": 6,
       "sdg": "SDG 6: Clean Water & Sanitation",
-      "xp": 15
+      "xp": 15,
+      "impact": {
+        "metric": "water_l",
+        "amount": 12
+      }
     },
     {
       "id": "m_check_leaks",
@@ -95,7 +139,11 @@
       "description": "Inspect your home for dripping taps or leaks and report them if found.",
       "sdgNumber": 6,
       "sdg": "SDG 6: Clean Water & Sanitation",
-      "xp": 25
+      "xp": 25,
+      "impact": {
+        "metric": "water_l",
+        "amount": 20
+      }
     },
     {
       "id": "m_screen_break",
@@ -103,7 +151,11 @@
       "description": "Take three 10-minute breaks away from screens today.",
       "sdgNumber": 3,
       "sdg": "SDG 3: Good Health & Well-being",
-      "xp": 15
+      "xp": 15,
+      "impact": {
+        "metric": "active_minutes",
+        "amount": 30
+      }
     },
     {
       "id": "m_move_20min",
@@ -111,7 +163,11 @@
       "description": "Do at least 20 minutes of physical activity—walking, stretching, dancing, anything!",
       "sdgNumber": 3,
       "sdg": "SDG 3: Good Health & Well-being",
-      "xp": 20
+      "xp": 20,
+      "impact": {
+        "metric": "active_minutes",
+        "amount": 20
+      }
     },
     {
       "id": "m_check_in",
@@ -119,7 +175,11 @@
       "description": "Reach out to someone and ask how they are really doing today.",
       "sdgNumber": 3,
       "sdg": "SDG 3: Good Health & Well-being",
-      "xp": 20
+      "xp": 20,
+      "impact": {
+        "metric": "people_reached",
+        "amount": 1
+      }
     },
     {
       "id": "m_teach_one_thing",
@@ -127,7 +187,11 @@
       "description": "Explain one Sustainable Development Goal to a friend or family member.",
       "sdgNumber": 4,
       "sdg": "SDG 4: Quality Education",
-      "xp": 25
+      "xp": 25,
+      "impact": {
+        "metric": "people_reached",
+        "amount": 1
+      }
     },
     {
       "id": "m_focus_study",
@@ -135,7 +199,11 @@
       "description": "Spend 25 distraction-free minutes learning something new.",
       "sdgNumber": 4,
       "sdg": "SDG 4: Quality Education",
-      "xp": 20
+      "xp": 20,
+      "impact": {
+        "metric": "learning_minutes",
+        "amount": 25
+      }
     },
     {
       "id": "m_equality_post",
@@ -143,7 +211,11 @@
       "description": "Share a positive message about equality or inclusion.",
       "sdgNumber": 5,
       "sdg": "SDG 5: Gender Equality",
-      "xp": 20
+      "xp": 20,
+      "impact": {
+        "metric": "people_reached",
+        "amount": 1
+      }
     },
     {
       "id": "m_include_someone",
@@ -151,7 +223,11 @@
       "description": "Invite someone who is often left out to join a game, call, or activity.",
       "sdgNumber": 10,
       "sdg": "SDG 10: Reduced Inequalities",
-      "xp": 15
+      "xp": 15,
+      "impact": {
+        "metric": "people_reached",
+        "amount": 1
+      }
     },
     {
       "id": "m_cleanup",
@@ -159,7 +235,11 @@
       "description": "Pick up at least 5 pieces of litter in a safe public space.",
       "sdgNumber": 11,
       "sdg": "SDG 11: Sustainable Cities & Communities",
-      "xp": 30
+      "xp": 30,
+      "impact": {
+        "metric": "waste_items",
+        "amount": 5
+      }
     },
     {
       "id": "m_positive_comment",
@@ -167,7 +247,11 @@
       "description": "Only leave positive, kind, or constructive comments online today.",
       "sdgNumber": 16,
       "sdg": "SDG 16: Peace, Justice & Strong Institutions",
-      "xp": 20
+      "xp": 20,
+      "impact": {
+        "metric": "people_reached",
+        "amount": 3
+      }
     },
     {
       "id": "m_gratitude_note",
@@ -175,7 +259,11 @@
       "description": "Thank a teacher, driver, cleaner, or community worker today.",
       "sdgNumber": 11,
       "sdg": "SDG 11: Sustainable Cities & Communities",
-      "xp": 25
+      "xp": 25,
+      "impact": {
+        "metric": "people_reached",
+        "amount": 1
+      }
     },
     {
       "id": "m_nature_walk",
@@ -183,7 +271,11 @@
       "description": "Spend at least 15 minutes outside observing nature. Note or photo what you see.",
       "sdgNumber": 15,
       "sdg": "SDG 15: Life on Land",
-      "xp": 20
+      "xp": 20,
+      "impact": {
+        "metric": "active_minutes",
+        "amount": 30
+      }
     },
     {
       "id": "m_no_litter_water",
@@ -191,7 +283,11 @@
       "description": "Ensure you leave no waste near water areas. Pick up safe litter if possible.",
       "sdgNumber": 14,
       "sdg": "SDG 14: Life Below Water",
-      "xp": 25
+      "xp": 25,
+      "impact": {
+        "metric": "waste_items",
+        "amount": 3
+      }
     },
     {
       "id": "m_plant_something",
@@ -199,7 +295,11 @@
       "description": "Plant a seed, plant, or help care for one—even indoors.",
       "sdgNumber": 15,
       "sdg": "SDG 15: Life on Land",
-      "xp": 30
+      "xp": 30,
+      "impact": {
+        "metric": "nature",
+        "amount": 1
+      }
     },
     {
       "id": "m_join_challenge",
@@ -207,7 +307,11 @@
       "description": "Invite a friend or family member to complete a mission with you.",
       "sdgNumber": 17,
       "sdg": "SDG 17: Partnerships for the Goals",
-      "xp": 20
+      "xp": 20,
+      "impact": {
+        "metric": "people_reached",
+        "amount": 1
+      }
     },
     {
       "id": "m_share_mission",
@@ -215,7 +319,11 @@
       "description": "Share or write about one action you took today and why it matters.",
       "sdgNumber": 17,
       "sdg": "SDG 17: Partnerships for the Goals",
-      "xp": 20
+      "xp": 20,
+      "impact": {
+        "metric": "people_reached",
+        "amount": 3
+      }
     },
     {
       "id": "m_donate_item",
@@ -223,7 +331,11 @@
       "description": "Find one item in good condition – clothes, a book or a toy – and set it aside to donate to a charity or shelter.",
       "sdgNumber": 1,
       "sdg": "SDG 1: No Poverty",
-      "xp": 25
+      "xp": 25,
+      "impact": {
+        "metric": "people_reached",
+        "amount": 1
+      }
     },
     {
       "id": "m_learn_poverty",
@@ -231,7 +343,11 @@
       "description": "Read or watch something short about one cause of poverty, then explain it to someone in one sentence.",
       "sdgNumber": 1,
       "sdg": "SDG 1: No Poverty",
-      "xp": 20
+      "xp": 20,
+      "impact": {
+        "metric": "learning_minutes",
+        "amount": 10
+      }
     },
     {
       "id": "m_support_local",
@@ -239,7 +355,11 @@
       "description": "Find out about a food drive, fundraiser or charity event near you and share it with your family or friends.",
       "sdgNumber": 1,
       "sdg": "SDG 1: No Poverty",
-      "xp": 20
+      "xp": 20,
+      "impact": {
+        "metric": "people_reached",
+        "amount": 2
+      }
     },
     {
       "id": "m_zero_waste_plate",
@@ -247,7 +367,11 @@
       "description": "Serve yourself only what you will eat at every meal today, so no food goes in the bin.",
       "sdgNumber": 2,
       "sdg": "SDG 2: Zero Hunger",
-      "xp": 20
+      "xp": 20,
+      "impact": {
+        "metric": "food_kg",
+        "amount": 0.2
+      }
     },
     {
       "id": "m_use_leftovers",
@@ -255,7 +379,11 @@
       "description": "Help make one meal or snack today from leftovers already in the fridge.",
       "sdgNumber": 2,
       "sdg": "SDG 2: Zero Hunger",
-      "xp": 25
+      "xp": 25,
+      "impact": {
+        "metric": "food_kg",
+        "amount": 0.3
+      }
     },
     {
       "id": "m_food_bank_list",
@@ -263,7 +391,11 @@
       "description": "Find out what your local food bank needs most and write a short list to share with your family.",
       "sdgNumber": 2,
       "sdg": "SDG 2: Zero Hunger",
-      "xp": 20
+      "xp": 20,
+      "impact": {
+        "metric": "people_reached",
+        "amount": 2
+      }
     },
     {
       "id": "m_thank_worker",
@@ -271,7 +403,11 @@
       "description": "Say a real thank-you to someone whose work helps you – a bus driver, cleaner, cook or shop worker.",
       "sdgNumber": 8,
       "sdg": "SDG 8: Decent Work & Economic Growth",
-      "xp": 15
+      "xp": 15,
+      "impact": {
+        "metric": "people_reached",
+        "amount": 1
+      }
     },
     {
       "id": "m_fair_trade_check",
@@ -279,7 +415,11 @@
       "description": "Look for a fair-trade or ethical label on products at home or in a shop and learn what it means.",
       "sdgNumber": 8,
       "sdg": "SDG 8: Decent Work & Economic Growth",
-      "xp": 20
+      "xp": 20,
+      "impact": {
+        "metric": "learning_minutes",
+        "amount": 10
+      }
     },
     {
       "id": "m_skill_practice",
@@ -287,7 +427,11 @@
       "description": "Spend 20 minutes practising a skill you might use in a job one day – typing, coding, cooking or a language.",
       "sdgNumber": 8,
       "sdg": "SDG 8: Decent Work & Economic Growth",
-      "xp": 25
+      "xp": 25,
+      "impact": {
+        "metric": "learning_minutes",
+        "amount": 20
+      }
     },
     {
       "id": "m_repair_tutorial",
@@ -295,7 +439,11 @@
       "description": "Watch a short tutorial and learn how to fix something simple, like a loose button or a bike chain.",
       "sdgNumber": 9,
       "sdg": "SDG 9: Industry, Innovation & Infrastructure",
-      "xp": 25
+      "xp": 25,
+      "impact": {
+        "metric": "learning_minutes",
+        "amount": 15
+      }
     },
     {
       "id": "m_invention_idea",
@@ -303,7 +451,11 @@
       "description": "Sketch an idea for an invention that could solve a problem in your school or neighbourhood.",
       "sdgNumber": 9,
       "sdg": "SDG 9: Industry, Innovation & Infrastructure",
-      "xp": 20
+      "xp": 20,
+      "impact": {
+        "metric": "learning_minutes",
+        "amount": 15
+      }
     },
     {
       "id": "m_help_online",
@@ -311,7 +463,11 @@
       "description": "Help a family member or neighbour with something online they find tricky, like a video call.",
       "sdgNumber": 9,
       "sdg": "SDG 9: Industry, Innovation & Infrastructure",
-      "xp": 25
+      "xp": 25,
+      "impact": {
+        "metric": "people_reached",
+        "amount": 1
+      }
     },
     {
       "id": "m_share_chores",
@@ -319,7 +475,11 @@
       "description": "Do a household chore today that someone else usually does, so the work is shared more fairly.",
       "sdgNumber": 5,
       "sdg": "SDG 5: Gender Equality",
-      "xp": 20
+      "xp": 20,
+      "impact": {
+        "metric": "people_reached",
+        "amount": 1
+      }
     },
     {
       "id": "m_inspiring_woman",
@@ -327,7 +487,11 @@
       "description": "Read about a woman who changed science, sport, politics or the arts, and tell someone about her.",
       "sdgNumber": 5,
       "sdg": "SDG 5: Gender Equality",
-      "xp": 20
+      "xp": 20,
+      "impact": {
+        "metric": "learning_minutes",
+        "amount": 10
+      }
     },
     {
       "id": "m_kind_disagreement",
@@ -335,7 +499,11 @@
       "description": "When you disagree with someone today, listen first and explain your view calmly without insults.",
       "sdgNumber": 16,
       "sdg": "SDG 16: Peace, Justice & Strong Institutions",
-      "xp": 20
+      "xp": 20,
+      "impact": {
+        "metric": "people_reached",
+        "amount": 1
+      }
     },
     {
       "id": "m_learn_rights",
@@ -343,7 +511,11 @@
       "description": "Read about one of the rights in the UN Convention on the Rights of the Child and what it means for you.",
       "sdgNumber": 16,
       "sdg": "SDG 16: Peace, Justice & Strong Institutions",
-      "xp": 20
+      "xp": 20,
+      "impact": {
+        "metric": "learning_minutes",
+        "amount": 10
+      }
     },
     {
       "id": "m_skip_plastic_straw",
@@ -351,7 +523,11 @@
       "description": "Avoid single-use plastic today – no straws, plastic cutlery or plastic bags.",
       "sdgNumber": 14,
       "sdg": "SDG 14: Life Below Water",
-      "xp": 20
+      "xp": 20,
+      "impact": {
+        "metric": "plastic_items",
+        "amount": 3
+      }
     },
     {
       "id": "m_ocean_fact",
@@ -359,7 +535,11 @@
       "description": "Learn one surprising fact about ocean life or ocean pollution and share it with a friend.",
       "sdgNumber": 14,
       "sdg": "SDG 14: Life Below Water",
-      "xp": 15
+      "xp": 15,
+      "impact": {
+        "metric": "people_reached",
+        "amount": 1
+      }
     },
     {
       "id": "m_learn_culture",
@@ -367,7 +547,11 @@
       "description": "Learn about a tradition, food or festival from a culture different from your own.",
       "sdgNumber": 10,
       "sdg": "SDG 10: Reduced Inequalities",
-      "xp": 20
+      "xp": 20,
+      "impact": {
+        "metric": "learning_minutes",
+        "amount": 15
+      }
     },
     {
       "id": "m_stand_up",
@@ -375,7 +559,11 @@
       "description": "If you see someone being left out or treated unfairly today, speak up or include them.",
       "sdgNumber": 10,
       "sdg": "SDG 10: Reduced Inequalities",
-      "xp": 25
+      "xp": 25,
+      "impact": {
+        "metric": "people_reached",
+        "amount": 1
+      }
     },
     {
       "id": "m_natural_light",
@@ -383,7 +571,11 @@
       "description": "Keep the lights off during daylight hours and open curtains or blinds instead.",
       "sdgNumber": 7,
       "sdg": "SDG 7: Affordable & Clean Energy",
-      "xp": 15
+      "xp": 15,
+      "impact": {
+        "metric": "co2_kg",
+        "amount": 0.1
+      }
     },
     {
       "id": "m_read_20",
@@ -391,7 +583,11 @@
       "description": "Read a book, article or comic for 20 minutes just for fun.",
       "sdgNumber": 4,
       "sdg": "SDG 4: Quality Education",
-      "xp": 15
+      "xp": 15,
+      "impact": {
+        "metric": "learning_minutes",
+        "amount": 20
+      }
     },
     {
       "id": "m_sdg_poster",
@@ -399,7 +595,11 @@
       "description": "Create a small poster or post about one SDG and display or share it.",
       "sdgNumber": 17,
       "sdg": "SDG 17: Partnerships for the Goals",
-      "xp": 25
+      "xp": 25,
+      "impact": {
+        "metric": "people_reached",
+        "amount": 5
+      }
     },
     {
       "id": "m_bug_hotel",
@@ -407,7 +607,11 @@
       "description": "Leave a small wild corner, put out water for birds or build a simple bug hotel.",
       "sdgNumber": 15,
       "sdg": "SDG 15: Life on Land",
-      "xp": 30
+      "xp": 30,
+      "impact": {
+        "metric": "nature",
+        "amount": 1
+      }
     },
     {
       "id": "m_energy_audit",
@@ -415,7 +619,11 @@
       "description": "Walk around your home and count devices left on standby, then switch off the ones that can be.",
       "sdgNumber": 13,
       "sdg": "SDG 13: Climate Action",
-      "xp": 25
+      "xp": 25,
+      "impact": {
+        "metric": "co2_kg",
+        "amount": 0.2
+      }
     },
     {
       "id": "m_public_transport",
@@ -423,7 +631,12 @@
       "description": "Use a bus, train or tram instead of a car for one trip today.",
       "sdgNumber": 11,
       "sdg": "SDG 11: Sustainable Cities & Communities",
-      "xp": 25
+      "xp": 25,
+      "impact": {
+        "metric": "co2_kg",
+        "amount": 0.7
+      }
     }
-  ]
+  ],
+  "impactNote": "Impact amounts are rough, conservative per-action estimates for awareness, not measurements."
 }

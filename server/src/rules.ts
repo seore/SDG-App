@@ -11,7 +11,21 @@ export interface MissionDef {
   sdgNumber: number;
   sdg: string;
   xp: number;
+  /** Rough real-world impact estimate for one completion. */
+  impact?: { metric: string; amount: number } | null;
 }
+
+export const impactMetrics = new Set([
+  'co2_kg',
+  'water_l',
+  'plastic_items',
+  'waste_items',
+  'food_kg',
+  'people_reached',
+  'learning_minutes',
+  'active_minutes',
+  'nature',
+]);
 
 export const missions: ReadonlyMap<string, MissionDef> = new Map(
   (catalog.missions as MissionDef[]).map((m) => [m.id, m]),

@@ -6,6 +6,10 @@ class Mission {
   final int xp;
   final bool isCompleted;
 
+  /// Rough real-world impact of one completion (see impact_metrics.dart).
+  final String? impactMetric;
+  final double impactAmount;
+
   Mission({
     required this.id,
     required this.title,
@@ -13,6 +17,8 @@ class Mission {
     required this.sdg,
     required this.xp,
     this.isCompleted = false,
+    this.impactMetric,
+    this.impactAmount = 0,
   });
 
   factory Mission.fromJson(Map<String, dynamic> json) => Mission(
@@ -21,6 +27,9 @@ class Mission {
         description: json['description'] as String,
         sdg: json['sdg'] as String,
         xp: json['xp'] as int,
+        impactMetric: (json['impact'] as Map?)?['metric'] as String?,
+        impactAmount:
+            (((json['impact'] as Map?)?['amount']) as num?)?.toDouble() ?? 0,
       );
 
   Mission copyWith({
@@ -38,6 +47,8 @@ class Mission {
       sdg: sdg ?? this.sdg,
       xp: xp ?? this.xp,
       isCompleted: isCompleted ?? this.isCompleted,
+      impactMetric: impactMetric,
+      impactAmount: impactAmount,
     );
   }
 }

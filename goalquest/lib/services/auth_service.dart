@@ -1,4 +1,5 @@
 import 'api_client.dart';
+import 'impact_service.dart';
 import 'owned_pack_service.dart';
 import 'profile_service.dart';
 
@@ -16,6 +17,7 @@ class AuthService {
     try {
       await OwnedPackService.instance.loadOwnedPacks();
     } catch (_) {}
+    ImpactService.instance.load();
   }
 
   Future<void> signUp({
@@ -53,6 +55,7 @@ class AuthService {
     try {
       await ProfileService.instance.loadCurrentUserProfile();
       await OwnedPackService.instance.loadOwnedPacks();
+      ImpactService.instance.load();
       return ProfileService.instance.currentProfile != null;
     } catch (_) {
       return _api.hasSession;

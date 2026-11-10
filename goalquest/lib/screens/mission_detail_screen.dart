@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
+import '../data/impact_metrics.dart';
 import '../data/sdg_data.dart';
 import '../models/mission.dart';
 import '../services/demo_mode.dart';
@@ -143,6 +144,14 @@ class _MissionDetailScreenState extends State<MissionDetailScreen> {
                                           color: AppColors.xp,
                                           icon: Icons.bolt_rounded,
                                         ),
+                                        if (impactMetrics[mission.impactMetric]
+                                            case final metric?)
+                                          PillChip(
+                                            label: metric
+                                                .describe(mission.impactAmount),
+                                            color: metric.color,
+                                            icon: metric.icon,
+                                          ),
                                       ],
                                     ),
                                   ),
@@ -410,7 +419,11 @@ class _MissionDetailScreenState extends State<MissionDetailScreen> {
       context,
       CelebrationData(
         title: mission.title,
-        subtitle: mission.sdg,
+        subtitle: switch (impactMetrics[mission.impactMetric]) {
+          final metric? =>
+            'Estimated impact: ${metric.describe(mission.impactAmount)}',
+          null => mission.sdg,
+        },
         color: color,
         xpEarned: mission.xp,
         streakBonus: award?.streakBonus ?? 0,

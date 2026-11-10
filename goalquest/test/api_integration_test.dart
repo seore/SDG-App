@@ -12,6 +12,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:goalquest/services/activity_service.dart';
 import 'package:goalquest/services/api_client.dart';
 import 'package:goalquest/services/auth_service.dart';
+import 'package:goalquest/services/impact_service.dart';
 import 'package:goalquest/services/live_data_service.dart';
 import 'package:goalquest/services/mission_catalog.dart';
 import 'package:goalquest/services/mission_progress_service.dart';
@@ -55,6 +56,10 @@ void main() {
       ActivityService.instance.completeMission(mission.id),
       throwsA(isA<ApiException>().having((e) => e.code, 'code', 'already_completed')),
     );
+
+    await ImpactService.instance.load();
+    expect(ImpactService.instance.totals.value.mine[mission.impactMetric],
+        mission.impactAmount);
 
     await MissionProgressService.instance.loadToday();
     expect(MissionProgressService.instance.statusFor(mission.id), MissionStatus.completed);

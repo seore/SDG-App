@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../data/impact_metrics.dart';
 import '../data/sdg_data.dart';
+import '../services/impact_service.dart';
 import '../services/live_data_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/app_card.dart';
@@ -18,6 +20,12 @@ class ImpactDashboardScreen extends StatefulWidget {
 
 class _ImpactDashboardScreenState extends State<ImpactDashboardScreen> {
   _Scope _scope = _Scope.me;
+
+  @override
+  void initState() {
+    super.initState();
+    ImpactService.instance.load();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -112,6 +120,12 @@ class _ImpactDashboardScreenState extends State<ImpactDashboardScreen> {
                       ),
                       const SizedBox(height: AppSpacing.xl),
                       FadeSlideIn(
+                        key: ValueKey('impact-$_scope'),
+                        delay: const Duration(milliseconds: 40),
+                        child: _RealWorldImpact(mine: _scope == _Scope.me),
+                      ),
+                      const SizedBox(height: AppSpacing.md),
+                      FadeSlideIn(
                         key: ValueKey('week-$_scope'),
                         delay: const Duration(milliseconds: 60),
                         child: _WeeklyChart(completions: visible),
@@ -145,6 +159,134 @@ class _ImpactDashboardScreenState extends State<ImpactDashboardScreen> {
             ],
           );
         },
+      ),
+    );
+  }
+}
+
+/// Estimated real-world impact totals, e.g. "≈ 120 L of water saved".
+class _RealWorldImpact extends StatelessWidget {
+  final bool mine;
+  const _RealWorldImpact({required this.mine});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return ValueListenableBuilder<ImpactTotals>(
+      valueListenable: ImpactService.instance.totals,
+      builder: (context, totals, _) {
+        final data = mine ? totals.mine : totals.community;
+        final metrics = [
+          for (final id in impactMetricOrder)
+            if ((data[id] ?? 0) > 0) (impactMetrics[id]!, data[id]!),
+        ];
+
+        return AppCard(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                mine ? 'Your real-world impact' : 'Community impact',
+                style: theme.textTheme.titleSmall
+                    ?.copyWith(fontWeight: FontWeight.w600),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                'Estimates based on typical savings per action',
+                style: theme.textTheme.bodySmall
+                    ?.copyWith(color: AppColors.textTertiary),
+              ),
+              const SizedBox(height: AppSpacing.md),
+              if (metrics.isEmpty)
+                Text(
+                  mine
+                      ? 'Complete a mission to see the difference you make – litres of water saved, CO₂ avoided and more.'
+                      : 'No actions logged yet.',
+                  style: theme.textTheme.bodyMedium
+                      ?.copyWith(color: AppColors.textSecondary),
+                )
+              else
+                GridView(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  padding: EdgeInsets.zero,
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    mainAxisSpacing: AppSpacing.sm,
+                    crossAxisSpacing: AppSpacing.sm,
+                    mainAxisExtent: 104,
+                  ),
+                  children: [
+                    for (final (metric, total) in metrics)
+                      _ImpactTile(metric: metric, total: total),
+                  ],
+                ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _ImpactTile extends StatelessWidget {
+  final ImpactMetric metric;
+  final double total;
+  const _ImpactTile({required this.metric, required this.total});
+
+  @override
+  Widget build(BuildContext context) {
+    final comparison = metric.compare?.call(total);
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: metric.color.withValues(alpha: 0.06),
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        border: Border.all(color: metric.color.withValues(alpha: 0.18)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(metric.icon, size: 16, color: metric.color),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  metric.shortLabel,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const Spacer(),
+          TweenAnimationBuilder<double>(
+            tween: Tween(begin: 0, end: total),
+            duration: AppDurations.slow * 1.5,
+            curve: Curves.easeOutCubic,
+            builder: (context, v, _) => Text(
+              '≈ ${metric.format(v)}',
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+                letterSpacing: -0.4,
+                fontFeatures: [FontFeature.tabularFigures()],
+              ),
+            ),
+          ),
+          if (comparison != null)
+            Text(
+              comparison,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(fontSize: 11, color: metric.color),
+            ),
+        ],
       ),
     );
   }

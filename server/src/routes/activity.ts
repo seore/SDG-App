@@ -53,8 +53,9 @@ activity.post('/missions/:id/complete', async (c) => {
   // The unique (user, mission, day) constraint makes double-submits a no-op.
   const inserted = await db.query(
     `insert into mission_completions
-       (user_id, user_name, mission_id, mission_title, sdg_number, xp, lat, lng, photo_key, completed_on)
-     values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10::date)
+       (user_id, user_name, mission_id, mission_title, sdg_number, xp, lat, lng, photo_key,
+        completed_on, impact_metric, impact_amount)
+     values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10::date, $11, $12)
      on conflict (user_id, mission_id, completed_on) do nothing
      returning id`,
     [
@@ -68,6 +69,8 @@ activity.post('/missions/:id/complete', async (c) => {
       body.data.lng ?? null,
       photoKey,
       today,
+      mission.impact?.metric ?? null,
+      mission.impact?.amount ?? 0,
     ],
   );
   if (!inserted.length) {
@@ -88,6 +91,7 @@ activity.post('/missions/:id/complete', async (c) => {
     xp_before: award.xp_before,
     xp_after: award.xp_after,
     capped: false,
+    impact: mission.impact ?? null,
     profile: toProfile(updated!, now),
   });
 });

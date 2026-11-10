@@ -68,6 +68,24 @@ me.get('/quiz-summary', async (c) => {
   });
 });
 
+/** Estimated real-world impact: the user's totals and the whole community's. */
+me.get('/impact', async (c) => {
+  type Row = { impact_metric: string; total: string | number; actions: string | number };
+  const sum = (rows: Row[]) =>
+    Object.fromEntries(
+      rows.map((r) => [r.impact_metric, { amount: Number(r.total), actions: Number(r.actions) }]),
+    );
+  const db = c.get('db');
+  const select = `select impact_metric, sum(impact_amount) as total, count(*) as actions
+                    from mission_completions
+                   where impact_metric is not null`;
+  const [mine, community] = await Promise.all([
+    db.query<Row>(`${select} and user_id = $1 group by impact_metric`, [c.get('userId')]),
+    db.query<Row>(`${select} group by impact_metric`),
+  ]);
+  return c.json({ mine: sum(mine), community: sum(community) });
+});
+
 me.get('/packs', async (c) => {
   const rows = await c
     .get('db')

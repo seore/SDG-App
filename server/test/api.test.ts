@@ -186,6 +186,31 @@ describe('games', () => {
   });
 });
 
+describe('impact', () => {
+  it('records each mission\'s impact and sums it for you and the community', async () => {
+    const a = await newUser();
+    const b = await newUser();
+    const before = (await call('GET', '/me/impact', undefined, a.access_token)).json;
+    const done = await call('POST', '/missions/m_short_shower/complete', {}, a.access_token);
+    expect(done.json.impact).toEqual({ metric: 'water_l', amount: 40 });
+    await call('POST', '/missions/m_turn_off_tap/complete', {}, a.access_token);
+    await call('POST', '/missions/m_short_shower/complete', {}, b.access_token);
+
+    const mine = (await call('GET', '/me/impact', undefined, a.access_token)).json;
+    expect(mine.mine.water_l).toEqual({ amount: 52, actions: 2 });
+    const prevCommunity = before.community.water_l?.amount ?? 0;
+    expect(mine.community.water_l.amount).toBe(prevCommunity + 92);
+  });
+
+  it('gives every mission a known impact metric', async () => {
+    const { missions, impactMetrics } = await import('../src/rules');
+    for (const m of missions.values()) {
+      expect(impactMetrics.has(m.impact!.metric), m.id).toBe(true);
+      expect(m.impact!.amount, m.id).toBeGreaterThan(0);
+    }
+  });
+});
+
 describe('feeds and profile', () => {
   it('marks your own completions and coarsens locations', async () => {
     const a = await newUser();

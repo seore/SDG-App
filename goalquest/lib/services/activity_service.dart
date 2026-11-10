@@ -1,5 +1,6 @@
 import 'api_client.dart';
 import 'demo_mode.dart';
+import 'impact_service.dart';
 import 'mission_catalog.dart';
 import 'profile_service.dart';
 
@@ -17,16 +18,22 @@ class ActivityService {
     double? lng,
     String? photoKey,
   }) async {
+    final mission = MissionCatalogService.instance.byId(missionId);
+    final XpAward award;
     if (DemoMode.enabled) {
-      final xp = MissionCatalogService.instance.byId(missionId)?.xp ?? 0;
-      return ProfileService.instance.awardLocally(xp);
+      award = ProfileService.instance.awardLocally(mission?.xp ?? 0);
+    } else {
+      final json = await _api.post('/missions/$missionId/complete', {
+        'lat': lat,
+        'lng': lng,
+        'photo_key': photoKey,
+      });
+      award = ProfileService.instance.applyServerAward(json as Map<String, dynamic>);
     }
-    final json = await _api.post('/missions/$missionId/complete', {
-      'lat': lat,
-      'lng': lng,
-      'photo_key': photoKey,
-    });
-    return ProfileService.instance.applyServerAward(json as Map<String, dynamic>);
+    if (mission?.impactMetric case final metric?) {
+      ImpactService.instance.addLocal(metric, mission!.impactAmount);
+    }
+    return award;
   }
 
   /// [score] and [total] are reported; the server applies the game's XP rule
