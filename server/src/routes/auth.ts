@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { apiError, type AppEnv, type Ctx } from '../context';
 import { hashPassword, randomToken, sha256, verifyPassword } from '../crypto';
 import { loadUser, toProfile, type UserRow } from '../profile';
+import { authRateLimit } from '../rate-limit';
 
 const email = z.string().trim().toLowerCase().email().max(254);
 const password = z.string().min(6).max(200);
@@ -39,6 +40,7 @@ async function issueSession(c: Ctx, user: UserRow) {
 }
 
 export const auth = new Hono<AppEnv>();
+auth.use('*', authRateLimit);
 
 auth.post('/signup', async (c) => {
   const body = z

@@ -105,6 +105,34 @@ describe('auth', () => {
   });
 });
 
+describe('auth rate limiting', () => {
+  it('blocks after the limit and keys login attempts by email', async () => {
+    const { createApp } = await import('../src/app');
+    const counts = new Map<string, number>();
+    const limiter = {
+      async limit({ key }: { key: string }) {
+        counts.set(key, (counts.get(key) ?? 0) + 1);
+        return { success: counts.get(key)! <= 3 };
+      },
+    };
+    const limited = createApp(() => ({ db, config: { ...config, authLimiter: limiter } }));
+    const login = (email: string) =>
+      limited.request('/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password: 'wrong-password' }),
+      });
+
+    const statuses = [];
+    for (let i = 0; i < 4; i++) statuses.push((await login('victim@example.com')).status);
+    expect(statuses).toEqual([401, 401, 401, 429]);
+    const blocked = (await (await login("VICTIM@example.com")).json()) as { error: string };
+    expect(blocked.error).toBe('too_many_attempts');
+    // A different account is unaffected.
+    expect((await login('other@example.com')).status).toBe(401);
+  });
+});
+
 describe('missions', () => {
   it('awards catalog XP once per mission per day', async () => {
     const s = await newUser();

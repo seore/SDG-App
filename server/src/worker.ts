@@ -4,9 +4,12 @@ import { configFromEnv, type EnvVars } from './config';
 import { neonDb } from './db';
 
 const app = createApp((c) => {
-  const env = c.env as unknown as EnvVars;
+  const env = c.env as unknown as EnvVars & { AUTH_LIMITER?: RateLimit };
   if (!env.DATABASE_URL) throw new Error('DATABASE_URL is not set.');
-  return { db: neonDb(env.DATABASE_URL), config: configFromEnv(env) };
+  return {
+    db: neonDb(env.DATABASE_URL),
+    config: { ...configFromEnv(env), authLimiter: env.AUTH_LIMITER },
+  };
 });
 
 export default app;

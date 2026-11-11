@@ -1,4 +1,5 @@
 import { createClaudePhotoChecker, type PhotoChecker } from './photo-check';
+import type { Limiter } from './rate-limit';
 import { loadObject } from './storage';
 
 export interface StorageConfig {
@@ -14,6 +15,8 @@ export interface Mailer {
 }
 
 export interface AppConfig {
+  /** Rate limiter for /auth routes (Cloudflare binding); off when unset. */
+  authLimiter?: Limiter;
   /** AI photo check (Claude vision); disabled when ANTHROPIC_API_KEY is unset. */
   photoChecker?: PhotoChecker;
   /** Loads an uploaded photo's bytes (defaults to S3 storage). */

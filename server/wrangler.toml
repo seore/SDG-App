@@ -1,6 +1,19 @@
 name = "sdg-journey-api"
 main = "src/worker.ts"
 compatibility_date = "2025-09-01"
+workers_dev = true
+preview_urls = false
+
+# Slows down password guessing and sign-up spam on /auth routes:
+# 10 attempts per minute per email (login, forgot password), per reset token,
+# or per IP (sign-up). Counts are approximate and per Cloudflare location.
+[[ratelimits]]
+name = "AUTH_LIMITER"
+namespace_id = "1001"
+
+  [ratelimits.simple]
+  limit = 10
+  period = 60
 
 # Secrets are set with `wrangler secret put <NAME>` (never committed):
 #   DATABASE_URL, JWT_SECRET, RESEND_API_KEY, EMAIL_FROM,
