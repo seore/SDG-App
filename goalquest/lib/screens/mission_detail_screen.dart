@@ -20,6 +20,7 @@ import '../widgets/app_scaffold.dart';
 import '../widgets/celebration_overlay.dart';
 import '../widgets/motion.dart';
 import '../widgets/progress_widgets.dart';
+import '../widgets/report_problem.dart';
 
 /// Route arguments for `/missionDetail` when a Hero animation is wanted.
 class MissionRouteArgs {
@@ -167,6 +168,27 @@ class _MissionDetailScreenState extends State<MissionDetailScreen> {
                                       ),
                                     ),
                                   ),
+                                  if (mission.impactBasis != null) ...[
+                                    const SizedBox(height: AppSpacing.md),
+                                    Row(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Icon(Icons.info_outline_rounded,
+                                            size: 16, color: AppColors.textTertiary),
+                                        const SizedBox(width: 6),
+                                        Expanded(
+                                          child: Text(
+                                            'How we estimate this: ${mission.impactBasis}',
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              height: 1.4,
+                                              color: AppColors.textTertiary,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
                                 ],
                               ),
                             ),
@@ -177,6 +199,12 @@ class _MissionDetailScreenState extends State<MissionDetailScreen> {
                       FadeSlideIn(
                         delay: const Duration(milliseconds: 180),
                         child: _buildPhotoCard(theme),
+                      ),
+                      const SizedBox(height: AppSpacing.sm),
+                      ReportProblemButton(
+                        type: 'mission',
+                        id: mission.id,
+                        subject: 'Mission: ${mission.title}',
                       ),
                     ],
                   ),

@@ -10,6 +10,9 @@ class Mission {
   final String? impactMetric;
   final double impactAmount;
 
+  /// The assumptions behind [impactAmount], shown to the user.
+  final String? impactBasis;
+
   Mission({
     required this.id,
     required this.title,
@@ -19,6 +22,7 @@ class Mission {
     this.isCompleted = false,
     this.impactMetric,
     this.impactAmount = 0,
+    this.impactBasis,
   });
 
   factory Mission.fromJson(Map<String, dynamic> json) => Mission(
@@ -30,6 +34,7 @@ class Mission {
         impactMetric: (json['impact'] as Map?)?['metric'] as String?,
         impactAmount:
             (((json['impact'] as Map?)?['amount']) as num?)?.toDouble() ?? 0,
+        impactBasis: (json['impact'] as Map?)?['basis'] as String?,
       );
 
   Mission copyWith({
@@ -49,6 +54,7 @@ class Mission {
       isCompleted: isCompleted ?? this.isCompleted,
       impactMetric: impactMetric,
       impactAmount: impactAmount,
+      impactBasis: impactBasis,
     );
   }
 }

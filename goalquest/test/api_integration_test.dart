@@ -13,6 +13,7 @@ import 'package:goalquest/services/activity_service.dart';
 import 'package:goalquest/services/api_client.dart';
 import 'package:goalquest/services/auth_service.dart';
 import 'package:goalquest/services/impact_service.dart';
+import 'package:goalquest/services/content_report_service.dart';
 import 'package:goalquest/services/learning_service.dart';
 import 'package:goalquest/services/live_data_service.dart';
 import 'package:goalquest/services/mission_catalog.dart';
@@ -101,6 +102,8 @@ void main() {
     expect(TeamService.instance.teams.value!.single.missionsThisWeek, 1);
     final detail = await TeamService.instance.detail(team.id);
     expect(detail.leaderboard.single.isMe, isTrue);
+    await ContentReportService.instance.report(
+      type: 'mission', id: 'm_short_shower', reason: ReportReason.unclear, message: 'Integration test');
     await StatsService.instance.load();
     final stats = StatsService.instance.stats.value!;
     expect(stats.missions, greaterThanOrEqualTo(1));

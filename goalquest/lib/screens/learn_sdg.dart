@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../data/sdg_data.dart';
+import '../data/sdg_targets.dart';
 import '../services/learning_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/mastery_widgets.dart';
@@ -11,6 +12,7 @@ import '../utils/sdg_utils.dart';
 import '../widgets/app_card.dart';
 import '../widgets/app_scaffold.dart';
 import '../widgets/motion.dart';
+import '../widgets/report_problem.dart';
 
 class LearnSdgScreen extends StatefulWidget {
   final int sdgNumber;
@@ -427,10 +429,100 @@ class _LessonPage extends StatelessWidget {
                   ],
                 ),
               ),
+              const SizedBox(height: AppSpacing.md),
+              _OfficialTargets(goal: goal),
+              const SizedBox(height: AppSpacing.sm),
+              ReportProblemButton(
+                type: 'lesson',
+                id: '${goal.number}',
+                subject: 'Lesson: Goal ${goal.number} · ${goal.shortTitle}',
+              ),
             ],
           ),
         ),
       ],
+    );
+  }
+}
+
+/// The goal's official UN targets, collapsed to the first few.
+class _OfficialTargets extends StatefulWidget {
+  final SdgGoal goal;
+  const _OfficialTargets({required this.goal});
+
+  @override
+  State<_OfficialTargets> createState() => _OfficialTargetsState();
+}
+
+class _OfficialTargetsState extends State<_OfficialTargets> {
+  static const _collapsed = 3;
+  final _load = SdgTargets.instance.load();
+  bool _expanded = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return FutureBuilder<void>(
+      future: _load,
+      builder: (context, snap) {
+        final targets = SdgTargets.instance.forGoal(widget.goal.number);
+        if (targets.isEmpty) return const SizedBox.shrink();
+        final shown = _expanded ? targets : targets.take(_collapsed).toList();
+        return _LessonSection(
+          icon: Icons.account_balance_rounded,
+          title: 'Official UN targets',
+          color: widget.goal.color,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (SdgTargets.instance.officialTitle(widget.goal.number) case final official?) ...[
+                Text(
+                  '“$official”',
+                  style: theme.textTheme.bodyMedium?.copyWith(fontStyle: FontStyle.italic, height: 1.45),
+                ),
+                const SizedBox(height: AppSpacing.md),
+              ],
+              for (final t in shown)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: Semantics(
+                    label: 'Target ${t.code}: ${t.title}',
+                    excludeSemantics: true,
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        SizedBox(
+                          width: 44,
+                          child: Text(
+                            t.code,
+                            style: TextStyle(
+                              fontWeight: FontWeight.w700,
+                              color: widget.goal.color,
+                              fontFeatures: const [FontFeature.tabularFigures()],
+                            ),
+                          ),
+                        ),
+                        Expanded(
+                          child: Text(t.title, style: theme.textTheme.bodySmall?.copyWith(height: 1.45)),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              if (targets.length > _collapsed)
+                TextButton(
+                  style: TextButton.styleFrom(padding: EdgeInsets.zero),
+                  onPressed: () => setState(() => _expanded = !_expanded),
+                  child: Text(_expanded ? 'Show fewer' : 'Show all ${targets.length} targets'),
+                ),
+              Text(
+                'Source: ${SdgTargets.source}. Wording as adopted by the UN; some dates (e.g. 2020) have passed.',
+                style: TextStyle(fontSize: 11, color: AppColors.textTertiary),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }

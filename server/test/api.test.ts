@@ -225,7 +225,8 @@ describe('impact', () => {
     const b = await newUser();
     const before = (await call('GET', '/me/impact', undefined, a.access_token)).json;
     const done = await call('POST', '/missions/m_short_shower/complete', {}, a.access_token);
-    expect(done.json.impact).toEqual({ metric: 'water_l', amount: 40 });
+    expect(done.json.impact).toMatchObject({ metric: 'water_l', amount: 40 });
+    expect(done.json.impact.basis).toContain('litres per minute');
     await call('POST', '/missions/m_turn_off_tap/complete', {}, a.access_token);
     await call('POST', '/missions/m_short_shower/complete', {}, b.access_token);
 
@@ -498,6 +499,22 @@ describe('achievements and monthly challenges', () => {
     expect((await call('POST', '/me/challenge/claim', {}, s.access_token)).status).toBe(409);
     expect((await call('GET', '/me/stats', undefined, s.access_token)).json.challenges_completed).toBe(1);
     clock = savedClock;
+  });
+});
+
+describe('content reports', () => {
+  it('accepts reports, validates them and limits them per day', async () => {
+    const s = await newUser();
+    const ok = await call('POST', '/content/reports', {
+      content_type: 'mission', content_id: 'm_short_shower', reason: 'inaccurate', message: 'Our showers use less water.',
+    }, s.access_token);
+    expect(ok.status).toBe(201);
+    expect((await call('POST', '/content/reports', { content_type: 'lesson', content_id: '6', reason: 'boring' }, s.access_token)).status).toBe(400);
+    expect((await call('POST', '/content/reports', { content_type: 'lesson', content_id: '6', reason: 'unclear' })).status).toBe(401);
+    for (let i = 1; i < 20; i++) {
+      await call('POST', '/content/reports', { content_type: 'quiz', content_id: `q${i}`, reason: 'other' }, s.access_token);
+    }
+    expect((await call('POST', '/content/reports', { content_type: 'quiz', content_id: 'q99', reason: 'other' }, s.access_token)).status).toBe(429);
   });
 });
 

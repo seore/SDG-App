@@ -10,7 +10,8 @@
       "xp": 20,
       "impact": {
         "metric": "co2_kg",
-        "amount": 0.05
+        "amount": 0.05,
+        "basis": "≈0.1 kWh of device and standby use avoided × a grid assumption of ≈0.4 kg CO₂ per kWh."
       }
     },
     {
@@ -22,7 +23,8 @@
       "xp": 20,
       "impact": {
         "metric": "co2_kg",
-        "amount": 0.1
+        "amount": 0.1,
+        "basis": "≈0.25 kWh of lighting avoided (several bulbs for a few hours) × a grid assumption of ≈0.4 kg CO₂ per kWh."
       }
     },
     {
@@ -34,7 +36,8 @@
       "xp": 30,
       "impact": {
         "metric": "co2_kg",
-        "amount": 0.8
+        "amount": 0.8,
+        "basis": "≈5 km not driven × ≈0.17 kg CO₂ per km for an average petrol car."
       }
     },
     {
@@ -46,7 +49,8 @@
       "xp": 25,
       "impact": {
         "metric": "co2_kg",
-        "amount": 0.8
+        "amount": 0.8,
+        "basis": "An air conditioner (≈1 kW) swapped for a fan (≈0.05 kW) for 2 hours saves ≈1.9 kWh × a grid assumption of ≈0.4 kg CO₂ per kWh."
       }
     },
     {
@@ -58,7 +62,8 @@
       "xp": 20,
       "impact": {
         "metric": "plastic_items",
-        "amount": 2
+        "amount": 2,
+        "basis": "Counts about 2 disposable bottles replaced in a day."
       }
     },
     {
@@ -70,7 +75,8 @@
       "xp": 25,
       "impact": {
         "metric": "waste_items",
-        "amount": 5
+        "amount": 5,
+        "basis": "Counts the 5 items you sorted for recycling."
       }
     },
     {
@@ -82,7 +88,8 @@
       "xp": 20,
       "impact": {
         "metric": "co2_kg",
-        "amount": 0.5
+        "amount": 0.5,
+        "basis": "Rough footprint of making and shipping one small item you did not need. Very uncertain; treat as an order of magnitude."
       }
     },
     {
@@ -94,7 +101,8 @@
       "xp": 30,
       "impact": {
         "metric": "waste_items",
-        "amount": 1
+        "amount": 1,
+        "basis": "Counts the 1 item repaired or reused instead of thrown away."
       }
     },
     {
@@ -106,7 +114,8 @@
       "xp": 25,
       "impact": {
         "metric": "co2_kg",
-        "amount": 1.5
+        "amount": 1.5,
+        "basis": "Typical difference between a meat-based and a plant-based meal. Varies a lot with the type of meat (beef is much higher than chicken)."
       }
     },
     {
@@ -118,7 +127,8 @@
       "xp": 20,
       "impact": {
         "metric": "water_l",
-        "amount": 40
+        "amount": 40,
+        "basis": "Shower flow ≈8 litres per minute × 5 minutes shorter."
       }
     },
     {
@@ -130,7 +140,8 @@
       "xp": 15,
       "impact": {
         "metric": "water_l",
-        "amount": 12
+        "amount": 12,
+        "basis": "Tap flow ≈6 litres per minute × 2 minutes less running (e.g. while brushing teeth)."
       }
     },
     {
@@ -142,7 +153,8 @@
       "xp": 25,
       "impact": {
         "metric": "water_l",
-        "amount": 20
+        "amount": 20,
+        "basis": "A slowly dripping tap can waste ≈20 litres a day; counts one day of a leak found and reported."
       }
     },
     {
@@ -238,7 +250,8 @@
       "xp": 30,
       "impact": {
         "metric": "waste_items",
-        "amount": 5
+        "amount": 5,
+        "basis": "Counts the 5 pieces of litter you picked up."
       }
     },
     {
@@ -286,7 +299,8 @@
       "xp": 25,
       "impact": {
         "metric": "waste_items",
-        "amount": 3
+        "amount": 3,
+        "basis": "Counts about 3 pieces of litter removed near water."
       }
     },
     {
@@ -370,7 +384,8 @@
       "xp": 20,
       "impact": {
         "metric": "food_kg",
-        "amount": 0.2
+        "amount": 0.2,
+        "basis": "A typical leftover portion (≈200 g) not thrown away."
       }
     },
     {
@@ -382,7 +397,8 @@
       "xp": 25,
       "impact": {
         "metric": "food_kg",
-        "amount": 0.3
+        "amount": 0.3,
+        "basis": "A typical portion of leftovers (≈300 g) eaten instead of thrown away."
       }
     },
     {
@@ -526,7 +542,8 @@
       "xp": 20,
       "impact": {
         "metric": "plastic_items",
-        "amount": 3
+        "amount": 3,
+        "basis": "Counts about 3 single-use items refused (e.g. straw, cup, bag)."
       }
     },
     {
@@ -574,7 +591,8 @@
       "xp": 15,
       "impact": {
         "metric": "co2_kg",
-        "amount": 0.1
+        "amount": 0.1,
+        "basis": "≈0.25 kWh of lighting avoided × a grid assumption of ≈0.4 kg CO₂ per kWh."
       }
     },
     {
@@ -622,7 +640,8 @@
       "xp": 25,
       "impact": {
         "metric": "co2_kg",
-        "amount": 0.2
+        "amount": 0.2,
+        "basis": "≈0.5 kWh saved by switching off what you find × a grid assumption of ≈0.4 kg CO₂ per kWh."
       }
     },
     {
@@ -634,7 +653,8 @@
       "xp": 25,
       "impact": {
         "metric": "co2_kg",
-        "amount": 0.7
+        "amount": 0.7,
+        "basis": "≈5 km by bus instead of car: ≈0.17 kg CO₂/km by car minus ≈0.03 kg/km per bus passenger."
       }
     }
   ],

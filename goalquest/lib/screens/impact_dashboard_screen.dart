@@ -8,6 +8,7 @@ import '../theme/app_theme.dart';
 import '../widgets/app_card.dart';
 import '../widgets/app_scaffold.dart';
 import '../widgets/motion.dart';
+import '../widgets/impact_method_sheet.dart';
 
 enum _Scope { me, everyone }
 
@@ -32,6 +33,11 @@ class _ImpactDashboardScreenState extends State<ImpactDashboardScreen> {
     return AppScaffold(
       title: 'Your impact',
       actions: [
+        IconButton(
+          tooltip: 'How we estimate impact',
+          onPressed: () => showImpactMethodSheet(context),
+          icon: const Icon(Icons.info_outline_rounded),
+        ),
         TextButton.icon(
           onPressed: () => Navigator.pushNamed(context, '/weeklySummary'),
           icon: const Icon(Icons.ios_share_rounded, size: 18),

@@ -12,7 +12,8 @@ export interface MissionDef {
   sdg: string;
   xp: number;
   /** Rough real-world impact estimate for one completion. */
-  impact?: { metric: string; amount: number } | null;
+  /** `basis` states the assumptions behind the estimate. */
+  impact?: { metric: string; amount: number; basis?: string } | null;
 }
 
 export const impactMetrics = new Set([
