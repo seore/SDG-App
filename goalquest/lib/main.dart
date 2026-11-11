@@ -6,6 +6,7 @@ import 'services/auth_service.dart';
 import 'services/demo_mode.dart';
 import 'services/mission_catalog.dart';
 import 'services/mission_progress_service.dart';
+import 'services/notification_service.dart';
 import 'services/profile_service.dart';
 import 'theme/theme_controller.dart';
 
@@ -23,6 +24,7 @@ Future<void> main() async {
   await Future.wait([
     MissionCatalogService.instance.load(),
     ThemeController.instance.load(),
+    NotificationService.instance.init(),
   ]);
 
   Uri? initialUri;

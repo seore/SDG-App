@@ -2,6 +2,7 @@ import 'api_client.dart';
 import 'demo_mode.dart';
 import 'impact_service.dart';
 import 'mission_catalog.dart';
+import 'notification_service.dart';
 import 'profile_service.dart';
 
 /// Reports missions and games to the server, which decides the XP.
@@ -33,6 +34,8 @@ class ActivityService {
     if (mission?.impactMetric case final metric?) {
       ImpactService.instance.addLocal(metric, mission!.impactAmount);
     }
+    // Active today: today's reminder and streak nudge are no longer needed.
+    NotificationService.instance.reschedule();
     return award;
   }
 
@@ -45,14 +48,20 @@ class ActivityService {
     required int localXp,
     int? sdgNumber,
   }) async {
-    if (DemoMode.enabled) return ProfileService.instance.awardLocally(localXp);
+    if (DemoMode.enabled) {
+      final award = ProfileService.instance.awardLocally(localXp);
+      NotificationService.instance.reschedule();
+      return award;
+    }
     final json = await _api.post('/games/complete', {
       'game_id': gameId,
       'score': score,
       'total': total,
       if (sdgNumber != null) 'sdg_number': sdgNumber,
     });
-    return ProfileService.instance.applyServerAward(json as Map<String, dynamic>);
+    final award = ProfileService.instance.applyServerAward(json as Map<String, dynamic>);
+    NotificationService.instance.reschedule();
+    return award;
   }
 
   /// Uploads a mission photo; returns its storage key, or null when photo

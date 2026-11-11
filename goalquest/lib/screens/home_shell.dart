@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../services/mission_progress_service.dart';
+import '../services/notification_service.dart';
 import '../services/team_service.dart';
 import '../theme/app_theme.dart';
 import 'daily_missions_screen.dart';
@@ -32,6 +33,7 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
     WidgetsBinding.instance.addObserver(this);
     MissionProgressService.instance.loadToday();
     TeamService.instance.load().catchError((_) {});
+    NotificationService.instance.reschedule();
   }
 
   @override
@@ -45,6 +47,7 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
     // Picks up day roll-over and completions from other devices.
     if (state == AppLifecycleState.resumed) {
       MissionProgressService.instance.loadToday();
+      NotificationService.instance.reschedule();
     }
   }
 

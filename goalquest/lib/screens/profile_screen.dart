@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../data/sdg_data.dart';
 import '../services/api_client.dart';
 import '../services/demo_mode.dart';
+import '../services/notification_service.dart';
 import '../services/privacy.dart';
 import '../services/profile_service.dart';
 import '../theme/app_theme.dart';
@@ -242,6 +243,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         label: 'Email',
                         value: profile.email,
                       ),
+                      const Divider(indent: 52),
+                      const _RemindersRow(),
                       const Divider(indent: 52),
                       ValueListenableBuilder<ThemeMode>(
                         valueListenable: ThemeController.instance.mode,
@@ -1163,6 +1166,74 @@ class _DeleteAccountDialogState extends State<_DeleteAccountDialog> {
           child: Text(_busy ? 'Deleting…' : 'Delete forever'),
         ),
       ],
+    );
+  }
+}
+
+/// Reminders on/off and the daily reminder time.
+class _RemindersRow extends StatelessWidget {
+  const _RemindersRow();
+
+  @override
+  Widget build(BuildContext context) {
+    final n = NotificationService.instance;
+    return ValueListenableBuilder<bool>(
+      valueListenable: n.enabled,
+      builder: (context, on, _) => ValueListenableBuilder<TimeOfDay>(
+        valueListenable: n.dailyTime,
+        builder: (context, time, _) => Padding(
+          padding: const EdgeInsets.fromLTRB(16, 4, 8, 4),
+          child: Row(
+            children: [
+              Icon(Icons.notifications_none_rounded, size: 20, color: AppColors.textSecondary),
+              const SizedBox(width: AppSpacing.md + 4),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('Reminders', style: TextStyle(fontWeight: FontWeight.w500)),
+                    if (on)
+                      InkWell(
+                        onTap: () async {
+                          final picked = await showTimePicker(context: context, initialTime: time);
+                          if (picked != null) await n.setDailyTime(picked);
+                        },
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 2),
+                          child: Text(
+                            'Daily at ${time.format(context)} · streak nudge at 8 pm',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: AppColors.primary,
+                              decoration: TextDecoration.underline,
+                            ),
+                          ),
+                        ),
+                      )
+                    else
+                      Text(
+                        'Daily mission reminder and streak nudge',
+                        style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                      ),
+                  ],
+                ),
+              ),
+              Switch(
+                value: on,
+                onChanged: (v) async {
+                  final messenger = ScaffoldMessenger.of(context);
+                  final result = await n.setEnabled(v);
+                  if (v && !result) {
+                    messenger.showSnackBar(const SnackBar(
+                      content: Text('Notifications are turned off for this app. Turn them on in your phone settings.'),
+                    ));
+                  }
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

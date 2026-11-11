@@ -4,6 +4,7 @@ import '../theme/app_theme.dart';
 import 'api_client.dart';
 import 'demo_mode.dart';
 import 'mission_progress_service.dart';
+import 'notification_service.dart';
 
 class UserProfile {
   final String id;
@@ -242,6 +243,7 @@ class ProfileService {
 
   Future<void> signOut() async {
     if (!DemoMode.enabled) await _api.logout();
+    await NotificationService.instance.setEnabled(false);
     profileListenable.value = null;
     MissionProgressService.instance.reset();
   }
