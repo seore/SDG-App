@@ -328,6 +328,40 @@ describe('teams', () => {
   });
 });
 
+describe('account deletion', () => {
+  it('requires the password and removes the user and their data', async () => {
+    const { createApp } = await import('../src/app');
+    const deleted: string[] = [];
+    const app2 = createApp(() => ({
+      db,
+      config: { ...config, deletePhoto: async (k: string) => void deleted.push(k) },
+    }));
+    const req = (method: string, path: string, body?: unknown, token?: string) =>
+      app2.request(path, {
+        method,
+        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        body: body === undefined ? undefined : JSON.stringify(body),
+      });
+
+    const s = await newUser();
+    const email = `user${n}@example.com`;
+    await call('POST', '/missions/m_unplug/complete', { photo_key: `mission-photos/${s.user.id}/a.jpg` }, s.access_token);
+    const team = (await call('POST', '/teams', { name: 'Only me' }, s.access_token)).json;
+
+    expect((await req('DELETE', '/me', { password: 'wrong-pass' }, s.access_token)).status).toBe(403);
+    const ok = await req('DELETE', '/me', { password: 'secret123' }, s.access_token);
+    expect(ok.status).toBe(200);
+    // The mission photo is removed from storage too.
+    expect(deleted).toEqual([`mission-photos/${s.user.id}/a.jpg`]);
+
+    expect((await call('POST', '/auth/login', { email, password: 'secret123' })).status).toBe(401);
+    expect((await call('POST', '/auth/refresh', { refresh_token: s.refresh_token })).status).toBe(401);
+    const left = await db.query('select count(*)::int as n from mission_completions m join users u on u.id = m.user_id where u.email = $1', [email]);
+    expect((left[0] as { n: number }).n).toBe(0);
+    expect(await db.query('select 1 from teams where id = $1', [team.id])).toEqual([]);
+  });
+});
+
 describe('feeds and profile', () => {
   it('marks your own completions and coarsens locations', async () => {
     const a = await newUser();

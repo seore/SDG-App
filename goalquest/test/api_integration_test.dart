@@ -96,7 +96,15 @@ void main() {
     final restored = await AuthService.instance.restore();
     expect(restored, isTrue);
 
-    await ProfileService.instance.signOut();
+    await expectLater(
+      ProfileService.instance.deleteAccount('wrong-password'),
+      throwsA(isA<ApiException>().having((e) => e.code, 'code', 'wrong_password')),
+    );
+    await ProfileService.instance.deleteAccount('secret123');
     expect(ApiClient.instance.hasSession, isFalse);
+    await expectLater(
+      AuthService.instance.logIn(email: email, password: 'secret123'),
+      throwsA(isA<ApiException>()),
+    );
   }, skip: apiUrl.isEmpty ? 'Set --dart-define=API_URL to run' : false);
 }

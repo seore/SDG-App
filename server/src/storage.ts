@@ -17,6 +17,10 @@ export function objectUrl(s: StorageConfig, key: string) {
   return `${s.endpoint}/${s.bucket}/${key.split('/').map(encodeURIComponent).join('/')}`;
 }
 
+export async function deleteObject(s: StorageConfig, key: string): Promise<void> {
+  await storageClient(s).fetch(objectUrl(s, key), { method: 'DELETE' });
+}
+
 export async function loadObject(s: StorageConfig, key: string): Promise<Uint8Array | null> {
   const res = await storageClient(s).fetch(objectUrl(s, key));
   if (!res.ok) return null;

@@ -215,6 +215,16 @@ class ProfileService {
     profileListenable.value = UserProfile.fromJson(json);
   }
 
+  /// Permanently deletes the account and all its data on the server.
+  Future<void> deleteAccount(String password) async {
+    if (!DemoMode.enabled) {
+      await _api.delete('/me', {'password': password});
+      await _api.clearSession();
+    }
+    profileListenable.value = null;
+    MissionProgressService.instance.reset();
+  }
+
   Future<void> signOut() async {
     if (!DemoMode.enabled) await _api.logout();
     profileListenable.value = null;

@@ -143,6 +143,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
+  Future<void> _deleteAccount() async {
+    final navigator = Navigator.of(context);
+    final deleted = await showDialog<bool>(
+      context: context,
+      builder: (_) => const _DeleteAccountDialog(),
+    );
+    if (deleted == true && mounted) {
+      navigator.pushNamedAndRemoveUntil('/auth', (route) => false);
+    }
+  }
+
   Future<void> _signOut() async {
     final confirmed = await showDialog<bool>(
       context: context,
@@ -263,6 +274,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         label: 'Sign out',
                         destructive: true,
                         onTap: _signOut,
+                      ),
+                      const Divider(indent: 52),
+                      _SettingsRow(
+                        icon: Icons.delete_forever_outlined,
+                        label: 'Delete account',
+                        destructive: true,
+                        onTap: _deleteAccount,
                       ),
                     ],
                   ),
@@ -1060,4 +1078,84 @@ Future<void> _showAppearanceSheet(BuildContext context) {
       ),
     ),
   );
+}
+
+/// Confirms permanent deletion with the account password.
+class _DeleteAccountDialog extends StatefulWidget {
+  const _DeleteAccountDialog();
+
+  @override
+  State<_DeleteAccountDialog> createState() => _DeleteAccountDialogState();
+}
+
+class _DeleteAccountDialogState extends State<_DeleteAccountDialog> {
+  final _password = TextEditingController();
+  bool _busy = false;
+  String? _error;
+
+  @override
+  void dispose() {
+    _password.dispose();
+    super.dispose();
+  }
+
+  Future<void> _delete() async {
+    setState(() {
+      _busy = true;
+      _error = null;
+    });
+    try {
+      await ProfileService.instance.deleteAccount(_password.text);
+      if (mounted) Navigator.pop(context, true);
+    } on ApiException catch (e) {
+      if (mounted) {
+        setState(() {
+          _busy = false;
+          _error = e.message;
+        });
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final needsPassword = !DemoMode.enabled;
+    return AlertDialog(
+      title: const Text('Delete your account?'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'This permanently deletes your profile, XP, missions, quiz and game '
+            'history, stories, photos and team memberships. It cannot be undone.',
+          ),
+          if (needsPassword) ...[
+            const SizedBox(height: AppSpacing.lg),
+            TextField(
+              controller: _password,
+              obscureText: true,
+              autofocus: true,
+              decoration: InputDecoration(
+                labelText: 'Password',
+                errorText: _error,
+              ),
+              onChanged: (_) => setState(() {}),
+            ),
+          ],
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: _busy ? null : () => Navigator.pop(context, false),
+          child: const Text('Cancel'),
+        ),
+        FilledButton(
+          style: FilledButton.styleFrom(backgroundColor: const Color(0xFFDC2626)),
+          onPressed: _busy || (needsPassword && _password.text.isEmpty) ? null : _delete,
+          child: Text(_busy ? 'Deleting…' : 'Delete forever'),
+        ),
+      ],
+    );
+  }
 }

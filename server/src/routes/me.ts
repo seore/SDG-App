@@ -2,11 +2,47 @@ import { Hono } from 'hono';
 import { z } from 'zod';
 
 import { apiError, requireAuth, type AppEnv } from '../context';
+import { verifyPassword } from '../crypto';
 import { loadUser, toProfile, type UserRow } from '../profile';
 import { shopPackIds, utcDay } from '../rules';
 
 export const me = new Hono<AppEnv>();
 me.use('*', requireAuth);
+
+/**
+ * Permanently deletes the account and everything linked to it (missions,
+ * stories, quiz and game history, team memberships, photos). Requires the
+ * password so a borrowed unlocked phone can't do it by accident.
+ */
+me.delete('/', async (c) => {
+  const body = z.object({ password: z.string().max(200) }).safeParse(await c.req.json().catch(() => null));
+  if (!body.success) throw apiError(400, 'invalid_input', 'Enter your password to confirm.');
+
+  const db = c.get('db');
+  const userId = c.get('userId');
+  const [row] = await db.query<{ password_hash: string }>('select password_hash from users where id = $1', [userId]);
+  if (!row) throw apiError(401, 'invalid_token', 'Your account no longer exists.');
+  if (!(await verifyPassword(body.data.password, row.password_hash))) {
+    throw apiError(403, 'wrong_password', 'That password is not right.');
+  }
+
+  const photos = await db.query<{ photo_key: string }>(
+    `select photo_key from mission_completions where user_id = $1 and photo_key is not null
+     union select photo_key from stories where user_id = $1 and photo_key is not null`,
+    [userId],
+  );
+  // Foreign keys cascade: sessions, completions, stories, quiz/game history,
+  // owned packs and team memberships go with the user.
+  await db.query('delete from users where id = $1', [userId]);
+  // Remove teams left with no members.
+  await db.query('delete from teams t where not exists (select 1 from team_members m where m.team_id = t.id)');
+
+  const deletePhoto = c.get('config').deletePhoto;
+  if (deletePhoto) {
+    await Promise.allSettled(photos.map((p) => deletePhoto(p.photo_key)));
+  }
+  return c.json({ ok: true, photos_deleted: deletePhoto ? photos.length : 0 });
+});
 
 me.get('/', async (c) => {
   const user = await loadUser(c.get('db'), c.get('userId'));

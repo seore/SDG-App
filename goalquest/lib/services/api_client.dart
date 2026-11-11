@@ -103,6 +103,7 @@ class ApiClient {
   Future<dynamic> get(String path) => _request('GET', path);
   Future<dynamic> post(String path, [Object? body]) => _request('POST', path, body);
   Future<dynamic> patch(String path, [Object? body]) => _request('PATCH', path, body);
+  Future<dynamic> delete(String path, [Object? body]) => _request('DELETE', path, body);
 
   /// Unauthenticated POST (login, sign-up, password reset).
   Future<dynamic> postPublic(String path, Object body) =>

@@ -1,6 +1,6 @@
 import { createClaudePhotoChecker, type PhotoChecker } from './photo-check';
 import type { Limiter } from './rate-limit';
-import { loadObject } from './storage';
+import { deleteObject, loadObject } from './storage';
 
 export interface StorageConfig {
   endpoint: string; // e.g. https://<account>.r2.cloudflarestorage.com
@@ -19,6 +19,8 @@ export interface AppConfig {
   authLimiter?: Limiter;
   /** AI photo check (Claude vision); disabled when ANTHROPIC_API_KEY is unset. */
   photoChecker?: PhotoChecker;
+  /** Deletes an uploaded photo (defaults to S3 storage). */
+  deletePhoto?: (key: string) => Promise<void>;
   /** Loads an uploaded photo's bytes (defaults to S3 storage). */
   loadPhoto?: (key: string) => Promise<Uint8Array | null>;
   jwtSecret: string;
@@ -87,6 +89,7 @@ export function configFromEnv(env: EnvVars): AppConfig {
   return {
     photoChecker: env.ANTHROPIC_API_KEY ? createClaudePhotoChecker(env.ANTHROPIC_API_KEY) : undefined,
     loadPhoto: storage ? (key) => loadObject(storage, key) : undefined,
+    deletePhoto: storage ? (key) => deleteObject(storage, key) : undefined,
     jwtSecret: env.JWT_SECRET,
     accessTokenTtlSeconds: 60 * 60,
     refreshTokenTtlDays: 60,
