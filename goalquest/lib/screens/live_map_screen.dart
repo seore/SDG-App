@@ -118,7 +118,7 @@ class _LiveMapScreenState extends State<LiveMapScreen> {
                   children: [
                     TileLayer(
                       urlTemplate: _tileUrl,
-                      userAgentPackageName: 'com.example.goalquest',
+                      userAgentPackageName: 'com.seore.sdgjourney',
                       retinaMode: RetinaMode.isHighDensity(context),
                     ),
                     if (_userLocation != null)

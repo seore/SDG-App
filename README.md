@@ -26,7 +26,6 @@ lessons, games and team challenges.
 |---|---|
 | `goalquest/` | The Flutter app (iOS, Android; also builds for web and desktop). |
 | `server/` | The API: TypeScript + [Hono](https://hono.dev) on **Neon** Postgres. Runs on Cloudflare Workers or Node. See [server/README.md](server/README.md). |
-| `docs/` | A previously published Flutter web build (GitHub Pages). It is **out of date**. Rebuild it with `flutter build web --dart-define=API_URL=…` before publishing again. |
 
 ## Getting started
 
