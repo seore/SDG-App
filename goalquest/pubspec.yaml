@@ -55,6 +55,7 @@ flutter:
 
   assets:
     - assets/content/missions.json
+    - assets/content/monthly_challenges.json
 
 
 

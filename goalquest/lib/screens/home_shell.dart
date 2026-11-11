@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 
 import '../services/mission_progress_service.dart';
 import '../services/learning_service.dart';
+import '../services/stats_service.dart';
 import '../services/notification_service.dart';
 import '../services/team_service.dart';
 import '../theme/app_theme.dart';
@@ -35,6 +36,7 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
     MissionProgressService.instance.loadToday();
     TeamService.instance.load().catchError((_) {});
     LearningService.instance.load();
+    StatsService.instance.load();
     NotificationService.instance.reschedule();
   }
 

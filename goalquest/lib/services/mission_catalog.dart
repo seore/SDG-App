@@ -3,6 +3,7 @@ import 'dart:math';
 
 import 'package:flutter/services.dart' show rootBundle;
 
+import '../data/monthly_challenges.dart';
 import '../models/mission.dart';
 import '../utils/sdg_utils.dart';
 import 'profile_service.dart';
@@ -33,13 +34,15 @@ class MissionCatalogService {
   }
 
   /// Deterministic set of missions for today, so every app open on the same
-  /// day shows the same missions. Up to [maxFocus] come from the user's
-  /// focus SDGs; the rest keep the mix varied across all goals.
+  /// day shows the same missions. One comes from this month's challenge
+  /// theme, up to [maxFocus] from the user's focus SDGs, and the rest keep
+  /// the mix varied across all goals.
   List<Mission> missionsForToday({
     int count = 5,
     List<int>? focusSdgs,
     int maxFocus = 2,
     DateTime? date,
+    List<int>? themeSdgs,
   }) {
     if (_missions.length <= count) return List<Mission>.from(_missions);
 
@@ -50,10 +53,13 @@ class MissionCatalogService {
     final seed = now.year * 10000 + now.month * 100 + now.day;
     final shuffled = List<Mission>.from(_missions)..shuffle(Random(seed));
 
-    final picked = <Mission>[];
+    final theme = themeSdgs ?? ChallengeCalendar.instance.forDate(now)?.sdgs ?? const [];
+    final picked = <Mission>[
+      ...shuffled.where((m) => theme.contains(extractSdgNumber(m.sdg))).take(1),
+    ];
     if (focus.isNotEmpty) {
       picked.addAll(shuffled
-          .where((m) => focus.contains(extractSdgNumber(m.sdg)))
+          .where((m) => focus.contains(extractSdgNumber(m.sdg)) && !picked.contains(m))
           .take(maxFocus));
     }
     for (final m in shuffled) {

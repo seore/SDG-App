@@ -2,6 +2,7 @@ import 'package:app_links/app_links.dart';
 import 'package:flutter/material.dart';
 
 import 'app.dart';
+import 'data/monthly_challenges.dart';
 import 'services/auth_service.dart';
 import 'services/demo_mode.dart';
 import 'services/mission_catalog.dart';
@@ -23,6 +24,7 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Future.wait([
     MissionCatalogService.instance.load(),
+    ChallengeCalendar.instance.load(),
     ThemeController.instance.load(),
     NotificationService.instance.init(),
   ]);

@@ -19,6 +19,7 @@ import 'package:goalquest/services/mission_catalog.dart';
 import 'package:goalquest/services/mission_progress_service.dart';
 import 'package:goalquest/services/owned_pack_service.dart';
 import 'package:goalquest/services/profile_service.dart';
+import 'package:goalquest/services/stats_service.dart';
 import 'package:goalquest/services/team_service.dart';
 import 'package:goalquest/services/weekly_service.dart';
 
@@ -100,6 +101,11 @@ void main() {
     expect(TeamService.instance.teams.value!.single.missionsThisWeek, 1);
     final detail = await TeamService.instance.detail(team.id);
     expect(detail.leaderboard.single.isMe, isTrue);
+    await StatsService.instance.load();
+    final stats = StatsService.instance.stats.value!;
+    expect(stats.missions, greaterThanOrEqualTo(1));
+    expect(stats.teams, 1);
+    expect(StatsService.instance.challenge.value!.target, greaterThan(0));
     final insights = await TeamService.instance.insights(team.id);
     expect(insights.members, 1);
     expect(insights.students.single.isMe, isTrue);

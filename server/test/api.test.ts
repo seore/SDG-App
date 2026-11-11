@@ -3,6 +3,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { createApp } from '../src/app';
 import type { AppConfig } from '../src/config';
 import { createLocalDb } from '../src/local-db';
+import { missions } from '../src/rules';
 
 // One in-memory Postgres for the file; each test uses its own user.
 let db: Awaited<ReturnType<typeof createLocalDb>>;
@@ -438,6 +439,65 @@ describe('learning path', () => {
     }, s.access_token);
     const g1 = (await call('GET', '/me/mastery', undefined, s.access_token)).json.goals[0];
     expect(g1.quiz_total).toBe(0);
+  });
+});
+
+describe('achievements and monthly challenges', () => {
+  it('reports lifetime stats and keeps the best streak', async () => {
+    const s = await newUser();
+    await call('POST', '/missions/m_short_shower/complete', {}, s.access_token);
+    await call('POST', '/missions/m_unplug/complete', {}, s.access_token);
+    await call('POST', '/games/complete', { game_id: 'quiz', score: 3, total: 3 }, s.access_token);
+    await call('POST', '/games/complete', { game_id: 'trash_sort', score: 5, total: 10 }, s.access_token);
+    await call('POST', '/me/lessons/6/read', {}, s.access_token);
+
+    const stats = (await call('GET', '/me/stats', undefined, s.access_token)).json;
+    expect(stats).toMatchObject({
+      missions: 2,
+      mission_goals: 2,
+      games_played: 2,
+      distinct_games: 2,
+      quiz_rounds: 1,
+      perfect_quizzes: 1,
+      lessons_read: 1,
+      teams: 0,
+      streak: 1,
+      best_streak: 1,
+      challenges_completed: 0,
+    });
+    expect(stats.xp).toBeGreaterThan(0);
+    expect(stats.challenge.target).toBeGreaterThan(0);
+    expect(stats.challenge.sdgs.length).toBeGreaterThan(0);
+  });
+
+  it('counts theme missions this month and pays the reward once', async () => {
+    const s = await newUser();
+    const savedClock = clock;
+    const first = (await call('GET', '/me/stats', undefined, s.access_token)).json.challenge;
+    expect(first).toMatchObject({ progress: 0, completed: false, claimed: false });
+    expect((await call('POST', '/me/challenge/claim', {}, s.access_token)).status).toBe(409);
+
+    // Complete theme missions on several days (5 missions per day max).
+    const themeMissions = [...missions.values()].filter((m) => first.sdgs.includes(m.sdgNumber));
+    let done = 0;
+    for (let day = 0; done < first.target && day < 31; day++) {
+      clock = new Date(Date.parse(first.month + '-01T12:00:00Z') + day * 86_400_000);
+      for (const m of themeMissions) {
+        if (done >= first.target) break;
+        const r = await call('POST', `/missions/${m.id}/complete`, {}, s.access_token);
+        if (r.status === 200 && !r.json.capped) done++;
+      }
+    }
+    const status = (await call('GET', '/me/stats', undefined, s.access_token)).json.challenge;
+    expect(status).toMatchObject({ progress: first.target, completed: true, claimed: false });
+
+    const claim = await call('POST', '/me/challenge/claim', {}, s.access_token);
+    expect(claim.status).toBe(200);
+    expect(claim.json.xp_earned).toBe(first.reward_xp);
+    expect(claim.json.challenge.claimed).toBe(true);
+    expect((await call('POST', '/me/challenge/claim', {}, s.access_token)).status).toBe(409);
+    expect((await call('GET', '/me/stats', undefined, s.access_token)).json.challenges_completed).toBe(1);
+    clock = savedClock;
   });
 });
 

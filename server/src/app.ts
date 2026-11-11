@@ -11,6 +11,7 @@ import { consent } from './routes/consent';
 import { privacy } from './routes/privacy';
 import { feed } from './routes/feed';
 import { learning } from './routes/learning';
+import { stats } from './routes/stats';
 import { me } from './routes/me';
 import { teams } from './routes/teams';
 import { uploads } from './routes/uploads';
@@ -43,6 +44,7 @@ export function createApp(resolve: (c: Ctx) => Deps) {
   app.route('/feed', feed);
   app.route('/teams', teams);
   app.route('/', learning);
+  app.route('/', stats);
   app.route('/', activity);
   app.route('/', uploads);
 

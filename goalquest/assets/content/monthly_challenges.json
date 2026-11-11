@@ -1,0 +1,19 @@
+{
+  "_comment": "One themed challenge per calendar month (UTC). Shared by the app and the API server. Progress = missions completed this month for any of the theme's goals.",
+  "target_missions": 8,
+  "reward_xp": 100,
+  "months": [
+    { "month": 1,  "id": "learning",  "title": "Learning Month",     "sdgs": [4],      "observance": "International Day of Education, 24 January", "blurb": "Help yourself and others learn something new." },
+    { "month": 2,  "id": "fairness",  "title": "Fairness Month",     "sdgs": [8, 10],  "observance": "World Day of Social Justice, 20 February", "blurb": "Stand up for fair work and equal chances." },
+    { "month": 3,  "id": "water",     "title": "Water Month",        "sdgs": [6],      "observance": "World Water Day, 22 March", "blurb": "Save water and keep it clean." },
+    { "month": 4,  "id": "earth",     "title": "Earth Month",        "sdgs": [13, 15], "observance": "Earth Day, 22 April", "blurb": "Act for the climate and the living world on land." },
+    { "month": 5,  "id": "energy",    "title": "Energy Month",       "sdgs": [7, 9],   "observance": null, "blurb": "Use less energy and back cleaner ideas." },
+    { "month": 6,  "id": "ocean",     "title": "Ocean Month",        "sdgs": [14],     "observance": "World Oceans Day, 8 June", "blurb": "Protect seas, rivers and the life in them." },
+    { "month": 7,  "id": "plastic",   "title": "Plastic-Free Month", "sdgs": [12],     "observance": "Plastic Free July", "blurb": "Refuse, reuse and recycle." },
+    { "month": 8,  "id": "health",    "title": "Healthy Living Month", "sdgs": [3],    "observance": null, "blurb": "Look after your body and mind, and help others do the same." },
+    { "month": 9,  "id": "peace",     "title": "Peace Month",        "sdgs": [16],     "observance": "International Day of Peace, 21 September", "blurb": "Be kind, fair and a good listener." },
+    { "month": 10, "id": "food",      "title": "Food Month",         "sdgs": [1, 2],   "observance": "World Food Day, 16 October", "blurb": "Waste less food and help people who have too little." },
+    { "month": 11, "id": "community", "title": "Community Month",    "sdgs": [11, 17], "observance": null, "blurb": "Make your neighbourhood better, together." },
+    { "month": 12, "id": "equality",  "title": "Equality Month",     "sdgs": [5, 10],  "observance": "Human Rights Day, 10 December", "blurb": "Make sure everyone is included and treated fairly." }
+  ]
+}

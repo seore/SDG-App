@@ -4,12 +4,16 @@ import '../data/sdg_data.dart';
 import '../models/mission.dart';
 import '../services/mission_catalog.dart';
 import '../services/mission_progress_service.dart';
+import '../services/learning_service.dart';
 import '../services/profile_service.dart';
+import '../services/stats_service.dart';
 import '../services/team_service.dart';
 import '../theme/app_theme.dart';
 import '../utils/sdg_utils.dart';
 import '../widgets/app_card.dart';
 import '../widgets/app_scaffold.dart';
+import '../widgets/challenge_card.dart';
+import '../widgets/living_world.dart';
 import '../widgets/mastery_widgets.dart';
 import '../widgets/motion.dart';
 import '../widgets/progress_widgets.dart';
@@ -39,6 +43,8 @@ class HomeScreen extends StatelessWidget {
               await Future.wait([
                 profileService.loadCurrentUserProfile(),
                 MissionProgressService.instance.loadToday(),
+                StatsService.instance.load(),
+                LearningService.instance.load(),
               ]);
             },
             child: ListView(
@@ -72,12 +78,29 @@ class HomeScreen extends StatelessWidget {
                       ),
                       const SizedBox(height: AppSpacing.xxl),
                       const FadeSlideIn(
+                        delay: Duration(milliseconds: 130),
+                        child: ChallengeCard(),
+                      ),
+                      const SizedBox(height: AppSpacing.xxl),
+                      const FadeSlideIn(
                         delay: Duration(milliseconds: 140),
                         child: SectionHeader(title: 'Continue learning'),
                       ),
                       const FadeSlideIn(
                         delay: Duration(milliseconds: 145),
                         child: NextLessonCard(),
+                      ),
+                      const SizedBox(height: AppSpacing.xxl),
+                      const FadeSlideIn(
+                        delay: Duration(milliseconds: 148),
+                        child: SectionHeader(
+                          title: 'Your world',
+                          subtitle: 'Grows with every goal star you earn',
+                        ),
+                      ),
+                      const FadeSlideIn(
+                        delay: Duration(milliseconds: 150),
+                        child: LivingWorldCard(),
                       ),
                       const SizedBox(height: AppSpacing.xxl),
                       const FadeSlideIn(

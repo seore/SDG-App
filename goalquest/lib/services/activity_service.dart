@@ -6,6 +6,7 @@ import '../utils/sdg_utils.dart';
 import 'mission_catalog.dart';
 import 'notification_service.dart';
 import 'profile_service.dart';
+import 'stats_service.dart';
 
 /// Reports missions and games to the server, which decides the XP.
 /// In demo mode everything is computed locally instead.
@@ -35,7 +36,10 @@ class ActivityService {
     }
     if (mission != null) {
       final n = extractSdgNumber(mission.sdg);
-      if (n != null) LearningService.instance.recordMission(n);
+      if (n != null) {
+        LearningService.instance.recordMission(n);
+        StatsService.instance.recordMission(n);
+      }
     }
     if (mission?.impactMetric case final metric?) {
       ImpactService.instance.addLocal(metric, mission!.impactAmount);
@@ -70,6 +74,7 @@ class ActivityService {
     });
     final award = ProfileService.instance.applyServerAward(json as Map<String, dynamic>);
     NotificationService.instance.reschedule();
+    StatsService.instance.load();
     return award;
   }
 

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../data/achievements.dart';
 import '../data/sdg_data.dart';
 import '../services/api_client.dart';
 import '../services/demo_mode.dart';
@@ -7,6 +8,7 @@ import '../services/notification_service.dart';
 import '../services/learning_service.dart';
 import '../services/privacy.dart';
 import '../services/profile_service.dart';
+import '../services/stats_service.dart';
 import '../theme/app_theme.dart';
 import '../theme/theme_controller.dart';
 import '../widgets/app_card.dart';
@@ -30,79 +32,6 @@ class _QuizSummary {
   static const empty = _QuizSummary(attempts: 0, averagePercent: 0, totalXp: 0);
 }
 
-/// An achievement with a target, shown as earned or locked with progress.
-class _Achievement {
-  final String title;
-  final IconData icon;
-  final Color color;
-  final int current;
-  final int target;
-  final String unit;
-
-  const _Achievement({
-    required this.title,
-    required this.icon,
-    required this.color,
-    required this.current,
-    required this.target,
-    required this.unit,
-  });
-
-  bool get earned => current >= target;
-  double get progress => (current / target).clamp(0.0, 1.0);
-}
-
-List<_Achievement> _achievementsFor(UserProfile p) => [
-  _Achievement(
-    title: 'First steps',
-    icon: Icons.flag_rounded,
-    color: AppColors.primary,
-    current: p.xp,
-    target: 1,
-    unit: 'XP',
-  ),
-  _Achievement(
-    title: '3-day streak',
-    icon: Icons.local_fire_department_rounded,
-    color: AppColors.streak,
-    current: p.streak,
-    target: 3,
-    unit: 'days',
-  ),
-  _Achievement(
-    title: '7-day streak',
-    icon: Icons.whatshot_rounded,
-    color: const Color(0xFFDC2626),
-    current: p.streak,
-    target: 7,
-    unit: 'days',
-  ),
-  _Achievement(
-    title: '500 XP',
-    icon: Icons.star_rounded,
-    color: const Color(0xFFB45309),
-    current: p.xp,
-    target: 500,
-    unit: 'XP',
-  ),
-  _Achievement(
-    title: '14-day streak',
-    icon: Icons.bolt_rounded,
-    color: const Color(0xFF7C3AED),
-    current: p.streak,
-    target: 14,
-    unit: 'days',
-  ),
-  _Achievement(
-    title: '1,000 XP',
-    icon: Icons.workspace_premium_rounded,
-    color: const Color(0xFF0369A1),
-    current: p.xp,
-    target: 1000,
-    unit: 'XP',
-  ),
-];
-
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
 
@@ -125,7 +54,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Future<void> _load() async {
     try {
-      await _profileService.loadCurrentUserProfile();
+      await Future.wait([
+        _profileService.loadCurrentUserProfile(),
+        StatsService.instance.load(),
+      ]);
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -202,8 +134,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _buildContent(BuildContext context, UserProfile profile) {
-    final achievements = _achievementsFor(profile);
-    final earned = achievements.where((a) => a.earned).length;
 
     Widget section(int i, Widget child) => FadeSlideIn(
       delay: Duration(milliseconds: 60 * i),
@@ -223,12 +153,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
               const SizedBox(height: AppSpacing.xxl),
               section(
                 2,
-                SectionHeader(
-                  title: 'Achievements',
-                  subtitle: '$earned of ${achievements.length} earned',
+                ValueListenableBuilder<UserStats?>(
+                  valueListenable: StatsService.instance.stats,
+                  builder: (context, loaded, _) {
+                    final stats = loaded?.withProfile(profile) ?? UserStats.fromProfile(profile);
+                    final earned = achievements.where((a) => a.earned(stats)).length;
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        SectionHeader(
+                          title: 'Achievements',
+                          subtitle: '$earned of ${achievements.length} earned',
+                        ),
+                        _AchievementGrid(stats: stats),
+                      ],
+                    );
+                  },
                 ),
               ),
-              section(3, _AchievementGrid(achievements: achievements)),
               const SizedBox(height: AppSpacing.xxl),
               section(
                 4,
@@ -526,26 +468,52 @@ class _StatTile extends StatelessWidget {
   }
 }
 
-class _AchievementGrid extends StatelessWidget {
-  final List<_Achievement> achievements;
-  const _AchievementGrid({required this.achievements});
+class _AchievementGrid extends StatefulWidget {
+  final UserStats stats;
+  const _AchievementGrid({required this.stats});
+
+  @override
+  State<_AchievementGrid> createState() => _AchievementGridState();
+}
+
+class _AchievementGridState extends State<_AchievementGrid> {
+  static const _collapsedCount = 9;
+  bool _expanded = false;
 
   @override
   Widget build(BuildContext context) {
+    final s = widget.stats;
+    // Earned first, then the closest to being earned.
+    final sorted = [...achievements]..sort((a, b) {
+        final ea = a.earned(s), eb = b.earned(s);
+        if (ea != eb) return ea ? -1 : 1;
+        if (ea) return 0;
+        return b.progress(s).compareTo(a.progress(s));
+      });
+    final shown = _expanded ? sorted : sorted.take(_collapsedCount).toList();
     return AppCard(
       padding: const EdgeInsets.all(AppSpacing.md),
-      child: GridView(
-        shrinkWrap: true,
-        physics: const NeverScrollableScrollPhysics(),
-        padding: EdgeInsets.zero,
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 3,
-          mainAxisSpacing: AppSpacing.sm,
-          crossAxisSpacing: AppSpacing.sm,
-          mainAxisExtent: 116,
-        ),
+      child: Column(
         children: [
-          for (final a in achievements) _AchievementTile(achievement: a),
+          GridView(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            padding: EdgeInsets.zero,
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 3,
+              mainAxisSpacing: AppSpacing.sm,
+              crossAxisSpacing: AppSpacing.sm,
+              mainAxisExtent: 116 * MediaQuery.textScalerOf(context).scale(1).clamp(1.0, 1.5),
+            ),
+            children: [
+              for (final a in shown) _AchievementTile(achievement: a, stats: s),
+            ],
+          ),
+          if (sorted.length > _collapsedCount)
+            TextButton(
+              onPressed: () => setState(() => _expanded = !_expanded),
+              child: Text(_expanded ? 'Show fewer' : 'Show all ${sorted.length}'),
+            ),
         ],
       ),
     );
@@ -553,75 +521,119 @@ class _AchievementGrid extends StatelessWidget {
 }
 
 class _AchievementTile extends StatelessWidget {
-  final _Achievement achievement;
-  const _AchievementTile({required this.achievement});
+  final Achievement achievement;
+  final UserStats stats;
+  const _AchievementTile({required this.achievement, required this.stats});
+
+  void _showDetails(BuildContext context) {
+    final a = achievement;
+    final earned = a.earned(stats);
+    showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (context) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              IconTile(icon: a.icon, color: earned ? a.color : AppColors.textTertiary, size: 56),
+              const SizedBox(height: AppSpacing.md),
+              Text(a.title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+              const SizedBox(height: 4),
+              Text(a.description, textAlign: TextAlign.center, style: TextStyle(color: AppColors.textSecondary)),
+              const SizedBox(height: AppSpacing.lg),
+              if (earned)
+                Text('Earned', style: TextStyle(color: AppColors.success, fontWeight: FontWeight.w700))
+              else ...[
+                SpringProgressBar(value: a.progress(stats), color: a.color),
+                const SizedBox(height: 6),
+                Text(
+                  '${a.current(stats).clamp(0, a.target)} / ${a.target} ${a.unit}',
+                  style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     final a = achievement;
-    final color = a.earned ? a.color : AppColors.textTertiary;
+    final earned = a.earned(stats);
+    final progress = a.progress(stats);
+    final color = earned ? a.color : AppColors.textTertiary;
 
-    return Tooltip(
-      message: a.earned
-          ? 'Earned'
-          : '${a.current.clamp(0, a.target)} / ${a.target} ${a.unit}',
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 10),
-        decoration: BoxDecoration(
-          color: a.earned
-              ? a.color.withValues(alpha: 0.06)
-              : AppColors.background,
+    return Semantics(
+      button: true,
+      label: earned
+          ? '${a.title}, earned. ${a.description}'
+          : '${a.title}, locked, ${a.current(stats).clamp(0, a.target)} of ${a.target} ${a.unit}. ${a.description}',
+      excludeSemantics: true,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
           borderRadius: BorderRadius.circular(AppRadius.md),
-          border: Border.all(
-            color: a.earned ? a.color.withValues(alpha: 0.2) : AppColors.border,
+          onTap: () => _showDetails(context),
+          child: Ink(
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 10),
+            decoration: BoxDecoration(
+              color: earned ? a.color.withValues(alpha: 0.06) : AppColors.background,
+              borderRadius: BorderRadius.circular(AppRadius.md),
+              border: Border.all(
+                color: earned ? a.color.withValues(alpha: 0.2) : AppColors.border,
+              ),
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                SizedBox(
+                  width: 44,
+                  height: 44,
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      // Ring shows progress towards locked achievements.
+                      TweenAnimationBuilder<double>(
+                        tween: Tween(end: progress),
+                        duration: AppDurations.slow,
+                        curve: AppMotion.gentleSpring,
+                        builder: (context, v, _) => CircularProgressIndicator(
+                          value: v.clamp(0.0, 1.0),
+                          strokeWidth: 3,
+                          strokeCap: StrokeCap.round,
+                          backgroundColor: AppColors.border,
+                          valueColor: AlwaysStoppedAnimation(color),
+                        ),
+                      ),
+                      Center(
+                        child: Icon(
+                          earned ? a.icon : Icons.lock_outline_rounded,
+                          size: 20,
+                          color: color,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                Text(
+                  a.title,
+                  textAlign: TextAlign.center,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: earned ? AppColors.textPrimary : AppColors.textSecondary,
+                  ),
+                ),
+              ],
+            ),
           ),
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            SizedBox(
-              width: 44,
-              height: 44,
-              child: Stack(
-                fit: StackFit.expand,
-                children: [
-                  // Ring shows progress towards locked achievements.
-                  TweenAnimationBuilder<double>(
-                    tween: Tween(end: a.progress),
-                    duration: AppDurations.slow,
-                    curve: AppMotion.gentleSpring,
-                    builder: (context, v, _) => CircularProgressIndicator(
-                      value: v.clamp(0.0, 1.0),
-                      strokeWidth: 3,
-                      strokeCap: StrokeCap.round,
-                      backgroundColor: AppColors.border,
-                      valueColor: AlwaysStoppedAnimation(color),
-                    ),
-                  ),
-                  Center(
-                    child: Icon(
-                      a.earned ? a.icon : Icons.lock_outline_rounded,
-                      size: 20,
-                      color: color,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: AppSpacing.sm),
-            Text(
-              a.title,
-              textAlign: TextAlign.center,
-              maxLines: 2,
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w600,
-                color: a.earned
-                    ? AppColors.textPrimary
-                    : AppColors.textSecondary,
-              ),
-            ),
-          ],
         ),
       ),
     );

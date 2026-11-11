@@ -71,7 +71,23 @@ class LearningService {
   static const maxStars = 51;
 
   Future<void> load() async {
-    if (DemoMode.enabled || !_api.hasSession) return;
+    if (DemoMode.enabled) {
+      if (totalStars == 0) {
+        const demo = {1: 1, 2: 1, 3: 2, 4: 3, 6: 3, 7: 2, 11: 1, 12: 2, 13: 1, 14: 1, 15: 2};
+        mastery.value = {
+          for (var n = 1; n <= 17; n++)
+            n: GoalMastery(
+              sdg: n,
+              lessonRead: (demo[n] ?? 0) >= 1,
+              quizCorrect: (demo[n] ?? 0) >= 2 ? 4 : 0,
+              quizTotal: (demo[n] ?? 0) >= 2 ? 5 : 0,
+              missions: (demo[n] ?? 0) >= 3 ? 2 : 0,
+            ),
+        };
+      }
+      return;
+    }
+    if (!_api.hasSession) return;
     try {
       final json = await _api.get('/me/mastery') as Map;
       mastery.value = {
