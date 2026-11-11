@@ -1,0 +1,286 @@
+{
+  "@@locale": "en",
+  "navHome": "Home",
+  "navMissions": "Missions",
+  "navPlay": "Play",
+  "navMap": "Map",
+  "navProfile": "Profile",
+  "cancel": "Cancel",
+  "continueLabel": "Continue",
+  "goToLogin": "Go to login",
+  "email": "Email",
+  "password": "Password",
+  "showPassword": "Show password",
+  "hidePassword": "Hide password",
+  "explorer": "Explorer",
+  "sdgLabel": "SDG {number} · {title}",
+  "@sdgLabel": {
+    "placeholders": {
+      "number": {
+        "type": "int"
+      },
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "loading": "Loading…",
+  "sending": "Sending…",
+  "saving": "Saving…",
+  "save": "Save",
+  "showFewer": "Show fewer",
+  "showAllCount": "Show all {count}",
+  "@showAllCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "authGenericError": "Something went wrong. Please try again.",
+  "enterEmail": "Enter your email",
+  "enterValidEmail": "Enter a valid email",
+  "passwordTooShort": "Use at least 6 characters",
+  "welcomeBack": "Welcome back. Pick up where you left off.",
+  "joinTagline": "Small actions, global impact. Join in.",
+  "newHereCreateAccount": "New here? Create an account",
+  "haveAccountLogIn": "Already have an account? Log in",
+  "logIn": "Log in",
+  "signUp": "Sign up",
+  "enterEmailFirst": "Enter your email above first.",
+  "forgotPassword": "Forgot password?",
+  "agreePrivacyFirst": "Please agree to the privacy policy to continue.",
+  "usernameTooShort": "Choose a username (2+ characters)",
+  "usernameTooLong": "Keep it under 24 characters",
+  "username": "Username",
+  "enterBirthYear": "Enter the year you were born",
+  "birthYear": "Year of birth",
+  "passwordHelper": "At least 6 characters",
+  "iAgreeToThe": "I agree to the ",
+  "privacyPolicyLink": "privacy policy",
+  "createAccount": "Create account",
+  "obEyebrow1": "WELCOME",
+  "obTitle1": "Small actions.\nGlobal impact.",
+  "obBody1": "The UN set 17 Sustainable Development Goals for a fairer, greener world. Your everyday choices help reach them.",
+  "obEyebrow2": "DAILY MISSIONS",
+  "obTitle2": "Five quick actions,\nevery day.",
+  "obBody2": "Unplug for an hour, take a shorter shower, walk instead of drive. Each mission takes minutes and earns XP.",
+  "obEyebrow3": "YOUR IMPACT",
+  "obTitle3": "Watch your impact\ngrow.",
+  "obBody3": "Level up, keep your streak alive, and see your actions on a live map alongside people around the world.",
+  "skip": "Skip",
+  "startFirstMission": "Start your first mission",
+  "continueLearning": "Continue learning",
+  "yourWorld": "Your world",
+  "yourWorldSubtitle": "Grows with every goal star you earn",
+  "explore": "Explore",
+  "goodMorning": "Good morning",
+  "goodAfternoon": "Good afternoon",
+  "goodEvening": "Good evening",
+  "openYourProfile": "Open your profile",
+  "levelShort": "LVL",
+  "impactXp": "Impact XP",
+  "xpToLevel": "{xp} XP to level {level}",
+  "@xpToLevel": {
+    "placeholders": {
+      "xp": {
+        "type": "int"
+      },
+      "level": {
+        "type": "int"
+      }
+    }
+  },
+  "viewImpact": "View impact",
+  "completedOf": "{done} of {total} completed",
+  "@completedOf": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "viewAll": "View all",
+  "learn": "Learn",
+  "learnSubtitle": "Lessons on all 17 goals",
+  "community": "Community",
+  "communitySubtitle": "Stories from others",
+  "yourImpact": "Your impact",
+  "yourImpactSubtitle": "Progress over time",
+  "rewards": "Rewards",
+  "rewardsSubtitle": "Unlock frames by playing",
+  "loginToStart": "Log in or sign up to start earning XP and tracking your SDG impact.",
+  "teamChallenge": "Team challenge",
+  "allTeams": "All teams",
+  "manage": "Manage",
+  "teamUpTitle": "Team up with your class",
+  "teamUpBody": "Set a weekly target and reach it together.",
+  "consentResent": "Sent again. Ask your parent to check their email.",
+  "waitingForParent": "Waiting for a parent to approve",
+  "waitingForParentBody": "You can learn and play now. Sharing stories, photos, the map and teams unlock once a parent approves.",
+  "resendEmail": "Resend the email",
+  "today": "Today",
+  "todaySubtitle": "A new set of missions every day",
+  "allMissionsComplete": "All missions complete",
+  "dailyProgress": "Daily progress",
+  "missionsDoneForToday": "Great work. New missions arrive tomorrow.",
+  "missionsIntro": "Complete small real-world actions to earn XP.",
+  "statusCompleted": "Completed",
+  "statusInProgress": "In progress",
+  "statusNotStarted": "Not started",
+  "missionComplete": "Mission complete",
+  "missionXp": "Mission XP",
+  "dismiss": "Dismiss",
+  "streakBonus": "{days}-day streak bonus",
+  "@streakBonus": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "levelUpReached": "Level up — you reached level {level}",
+  "@levelUpReached": {
+    "placeholders": {
+      "level": {
+        "type": "int"
+      }
+    }
+  },
+  "levelN": "Level {level}",
+  "@levelN": {
+    "placeholders": {
+      "level": {
+        "type": "int"
+      }
+    }
+  },
+  "signOutQuestion": "Sign out?",
+  "signOutBody": "You can sign back in at any time.",
+  "signOut": "Sign out",
+  "achievements": "Achievements",
+  "earnedOf": "{earned} of {total} earned",
+  "@earnedOf": {
+    "placeholders": {
+      "earned": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "goalMastery": "Goal mastery",
+  "goalMasterySubtitle": "{stars} of {max} stars · lesson, quiz and action for each goal",
+  "@goalMasterySubtitle": {
+    "placeholders": {
+      "stars": {
+        "type": "int"
+      },
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "focusSdgs": "Focus SDGs",
+  "account": "Account",
+  "appearance": "Appearance",
+  "themeSystem": "System",
+  "themeLight": "Light",
+  "themeDark": "Dark",
+  "impactDashboard": "Impact dashboard",
+  "privacyPolicy": "Privacy policy",
+  "deleteAccount": "Delete account",
+  "language": "Language",
+  "languageSystem": "Device language",
+  "languageNote": "Lessons and missions are in English for now.",
+  "noQuizzesYet": "No quizzes yet",
+  "quizAttempts": "{count, plural, =1{1 attempt} other{{count} attempts}}",
+  "@quizAttempts": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "level": "Level",
+  "xpToNext": "{xp} XP to next",
+  "@xpToNext": {
+    "placeholders": {
+      "xp": {
+        "type": "int"
+      }
+    }
+  },
+  "totalEarned": "Total earned",
+  "streak": "Streak",
+  "daysInARow": "{count, plural, =1{day in a row} other{days in a row}}",
+  "@daysInARow": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "quizAverage": "Quiz average",
+  "levelRank": "Level {level} · {rank}",
+  "@levelRank": {
+    "placeholders": {
+      "level": {
+        "type": "int"
+      },
+      "rank": {
+        "type": "String"
+      }
+    }
+  },
+  "rankGlobalLeader": "Global Leader",
+  "rankChangemaker": "Changemaker",
+  "rankAdvocate": "Advocate",
+  "rankExplorer": "Explorer",
+  "rankNewcomer": "Newcomer",
+  "earned": "Earned",
+  "focusPrompt": "Pick up to 3 goals you care about. Your daily missions will include them.",
+  "choose": "Choose",
+  "editFocusGoals": "Edit focus goals",
+  "yourFocusGoals": "Your focus goals",
+  "focusChooseUpTo": "Choose up to {max}. Up to 2 of your daily missions will come from these.",
+  "@focusChooseUpTo": {
+    "placeholders": {
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "selectedOf": "{count} of {max} selected",
+  "@selectedOf": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "noProfileYet": "No profile yet",
+  "noProfileBody": "Log in or sign up to see your SDG stats.",
+  "deleteAccountQuestion": "Delete your account?",
+  "deleteAccountBody": "This permanently deletes your profile, XP, missions, quiz and game history, stories, photos and team memberships. It cannot be undone.",
+  "deleting": "Deleting…",
+  "deleteForever": "Delete forever",
+  "reminders": "Reminders",
+  "remindersOn": "Daily at {time} · streak nudge at 8 pm",
+  "@remindersOn": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "remindersOff": "Daily mission reminder and streak nudge",
+  "notificationsBlocked": "Notifications are turned off for this app. Turn them on in your phone settings."
+}

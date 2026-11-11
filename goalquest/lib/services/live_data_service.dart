@@ -1,19 +1,27 @@
 import 'dart:async';
-import 'package:supabase_flutter/supabase_flutter.dart';
+
+import 'api_client.dart';
 
 class LiveMissionCompletion {
   final String id;
+
+  /// True when the signed-in user completed this (the server never exposes
+  /// other people's user ids).
+  final bool isMine;
   final String userName;
   final String missionId;
   final String missionTitle;
   final int sdgNumber;
   final int xp;
   final DateTime createdAt;
+
+  /// Rounded to ~1 km by the server for privacy.
   final double? lat;
   final double? lng;
 
   LiveMissionCompletion({
     required this.id,
+    required this.isMine,
     required this.userName,
     required this.missionId,
     required this.missionTitle,
@@ -25,27 +33,18 @@ class LiveMissionCompletion {
   });
 
   factory LiveMissionCompletion.fromMap(Map<String, dynamic> map) {
-    final createdRaw = map['created_at'];
-
-    DateTime createdAt;
-    if (createdRaw is String) {
-      createdAt = DateTime.parse(createdRaw);
-    } else if (createdRaw is DateTime) {
-      createdAt = createdRaw;
-    } else {
-      createdAt = DateTime.now();
-    }
-
     return LiveMissionCompletion(
       id: map['id'].toString(),
+      isMine: (map['is_mine'] as bool?) ?? false,
       userName: (map['user_name'] ?? 'Someone').toString(),
       missionId: (map['mission_id'] ?? '').toString(),
       missionTitle: (map['mission_title'] ?? '').toString(),
       sdgNumber: (map['sdg_number'] ?? 0) as int,
       xp: (map['xp'] ?? 0) as int,
-      lat: map['lat'] != null ? (map['lat'] as num).toDouble() : null,
-      lng: map['lng'] != null ? (map['lng'] as num).toDouble() : null,
-      createdAt: createdAt,
+      lat: (map['lat'] as num?)?.toDouble(),
+      lng: (map['lng'] as num?)?.toDouble(),
+      createdAt: DateTime.tryParse(map['created_at']?.toString() ?? '')?.toLocal() ??
+          DateTime.now(),
     );
   }
 }
@@ -58,6 +57,9 @@ class LiveStory {
   final String? photoUrl;
   final DateTime createdAt;
 
+  /// The mission photo was confirmed by the AI photo check.
+  final bool verified;
+
   LiveStory({
     required this.id,
     required this.userName,
@@ -65,107 +67,69 @@ class LiveStory {
     this.sdgNumber,
     this.photoUrl,
     required this.createdAt,
+    this.verified = false,
   });
 
   factory LiveStory.fromMap(Map<String, dynamic> map) {
-    final createdRaw = map['created_at'];
-
-    DateTime createdAt;
-    if (createdRaw is String) {
-      createdAt = DateTime.parse(createdRaw);
-    } else if (createdRaw is DateTime) {
-      createdAt = createdRaw;
-    } else {
-      createdAt = DateTime.now();
-    }
-
     return LiveStory(
       id: map['id'].toString(),
       userName: (map['user_name'] ?? 'Someone').toString(),
       message: (map['message'] ?? '').toString(),
       sdgNumber: map['sdg_number'] as int?,
       photoUrl: map['photo_url'] as String?,
-      createdAt: createdAt,
+      verified: (map['verified'] as bool?) ?? false,
+      createdAt: DateTime.tryParse(map['created_at']?.toString() ?? '')?.toLocal() ??
+          DateTime.now(),
     );
   }
 }
 
+/// Map, impact and community feeds. Neon has no realtime push for Dart, so
+/// these poll the API while a screen is listening.
 class LiveDataService {
   LiveDataService._internal();
   static final LiveDataService instance = LiveDataService._internal();
 
-  final SupabaseClient _supabase = Supabase.instance.client;
+  static const pollInterval = Duration(seconds: 15);
 
-  Stream<List<LiveMissionCompletion>> get completionsStream {
-    return _supabase
-        .from('mission_completions')
-        .stream(primaryKey: ['id'])
-        .order('created_at')
-        .map(
-          (rows) => rows
-              .map((row) =>
-                  LiveMissionCompletion.fromMap(row as Map<String, dynamic>))
-              .toList(),
-        );
-  }
+  Stream<List<LiveMissionCompletion>> get completionsStream => _poll(
+        '/feed/completions',
+        (json) => ((json as Map)['completions'] as List)
+            .map((r) => LiveMissionCompletion.fromMap(r as Map<String, dynamic>))
+            .toList(),
+      );
 
-  Stream<List<LiveStory>> get storiesStream {
-    return _supabase
-        .from('stories')
-        .stream(primaryKey: ['id'])
-        .order('created_at')
-        .map(
-          (rows) =>
-              rows.map((row) => LiveStory.fromMap(row as Map<String, dynamic>))
-                  .toList(),
-        );
-  }
+  Stream<List<LiveStory>> get storiesStream => _poll(
+        '/feed/stories',
+        (json) => ((json as Map)['stories'] as List)
+            .map((r) => LiveStory.fromMap(r as Map<String, dynamic>))
+            .toList(),
+      );
 
-  Future<void> addCompletion({
-    required String userName,
-    required String missionId,
-    required String missionTitle,
-    required int sdgNumber,
-    required int xp,
-    double? lat,
-    double? lng,
-  }) async {
-    final user = _supabase.auth.currentUser;
+  /// Emits immediately, then every [pollInterval] while listened to. Errors
+  /// are only surfaced if no data has been delivered yet.
+  Stream<T> _poll<T>(String path, T Function(dynamic json) parse) {
+    late StreamController<T> controller;
+    Timer? timer;
+    var delivered = false;
 
-    if (user == null) {
-      throw Exception('You must be logged in to complete missions.');
+    Future<void> tick() async {
+      try {
+        final data = parse(await ApiClient.instance.get(path));
+        if (!controller.isClosed) controller.add(data);
+        delivered = true;
+      } catch (e) {
+        if (!delivered && !controller.isClosed) controller.addError(e);
+      }
     }
 
-    await _supabase.from('mission_completions').insert({
-      'user_id': user.id, 
-      'user_name': userName,
-      'mission_id': missionId,
-      'mission_title': missionTitle,
-      'sdg_number': sdgNumber,
-      'xp': xp,
-      'lat': lat,
-      'lng': lng,
-    });
-  }
-
-  Future<void> addStory({
-    required String userName,
-    required String message,
-    int? sdgNumber,
-    String? photoUrl,
-  }) async {
-    final user = _supabase.auth.currentUser;
-
-    if (user == null) {
-      throw Exception('You must be logged in to post stories.');
-    }
-
-    await _supabase.from('stories').insert({
-      'user_id': user.id, 
-      'user_name': userName,
-      'message': message,
-      'sdg_number': sdgNumber,
-      'photo_url': photoUrl,
-    });
+    controller = StreamController<T>(
+      onListen: () {
+        tick();
+        timer = Timer.periodic(pollInterval, (_) => tick());
+      },
+      onCancel: () => timer?.cancel(),
+    );
+    return controller.stream;
   }
 }

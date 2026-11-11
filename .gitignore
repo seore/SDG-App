@@ -1,0 +1,17 @@
+# macOS
+.DS_Store
+
+# Build output
+goalquest/android/build/
+
+# Dependencies
+node_modules/
+
+# Cloudflare Wrangler local state
+.wrangler/
+
+# Local database data (PGlite)
+.data/
+
+# Env
+.env

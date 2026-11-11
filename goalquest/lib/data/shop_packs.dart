@@ -7,7 +7,9 @@ class ShopPacks {
   final String productId;       
   final int sdgNumber;
   final IconData icon;
-  final int priceCents;
+
+  /// Rewards are earned through play: a level or a streak to reach.
+  final RewardUnlock unlock;
 
   const ShopPacks({
     required this.id,            
@@ -16,8 +18,20 @@ class ShopPacks {
     required this.productId,       
     required this.sdgNumber,
     required this.icon,
-    required this.priceCents,
+    required this.unlock,
   });
+}
+
+enum UnlockType { level, streak }
+
+class RewardUnlock {
+  final UnlockType type;
+  final int value;
+  const RewardUnlock.level(this.value) : type = UnlockType.level;
+  const RewardUnlock.streak(this.value) : type = UnlockType.streak;
+
+  String get label =>
+      type == UnlockType.level ? 'Reach level $value' : 'Keep a $value-day streak';
 }
 
 const List<ShopPacks> kShopPacks = [
@@ -28,7 +42,7 @@ const List<ShopPacks> kShopPacks = [
     productId: 'cosmetic_ocean_frame',
     sdgNumber: 14,
     icon: Icons.water,
-    priceCents: 199,
+    unlock: RewardUnlock.level(3),
   ),
   ShopPacks(
     id: 'cosmetic_sunrise_frame',
@@ -37,7 +51,7 @@ const List<ShopPacks> kShopPacks = [
     productId: 'cosmetic_sunrise_frame',
     sdgNumber: 7,
     icon: Icons.wb_sunny_outlined,
-    priceCents: 199,
+    unlock: RewardUnlock.level(5),
   ),
   ShopPacks(
     id: 'cosmetic_star_badge',
@@ -46,7 +60,7 @@ const List<ShopPacks> kShopPacks = [
     productId: 'cosmetic_star_badge',
     sdgNumber: 4,
     icon: Icons.star,
-    priceCents: 149,
+    unlock: RewardUnlock.streak(7),
   ),
   ShopPacks(
     id: 'cosmetic_heart_badge',
@@ -55,7 +69,7 @@ const List<ShopPacks> kShopPacks = [
     productId: 'cosmetic_heart_badge',
     sdgNumber: 3,
     icon: Icons.favorite,
-    priceCents: 149,
+    unlock: RewardUnlock.streak(3),
   ),
   ShopPacks(
     id: 'cosmetic_lightning_frame',
@@ -64,16 +78,16 @@ const List<ShopPacks> kShopPacks = [
     productId: 'cosmetic_lightning_frame',
     sdgNumber: 9,
     icon: Icons.flash_on,
-    priceCents: 249,
+    unlock: RewardUnlock.level(8),
   ),
   ShopPacks(
     id: 'cosmetic_gold_frame',
-    title: 'Premium Gold Frame',
+    title: 'Gold Frame',
     description: 'A luxury golden frame that stands out.',
     productId: 'cosmetic_gold_frame',
     sdgNumber: 10,
     icon: Icons.circle,
-    priceCents: 299,
+    unlock: RewardUnlock.level(12),
   ),
   ShopPacks(
     id: 'cosmetic_eco_frame',
@@ -82,7 +96,7 @@ const List<ShopPacks> kShopPacks = [
     productId: 'cosmetic_eco_frame', // match App Store IAP id later
     sdgNumber: 13,
     icon: Icons.eco,
-    priceCents: 199,
+    unlock: RewardUnlock.level(2),
   ),
   ShopPacks(
     id: 'dlc_trash_advanced',
@@ -91,7 +105,7 @@ const List<ShopPacks> kShopPacks = [
     productId: 'dlc_trash_advanced',
     sdgNumber: 12,
     icon: Icons.recycling,
-    priceCents: 299,
+    unlock: RewardUnlock.level(4),
   ),
   ShopPacks(
     id: 'dlc_water_city',
@@ -100,6 +114,6 @@ const List<ShopPacks> kShopPacks = [
     productId: 'dlc_water_city',
     sdgNumber: 6,
     icon: Icons.water_drop_outlined,
-    priceCents: 299,
+    unlock: RewardUnlock.level(6),
   ),
 ];

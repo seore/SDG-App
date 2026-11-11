@@ -1,520 +1,623 @@
-// ignore_for_file: deprecated_member_use
-
 import 'package:flutter/material.dart';
-import '../services/profile_service.dart';
 
-class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+import '../data/sdg_data.dart';
+import '../models/mission.dart';
+import '../services/mission_catalog.dart';
+import '../services/mission_progress_service.dart';
+import '../services/learning_service.dart';
+import '../services/profile_service.dart';
+import '../services/stats_service.dart';
+import '../services/team_service.dart';
+import '../theme/app_theme.dart';
+import '../utils/sdg_utils.dart';
+import '../widgets/app_card.dart';
+import '../widgets/app_scaffold.dart';
+import '../widgets/challenge_card.dart';
+import '../widgets/living_world.dart';
+import '../widgets/mastery_widgets.dart';
+import '../widgets/motion.dart';
+import '../widgets/progress_widgets.dart';
+import 'mission_detail_screen.dart';
+import 'teams_screen.dart';
+import '../l10n/l10n.dart';
+
+/// Home dashboard tab. [onOpenTab] switches the bottom navigation tab.
+class HomeScreen extends StatelessWidget {
+  final ValueChanged<int>? onOpenTab;
+
+  const HomeScreen({super.key, this.onOpenTab});
 
   @override
-  State<HomeScreen> createState() => _HomeScreenState();
+  Widget build(BuildContext context) {
+    final profileService = ProfileService.instance;
+
+    return AppScaffold(
+      showAppBar: false,
+      body: ValueListenableBuilder<UserProfile?>(
+        valueListenable: profileService.profileListenable,
+        builder: (context, profile, _) {
+          if (profile == null) return const _LoggedOutState();
+
+          return RefreshIndicator(
+            color: AppColors.primary,
+            onRefresh: () async {
+              await Future.wait([
+                profileService.loadCurrentUserProfile(),
+                MissionProgressService.instance.loadToday(),
+                StatsService.instance.load(),
+                LearningService.instance.load(),
+              ]);
+            },
+            child: ListView(
+              padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
+              children: [
+                ContentWidth(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      FadeSlideIn(
+                        child: _Header(
+                          profile: profile,
+                          onAvatarTap: () => onOpenTab?.call(4),
+                        ),
+                      ),
+                      if (profile.awaitingParentConsent) ...[
+                        const SizedBox(height: AppSpacing.lg),
+                        const _ParentConsentBanner(),
+                      ],
+                      const SizedBox(height: AppSpacing.xl),
+                      FadeSlideIn(
+                        delay: const Duration(milliseconds: 60),
+                        child: _ProgressCard(profile: profile),
+                      ),
+                      const SizedBox(height: AppSpacing.xxl),
+                      FadeSlideIn(
+                        delay: const Duration(milliseconds: 120),
+                        child: _TodaySection(
+                          onSeeAll: () => onOpenTab?.call(1),
+                        ),
+                      ),
+                      const SizedBox(height: AppSpacing.xxl),
+                      const FadeSlideIn(
+                        delay: Duration(milliseconds: 130),
+                        child: ChallengeCard(),
+                      ),
+                      const SizedBox(height: AppSpacing.xxl),
+                      FadeSlideIn(
+                        delay: Duration(milliseconds: 140),
+                        child: SectionHeader(title: context.l10n.continueLearning),
+                      ),
+                      const FadeSlideIn(
+                        delay: Duration(milliseconds: 145),
+                        child: NextLessonCard(),
+                      ),
+                      const SizedBox(height: AppSpacing.xxl),
+                      FadeSlideIn(
+                        delay: Duration(milliseconds: 148),
+                        child: SectionHeader(
+                          title: context.l10n.yourWorld,
+                          subtitle: context.l10n.yourWorldSubtitle,
+                        ),
+                      ),
+                      const FadeSlideIn(
+                        delay: Duration(milliseconds: 150),
+                        child: LivingWorldCard(),
+                      ),
+                      const SizedBox(height: AppSpacing.xxl),
+                      const FadeSlideIn(
+                        delay: Duration(milliseconds: 150),
+                        child: _TeamSection(),
+                      ),
+                      const SizedBox(height: AppSpacing.xxl),
+                      FadeSlideIn(
+                        delay: Duration(milliseconds: 180),
+                        child: SectionHeader(title: context.l10n.explore),
+                      ),
+                      const _ExploreGrid(),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
 }
 
-class _HomeScreenState extends State<HomeScreen> {
-  final _profileService = ProfileService.instance;
+String _greetingForNow(BuildContext context) {
+  final h = DateTime.now().hour;
+  if (h < 12) return context.l10n.goodMorning;
+  if (h < 18) return context.l10n.goodAfternoon;
+  return context.l10n.goodEvening;
+}
 
-  @override
-  void initState() {
-    super.initState();
-    _profileService.loadCurrentUserProfile();
-    // OwnedPackService.instance.loadOwnedPacks(); 
-  }
+class _Header extends StatelessWidget {
+  final UserProfile profile;
+  final VoidCallback onAvatarTap;
+  const _Header({required this.profile, required this.onAvatarTap});
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-
-    return Scaffold(
-      appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(70),
-        child: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              colors: [Color(0xFF32C27C), Color(0xFF2196F3)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black26,
-                blurRadius: 8,
-                offset: Offset(0, 3),
+    final name = profile.username.trim().isNotEmpty
+        ? profile.username.trim()
+        : context.l10n.explorer;
+    return Row(
+      children: [
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                _greetingForNow(context),
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: AppColors.textSecondary,
+                ),
               ),
-            ],
-          ),
-          child: AppBar(
-            backgroundColor: Colors.transparent,
-            elevation: 0,
-            automaticallyImplyLeading: false,
-            title: const Text(
-              "Home",
-              style: TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.w700,
-                fontSize: 20,
-              ),
-            ),
-            centerTitle: true,
-            actions: [
-              Padding(
-                padding: const EdgeInsets.only(right: 12.0),
-                child: GestureDetector(
-                  onTap: () => Navigator.pushNamed(context, '/profile'),
-                  child: ValueListenableBuilder<UserProfile?>(
-                    valueListenable: _profileService.profileListenable,
-                    builder: (context, profile, _) {
-                      // Simple avatar, no cosmetic frame
-                      if (profile == null) {
-                        return CircleAvatar(
-                          radius: 18,
-                          backgroundColor: Colors.white.withOpacity(0.15),
-                          child: const Icon(Icons.person, color: Colors.white),
-                        );
-                      }
-
-                      if (profile.avatarUrl != null) {
-                        return CircleAvatar(
-                          radius: 18,
-                          backgroundColor: Colors.white.withOpacity(0.15),
-                          child: ClipOval(
-                            child: Image.network(
-                              profile.avatarUrl!,
-                              width: 36,
-                              height: 36,
-                              fit: BoxFit.cover,
-                            ),
-                          ),
-                        );
-                      }
-
-                      final hasUsername = profile.username.trim().isNotEmpty;
-                      final initials = hasUsername
-                          ? profile.username.trim()[0].toUpperCase()
-                          : null;
-
-                      return CircleAvatar(
-                        radius: 18,
-                        backgroundColor: Colors.white.withOpacity(0),
-                        child: Icon(Icons.person, color: Colors.white),
-                      );
-                    },
-                  ),
+              const SizedBox(height: 2),
+              Text(
+                name,
+                style: theme.textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: -0.5,
                 ),
               ),
             ],
           ),
         ),
-      ),
-
-      // ========================= BODY =========================
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Color(0xFF32C27C), Color(0xFF2196F3)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
+        Pressable(
+          onTap: onAvatarTap,
+          semanticLabel: context.l10n.openYourProfile,
+          // 48×48 touch target around the 40px avatar.
+          child: SizedBox(
+            width: 48,
+            height: 48,
+            child: Center(
+              child: SizedBox(
+                width: 40,
+                height: 40,
+                child: ProfileAvatar(profile: profile, fontSize: 16),
+              ),
+            ),
           ),
         ),
-        child: SafeArea(
-          child: ValueListenableBuilder<UserProfile?>(
-            valueListenable: _profileService.profileListenable,
-            builder: (context, profile, _) {
-              if (profile == null) return _buildLoggedOutState(theme);
+      ],
+    );
+  }
+}
 
-              final xp = profile.xp;
-              const xpPerLevel = 100;
-              final level = xp ~/ xpPerLevel;
-              final xpInLevel = xp % xpPerLevel;
-              final progress = xpInLevel / xpPerLevel;
-              final streak = profile.streak;
+class _ProgressCard extends StatelessWidget {
+  final UserProfile profile;
+  const _ProgressCard({required this.profile});
 
-              return LayoutBuilder(
-                builder: (context, constraints) {
-                  final maxWidth = constraints.maxWidth > 480
-                      ? 480.0
-                      : constraints.maxWidth * 0.95;
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final info = LevelInfo(profile.xp);
 
-                  return Center(
-                    child: SingleChildScrollView(
-                      padding: const EdgeInsets.symmetric(vertical: 24),
+    return AppCard(
+      padding: EdgeInsets.zero,
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(AppSpacing.lg + 4),
+            child: Row(
+              children: [
+                XpRing(
+                  progress: info.progress,
+                  size: 72,
+                  child: Center(
+                    child: MediaQuery.withClampedTextScaling(
+                      maxScaleFactor: 1.3,
                       child: Column(
+                        mainAxisSize: MainAxisSize.min,
                         children: [
-                          // ---------- Header ----------
                           Text(
-                            'Your SDG Journey',
-                            style: theme.textTheme.headlineSmall?.copyWith(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w800,
+                            context.l10n.levelShort,
+                            style: theme.textTheme.labelSmall?.copyWith(
+                              color: AppColors.textSecondary,
+                              fontSize: 9,
+                              letterSpacing: 0.8,
                             ),
                           ),
-                          const SizedBox(height: 24),
-
-                          // ---------- XP + STREAK CARD ----------
-                          Container(
-                            width: maxWidth,
-                            decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.97),
-                              borderRadius: BorderRadius.circular(24),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.18),
-                                  blurRadius: 20,
-                                  offset: const Offset(0, 12),
-                                ),
-                              ],
-                            ),
-                            child: Padding(
-                              padding: const EdgeInsets.all(18.0),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    children: [
-                                      // Simple avatar (no frame)
-                                      CircleAvatar(
-                                        radius: 26,
-                                        backgroundColor:
-                                            const Color(0xFF32C27C)
-                                                .withOpacity(0.12),
-                                        child: profile.avatarUrl != null
-                                            ? ClipOval(
-                                                child: Image.network(
-                                                  profile.avatarUrl!,
-                                                  width: 52,
-                                                  height: 52,
-                                                  fit: BoxFit.cover,
-                                                ),
-                                              )
-                                            : const Text(
-                                                '🌍',
-                                                style:
-                                                    TextStyle(fontSize: 26),
-                                              ),
-                                      ),
-                                      const SizedBox(width: 12),
-
-                                      // Username + welcome text
-                                      Expanded(
-                                        child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            Text(
-                                              'Welcome back,',
-                                              style: theme.textTheme.bodySmall
-                                                  ?.copyWith(
-                                                color: Colors.grey[600],
-                                              ),
-                                            ),
-                                            Text(
-                                              profile.username.isNotEmpty
-                                                  ? profile.username
-                                                  : 'Explorer',
-                                              style: theme
-                                                  .textTheme.titleMedium
-                                                  ?.copyWith(
-                                                fontWeight: FontWeight.w700,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-
-                                      // Level Chip
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 10,
-                                          vertical: 6,
-                                        ),
-                                        decoration: BoxDecoration(
-                                          color: const Color(0xFF32C27C)
-                                              .withOpacity(0.08),
-                                          borderRadius:
-                                              BorderRadius.circular(999),
-                                        ),
-                                        child: Row(
-                                          children: const [
-                                            Icon(
-                                              Icons.stars_rounded,
-                                              size: 16,
-                                              color: Color(0xFF32C27C),
-                                            ),
-                                            SizedBox(width: 4),
-                                            Text(
-                                              'Level',
-                                              style: TextStyle(
-                                                fontSize: 12,
-                                                fontWeight: FontWeight.w600,
-                                                color: Color(0xFF32C27C),
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-
-                                  const SizedBox(height: 16),
-
-                                  // XP label, animated
-                                  Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      const Text(
-                                        'Impact XP',
-                                        style: TextStyle(
-                                          fontSize: 13,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                      AnimatedSwitcher(
-                                        duration:
-                                            const Duration(milliseconds: 400),
-                                        transitionBuilder: (child, anim) =>
-                                            ScaleTransition(
-                                          scale: anim,
-                                          child: child,
-                                        ),
-                                        child: Text(
-                                          '$xp XP',
-                                          key: ValueKey<int>(xp),
-                                          style: const TextStyle(
-                                            fontSize: 14,
-                                            fontWeight: FontWeight.w700,
-                                            color: Color(0xFF32C27C),
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-
-                                  const SizedBox(height: 8),
-
-                                  // Animated progress bar
-                                  TweenAnimationBuilder<double>(
-                                    tween: Tween<double>(
-                                      begin: 0,
-                                      end: progress.clamp(0.0, 1.0),
-                                    ),
-                                    duration:
-                                        const Duration(milliseconds: 600),
-                                    builder: (context, value, _) {
-                                      return ClipRRect(
-                                        borderRadius:
-                                            BorderRadius.circular(999),
-                                        child: LinearProgressIndicator(
-                                          value: value,
-                                          minHeight: 8,
-                                          backgroundColor:
-                                              Colors.grey.shade300,
-                                          valueColor:
-                                              const AlwaysStoppedAnimation(
-                                            Color(0xFF32C27C),
-                                          ),
-                                        ),
-                                      );
-                                    },
-                                  ),
-                                  const SizedBox(height: 6),
-                                  Text(
-                                    '$xpInLevel / $xpPerLevel XP to next level',
-                                    style: const TextStyle(
-                                      fontSize: 11,
-                                      color: Colors.grey,
-                                    ),
-                                  ),
-
-                                  const SizedBox(height: 16),
-
-                                  // Streak row
-                                  Row(
-                                    children: [
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 10,
-                                          vertical: 6,
-                                        ),
-                                        decoration: BoxDecoration(
-                                          color:
-                                              Colors.orange.withOpacity(0.08),
-                                          borderRadius:
-                                              BorderRadius.circular(999),
-                                        ),
-                                        child: Row(
-                                          children: [
-                                            const Icon(
-                                              Icons.local_fire_department,
-                                              size: 16,
-                                              color: Colors.orange,
-                                            ),
-                                            const SizedBox(width: 4),
-                                            Text(
-                                              '$streak day streak',
-                                              style: const TextStyle(
-                                                fontSize: 12,
-                                                fontWeight: FontWeight.w600,
-                                                color: Colors.orange,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                      const Spacer(),
-                                      TextButton.icon(
-                                        onPressed: () => Navigator.pushNamed(
-                                            context, '/impactDashboard'),
-                                        icon: const Icon(
-                                          Icons.auto_graph,
-                                          size: 16,
-                                        ),
-                                        label: const Text(
-                                          'View impact',
-                                          style: TextStyle(fontSize: 12),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-
-                          const SizedBox(height: 24),
-
-                          // -------------- NAVIGATION TILES --------------
-                          Container(
-                            width: maxWidth,
-                            decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.97),
-                              borderRadius: BorderRadius.circular(24),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.15),
-                                  blurRadius: 18,
-                                  offset: const Offset(0, 10),
-                                ),
-                              ],
-                            ),
-                            child: Column(
-                              children: [
-                                _HomeNavTile(
-                                  icon: Icons.flag_rounded,
-                                  iconColor: const Color.fromARGB(255, 137, 197, 18),
-                                  title: 'Daily Missions',
-                                  subtitle:
-                                      'Small real-world actions you can do today.',
-                                  onTap: () => Navigator.pushNamed(
-                                      context, '/dailyMissions'),
-                                ),
-                                const Divider(
-                                    height: 1, color: Color(0xFFE2E8F0)),
-
-                                _HomeNavTile(
-                                  icon: Icons.videogame_asset_rounded,
-                                  iconColor: const Color(0xFF6366F1),
-                                  title: 'Mini Games & Quizzes',
-                                  subtitle:
-                                      'Play & learn about the SDGs.',
-                                  onTap: () =>
-                                      Navigator.pushNamed(context, '/miniGames'),
-                                ),
-                                const Divider(
-                                    height: 1, color: Color(0xFFE2E8F0)),
-
-                                _HomeNavTile(
-                                  icon: Icons.shopping_bag_outlined,
-                                  iconColor: const Color.fromARGB(255, 220, 19, 19),
-                                  title: 'SDG Shop',
-                                  subtitle:
-                                      'Unlock themes & bonus packs (cosmetics coming later).',
-                                  onTap: () =>
-                                      Navigator.pushNamed(context, '/shop'),
-                                ),
-                                const Divider(
-                                    height: 1, color: Color(0xFFE2E8F0)),
-
-                                _HomeNavTile(
-                                  icon: Icons.public,
-                                  iconColor: const Color(0xFF0EA5E9),
-                                  title: 'Live Impact Map',
-                                  subtitle:
-                                      'See other young changemakers near you.',
-                                  onTap: () =>
-                                      Navigator.pushNamed(context, '/liveMap'),
-                                ),
-                                const Divider(
-                                    height: 1, color: Color(0xFFE2E8F0)),
-
-                                _HomeNavTile(
-                                  icon: Icons.groups_rounded,
-                                  iconColor: const Color(0xFFEC4899),
-                                  title: 'Community Stories',
-                                  subtitle:
-                                      'Share your wins & read others’ stories.',
-                                  onTap: () =>
-                                      Navigator.pushNamed(context, '/community'),
-                                ),
-                                const Divider(
-                                    height: 1, color: Color(0xFFE2E8F0)),
-
-                                _HomeNavTile(
-                                  icon: Icons.menu_book_rounded,
-                                  iconColor: const Color(0xFFF97316),
-                                  title: 'Learn the SDGs',
-                                  subtitle: 'Short lessons for each goal.',
-                                  onTap: () =>
-                                      Navigator.pushNamed(context, '/learnSdg'),
-                                ),
-                              ],
+                          Text(
+                            '${info.level}',
+                            style: theme.textTheme.titleLarge?.copyWith(
+                              fontWeight: FontWeight.w700,
+                              height: 1.1,
                             ),
                           ),
                         ],
                       ),
                     ),
-                  );
-                },
-              );
-            },
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.lg + 4),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        context.l10n.impactXp,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                      AnimatedCount(
+                        value: profile.xp,
+                        style: theme.textTheme.headlineMedium?.copyWith(
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: -1,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      SpringProgressBar(value: info.progress),
+                      const SizedBox(height: 6),
+                      Text(
+                        context.l10n.xpToLevel(info.xpToNext, info.level + 1),
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const Divider(),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 6, 8, 6),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: StreakFlame(streak: profile.streak),
+                    ),
+                  ),
+                ),
+                Flexible(
+                  child: TextButton(
+                    onPressed: () =>
+                        Navigator.pushNamed(context, '/impactDashboard'),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Flexible(
+                          child: Text(
+                            context.l10n.viewImpact,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        SizedBox(width: 2),
+                        Icon(Icons.arrow_forward_rounded, size: 16),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Avatar image, or the user's initial on a neutral circle.
+class ProfileAvatar extends StatelessWidget {
+  final UserProfile profile;
+  final double fontSize;
+  const ProfileAvatar({super.key, required this.profile, this.fontSize = 22});
+
+  @override
+  Widget build(BuildContext context) {
+    final url = profile.avatarUrl;
+    if (url != null && url.isNotEmpty) {
+      return ClipOval(
+        child: Image.network(
+          url,
+          excludeFromSemantics: true, // The name is shown next to it.
+          fit: BoxFit.cover,
+          errorBuilder: (_, __, ___) => _initial(),
+        ),
+      );
+    }
+    return _initial();
+  }
+
+  Widget _initial() {
+    final name = profile.username.trim();
+    return Container(
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: AppColors.primarySoft,
+        border: Border.all(color: AppColors.border),
+      ),
+      alignment: Alignment.center,
+      child: Text(
+        name.isNotEmpty ? name[0].toUpperCase() : '?',
+        style: TextStyle(
+          color: AppColors.primaryDark,
+          fontSize: fontSize,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
+    );
+  }
+}
+
+class _TodaySection extends StatelessWidget {
+  final VoidCallback onSeeAll;
+  const _TodaySection({required this.onSeeAll});
+
+  @override
+  Widget build(BuildContext context) {
+    final progress = MissionProgressService.instance;
+    final missions = MissionCatalogService.instance.missionsForToday(count: 5);
+
+    return ValueListenableBuilder<Map<String, MissionStatus>>(
+      valueListenable: progress.notifier,
+      builder: (context, _, __) {
+        final done = missions
+            .where((m) => progress.statusFor(m.id) == MissionStatus.completed)
+            .length;
+        final preview = missions.take(3).toList();
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            SectionHeader(
+              title: "Today's missions",
+              subtitle: context.l10n.completedOf(done, missions.length),
+              trailing: TextButton(
+                onPressed: onSeeAll,
+                child: Text(context.l10n.viewAll),
+              ),
+            ),
+            AppCard(
+              padding: EdgeInsets.zero,
+              child: Column(
+                children: [
+                  for (var i = 0; i < preview.length; i++) ...[
+                    if (i > 0) const Divider(indent: 68),
+                    _MissionRow(
+                      mission: preview[i],
+                      status: progress.statusFor(preview[i].id),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _MissionRow extends StatelessWidget {
+  final Mission mission;
+  final MissionStatus status;
+  const _MissionRow({required this.mission, required this.status});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final sdgNumber = extractSdgNumber(mission.sdg);
+    final sdg = sdgNumber != null ? getSdgByNumber(sdgNumber) : null;
+    final color = sdg?.color ?? AppColors.primary;
+    final icon = sdgNumber != null ? iconForSdg(sdgNumber) : Icons.flag_rounded;
+    final heroTag = 'home-${mission.id}';
+    final completed = status == MissionStatus.completed;
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () => Navigator.pushNamed(
+          context,
+          '/missionDetail',
+          arguments: MissionRouteArgs(mission, heroTag: heroTag),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          child: Row(
+            children: [
+              Hero(
+                tag: heroTag,
+                child: IconTile(icon: icon, color: color),
+              ),
+              const SizedBox(width: AppSpacing.md),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      mission.title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                        color: completed
+                            ? AppColors.textTertiary
+                            : AppColors.textPrimary,
+                        decoration: completed
+                            ? TextDecoration.lineThrough
+                            : null,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      sdg != null
+                          ? context.l10n.sdgLabel(sdg.number, sdg.shortTitle)
+                          : mission.sdg,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              AnimatedSwitcher(
+                duration: AppDurations.medium,
+                switchInCurve: AppMotion.spring,
+                transitionBuilder: (c, a) =>
+                    ScaleTransition(scale: a, child: c),
+                child: completed
+                    ? Icon(
+                        Icons.check_circle_rounded,
+                        key: ValueKey('done'),
+                        color: AppColors.success,
+                      )
+                    : Text(
+                        '+${mission.xp} XP',
+                        key: const ValueKey('xp'),
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.xp,
+                        ),
+                      ),
+              ),
+            ],
           ),
         ),
       ),
     );
   }
+}
 
-  Widget _buildLoggedOutState(ThemeData theme) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24.0),
+class _ExploreGrid extends StatelessWidget {
+  const _ExploreGrid();
+
+  @override
+  Widget build(BuildContext context) {
+    final l = context.l10n;
+    final tiles = [
+      _ExploreTileData(
+        title: l.learn,
+        subtitle: l.learnSubtitle,
+        icon: Icons.menu_book_rounded,
+        color: const Color(0xFFC2410C),
+        route: '/learnSdg',
+      ),
+      _ExploreTileData(
+        title: l.community,
+        subtitle: l.communitySubtitle,
+        icon: Icons.forum_rounded,
+        color: const Color(0xFFBE185D),
+        route: '/community',
+      ),
+      _ExploreTileData(
+        title: l.yourImpact,
+        subtitle: l.yourImpactSubtitle,
+        icon: Icons.insights_rounded,
+        color: const Color(0xFF0369A1),
+        route: '/impactDashboard',
+      ),
+      _ExploreTileData(
+        title: l.rewards,
+        subtitle: l.rewardsSubtitle,
+        icon: Icons.storefront_rounded,
+        color: const Color(0xFF6D28D9),
+        route: '/shop',
+      ),
+    ];
+
+    // Fixed height (scaled with text size) so tiles never clip on narrow phones.
+    final tileHeight =
+        118 * MediaQuery.textScalerOf(context).scale(1).clamp(1.0, 1.6);
+    return GridView(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      padding: EdgeInsets.zero,
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        mainAxisSpacing: AppSpacing.md,
+        crossAxisSpacing: AppSpacing.md,
+        mainAxisExtent: tileHeight,
+      ),
+      children: [
+        for (var i = 0; i < tiles.length; i++)
+          FadeSlideIn(
+            delay: Duration(milliseconds: 220 + i * 50),
+            child: _ExploreTile(data: tiles[i]),
+          ),
+      ],
+    );
+  }
+}
+
+class _ExploreTileData {
+  final String title;
+  final String subtitle;
+  final IconData icon;
+  final Color color;
+  final String route;
+
+  const _ExploreTileData({
+    required this.title,
+    required this.subtitle,
+    required this.icon,
+    required this.color,
+    required this.route,
+  });
+}
+
+class _ExploreTile extends StatelessWidget {
+  final _ExploreTileData data;
+  const _ExploreTile({required this.data});
+
+  @override
+  Widget build(BuildContext context) {
+    return Pressable(
+      onTap: () => Navigator.pushNamed(context, data.route),
+      builder: (context, state) => AppCard(
+        padding: const EdgeInsets.all(14),
+        shadow: state == PressState.hovered ? AppShadows.raised : null,
         child: Column(
-          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'You\'re not signed in',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-                color: Colors.white,
-              ),
+            Row(
+              children: [
+                IconTile(icon: data.icon, color: data.color, size: 36),
+                const Spacer(),
+                AnimatedSlide(
+                  offset: state == PressState.hovered
+                      ? const Offset(0.15, 0)
+                      : Offset.zero,
+                  duration: AppDurations.medium,
+                  curve: AppMotion.spring,
+                  child: Icon(
+                    Icons.arrow_outward_rounded,
+                    size: 16,
+                    color: AppColors.textTertiary,
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 8),
+            const Spacer(),
             Text(
-              'Log in or sign up to start earning XP and tracking your SDG impact.',
-              textAlign: TextAlign.center,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: Colors.white.withOpacity(0.9),
-              ),
+              data.title,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
             ),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.pushNamedAndRemoveUntil(
-                    context, '/auth', (route) => false);
-              },
-              child: const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 24.0, vertical: 10),
-                child: Text('Go to login'),
-              ),
+            const SizedBox(height: 2),
+            Text(
+              data.subtitle,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
             ),
           ],
         ),
@@ -523,65 +626,190 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
-class _HomeNavTile extends StatelessWidget {
-  final IconData icon;
-  final Color iconColor;
-  final String title;
-  final String subtitle;
-  final VoidCallback onTap;
-
-  const _HomeNavTile({
-    required this.icon,
-    required this.iconColor,
-    required this.title,
-    required this.subtitle,
-    required this.onTap,
-  });
+class _LoggedOutState extends StatelessWidget {
+  const _LoggedOutState();
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(24),
+    return Center(
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-        child: Row(
+        padding: const EdgeInsets.all(AppSpacing.xl),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Container(
-              width: 42,
-              height: 42,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: iconColor.withOpacity(0.12),
-              ),
-              child: Icon(icon, color: iconColor),
+            IconTile(
+              icon: Icons.lock_outline_rounded,
+              color: AppColors.primary,
+              size: 56,
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: theme.textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    subtitle,
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: Colors.grey[600],
-                    ),
-                  ),
-                ],
+            const SizedBox(height: AppSpacing.lg),
+            Text(
+              "You're not signed in",
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w600,
               ),
             ),
-            const SizedBox(width: 8),
-            const Icon(Icons.chevron_right, color: Colors.black45),
+            const SizedBox(height: AppSpacing.sm),
+            Text(
+              context.l10n.loginToStart,
+              textAlign: TextAlign.center,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: AppColors.textSecondary,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.lg),
+            FilledButton(
+              onPressed: () => Navigator.pushNamedAndRemoveUntil(
+                context,
+                '/auth',
+                (route) => false,
+              ),
+              child: Text(context.l10n.goToLogin),
+            ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// Your team's weekly progress, or an invitation to start one.
+class _TeamSection extends StatelessWidget {
+  const _TeamSection();
+
+  @override
+  Widget build(BuildContext context) {
+    return ValueListenableBuilder<List<Team>?>(
+      valueListenable: TeamService.instance.teams,
+      builder: (context, teams, _) {
+        final hasTeams = teams != null && teams.isNotEmpty;
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            SectionHeader(
+              title: context.l10n.teamChallenge,
+              trailing: hasTeams
+                  ? TextButton(
+                      onPressed: () => Navigator.pushNamed(context, '/teams'),
+                      child: Text(teams.length > 1 ? context.l10n.allTeams : context.l10n.manage),
+                    )
+                  : null,
+            ),
+            if (hasTeams)
+              TeamProgressCard(team: teams.first)
+            else
+              Pressable(
+                pressedScale: 0.985,
+                onTap: () => Navigator.pushNamed(context, '/teams'),
+                builder: (context, state) => AppCard(
+                  shadow: state == PressState.hovered
+                      ? AppShadows.raised
+                      : null,
+                  child: Row(
+                    children: [
+                      const IconTile(
+                        icon: Icons.groups_rounded,
+                        color: Color(0xFF19486A),
+                        size: 44,
+                      ),
+                      const SizedBox(width: AppSpacing.md),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              context.l10n.teamUpTitle,
+                              style: TextStyle(fontWeight: FontWeight.w600),
+                            ),
+                            Text(
+                              context.l10n.teamUpBody,
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: AppColors.textSecondary,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Icon(
+                        Icons.chevron_right_rounded,
+                        color: AppColors.textTertiary,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+/// Shown until a parent approves a young user's account.
+class _ParentConsentBanner extends StatefulWidget {
+  const _ParentConsentBanner();
+
+  @override
+  State<_ParentConsentBanner> createState() => _ParentConsentBannerState();
+}
+
+class _ParentConsentBannerState extends State<_ParentConsentBanner> {
+  bool _sending = false;
+
+  Future<void> _resend() async {
+    final messenger = ScaffoldMessenger.of(context);
+    setState(() => _sending = true);
+    try {
+      await ProfileService.instance.resendParentConsent();
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(l10nNow().consentResent),
+        ),
+      );
+    } catch (e) {
+      messenger.showSnackBar(SnackBar(content: Text('$e')));
+    } finally {
+      if (mounted) setState(() => _sending = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AppCard(
+      color: AppColors.primarySoft,
+      shadow: const [],
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(Icons.family_restroom_rounded, color: AppColors.primaryDark),
+          const SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  context.l10n.waitingForParent,
+                  style: TextStyle(
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.primaryDark,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  context.l10n.waitingForParentBody,
+                  style: TextStyle(fontSize: 12, color: AppColors.primaryDark),
+                ),
+                TextButton(
+                  style: TextButton.styleFrom(padding: EdgeInsets.zero),
+                  onPressed: _sending ? null : _resend,
+                  child: Text(_sending ? context.l10n.sending : context.l10n.resendEmail),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

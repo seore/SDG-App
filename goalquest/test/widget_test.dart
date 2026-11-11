@@ -1,18 +1,15 @@
-//import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:goalquest/app.dart';
 
 void main() {
-  testWidgets('App builds smoke test', (WidgetTester tester) async {
-    // Build the app with a test initial route
+  testWidgets('App builds and shows the auth screen', (WidgetTester tester) async {
     await tester.pumpWidget(const GoalQuestApp(initialRoute: '/auth'));
+    // The auth screen has looping entrance animations, so pump a fixed time
+    // instead of pumpAndSettle.
+    await tester.pump(const Duration(seconds: 2));
 
-    // Let Flutter build the first frame
-    await tester.pumpAndSettle();
-
-    // Check something that SHOULD exist on the Auth Screen
-    expect(find.text('Log In'), findsOneWidget);
-    expect(find.text('Sign Up'), findsOneWidget);
+    expect(find.text('SDG Journey'), findsOneWidget);
+    expect(find.text('Log in'), findsWidgets); // toggle + submit button
+    expect(find.text('Sign up'), findsOneWidget);
   });
 }
-
