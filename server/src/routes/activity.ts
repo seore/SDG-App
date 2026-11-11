@@ -150,6 +150,17 @@ activity.post('/games/complete', async (c) => {
       score: z.number().int().min(0),
       total: z.number().int().min(1),
       sdg_number: z.number().int().min(1).max(17).optional(),
+      /** Quiz only: how the player did on each goal's questions. */
+      per_sdg: z
+        .array(
+          z.object({
+            sdg_number: z.number().int().min(1).max(17),
+            correct: z.number().int().min(0),
+            total: z.number().int().min(1),
+          }),
+        )
+        .max(17)
+        .optional(),
     })
     .safeParse(await c.req.json().catch(() => null));
   if (!body.success) throw apiError(400, 'invalid_input', 'Invalid game result.');
@@ -185,6 +196,18 @@ activity.post('/games/complete', async (c) => {
        values ($1, $2, $3, $4, $5)`,
       [userId, body.data.sdg_number ?? rule.sdgNumber, score, total, xp],
     );
+    // Per-goal results must add up to the reported round.
+    const perSdg = body.data.per_sdg ?? [];
+    const sumCorrect = perSdg.reduce((s, r) => s + r.correct, 0);
+    const sumTotal = perSdg.reduce((s, r) => s + r.total, 0);
+    if (perSdg.length && sumCorrect === score && sumTotal === total && perSdg.every((r) => r.correct <= r.total)) {
+      for (const r of perSdg) {
+        await db.query(
+          'insert into quiz_sdg_results (user_id, sdg_number, correct, total) values ($1, $2, $3, $4)',
+          [userId, r.sdg_number, r.correct, r.total],
+        );
+      }
+    }
   }
 
   const award = await awardXp(db, userId, xp, today);

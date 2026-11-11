@@ -4,12 +4,14 @@ import '../data/sdg_data.dart';
 import '../services/api_client.dart';
 import '../services/demo_mode.dart';
 import '../services/notification_service.dart';
+import '../services/learning_service.dart';
 import '../services/privacy.dart';
 import '../services/profile_service.dart';
 import '../theme/app_theme.dart';
 import '../theme/theme_controller.dart';
 import '../widgets/app_card.dart';
 import '../widgets/app_scaffold.dart';
+import '../widgets/mastery_widgets.dart';
 import '../widgets/motion.dart';
 import '../widgets/progress_widgets.dart';
 import 'home_screen.dart' show ProfileAvatar;
@@ -227,6 +229,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
               ),
               section(3, _AchievementGrid(achievements: achievements)),
+              const SizedBox(height: AppSpacing.xxl),
+              section(
+                4,
+                ValueListenableBuilder(
+                  valueListenable: LearningService.instance.mastery,
+                  builder: (context, _, __) => SectionHeader(
+                    title: 'Goal mastery',
+                    subtitle:
+                        '${LearningService.instance.totalStars} of ${LearningService.maxStars} stars · lesson, quiz and action for each goal',
+                  ),
+                ),
+              ),
+              section(4, const MasteryGrid()),
               const SizedBox(height: AppSpacing.xxl),
               section(4, const SectionHeader(title: 'Focus SDGs')),
               section(5, _FocusSdgs(focus: profile.focusSdgs)),

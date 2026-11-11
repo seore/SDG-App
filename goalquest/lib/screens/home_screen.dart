@@ -10,6 +10,7 @@ import '../theme/app_theme.dart';
 import '../utils/sdg_utils.dart';
 import '../widgets/app_card.dart';
 import '../widgets/app_scaffold.dart';
+import '../widgets/mastery_widgets.dart';
 import '../widgets/motion.dart';
 import '../widgets/progress_widgets.dart';
 import 'mission_detail_screen.dart';
@@ -68,6 +69,15 @@ class HomeScreen extends StatelessWidget {
                         child: _TodaySection(
                           onSeeAll: () => onOpenTab?.call(1),
                         ),
+                      ),
+                      const SizedBox(height: AppSpacing.xxl),
+                      const FadeSlideIn(
+                        delay: Duration(milliseconds: 140),
+                        child: SectionHeader(title: 'Continue learning'),
+                      ),
+                      const FadeSlideIn(
+                        delay: Duration(milliseconds: 145),
+                        child: NextLessonCard(),
                       ),
                       const SizedBox(height: AppSpacing.xxl),
                       const FadeSlideIn(
@@ -223,8 +233,15 @@ class _ProgressCard extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(20, 6, 8, 6),
             child: Row(
               children: [
-                StreakFlame(streak: profile.streak),
-                const Spacer(),
+                Expanded(
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: StreakFlame(streak: profile.streak),
+                    ),
+                  ),
+                ),
                 TextButton(
                   onPressed: () =>
                       Navigator.pushNamed(context, '/impactDashboard'),
@@ -459,14 +476,18 @@ class _ExploreGrid extends StatelessWidget {
       ),
     ];
 
-    return GridView.count(
-      crossAxisCount: 2,
+    // Fixed height (scaled with text size) so tiles never clip on narrow phones.
+    final tileHeight = 118 * MediaQuery.textScalerOf(context).scale(1).clamp(1.0, 1.6);
+    return GridView(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       padding: EdgeInsets.zero,
-      mainAxisSpacing: AppSpacing.md,
-      crossAxisSpacing: AppSpacing.md,
-      childAspectRatio: 1.35,
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        mainAxisSpacing: AppSpacing.md,
+        crossAxisSpacing: AppSpacing.md,
+        mainAxisExtent: tileHeight,
+      ),
       children: [
         for (var i = 0; i < tiles.length; i++)
           FadeSlideIn(
@@ -526,6 +547,8 @@ class _ExploreTile extends StatelessWidget {
             const Spacer(),
             Text(
               data.title,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
               style: const TextStyle(
                 fontWeight: FontWeight.w600,
                 fontSize: 14,

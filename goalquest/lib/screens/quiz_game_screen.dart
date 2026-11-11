@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../data/quiz_questions.dart';
 import '../services/game_session.dart';
+import '../services/learning_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/app_card.dart';
 import '../widgets/app_scaffold.dart';
@@ -52,11 +53,17 @@ class _QuizGameScreenState extends State<QuizGameScreen> {
   QuizQuestion get _q => _questions[_index];
   bool get _isLast => _index == _questions.length - 1;
 
+  /// sdg → (correct, answered) for the learning path.
+  final Map<int, (int, int)> _bySdg = {};
+
   void _check() {
     if (_selected == null || _revealed) return;
+    final correct = _selected == _q.correctIndex;
+    final (c, t) = _bySdg[_q.sdgNumber] ?? (0, 0);
+    _bySdg[_q.sdgNumber] = (c + (correct ? 1 : 0), t + 1);
     setState(() {
       _revealed = true;
-      if (_selected == _q.correctIndex) _score++;
+      if (correct) _score++;
     });
   }
 
@@ -84,6 +91,9 @@ class _QuizGameScreenState extends State<QuizGameScreen> {
       total: total,
       sdgNumber: _q.sdgNumber,
       localXp: _score * _xpPerCorrect,
+      perSdg: [
+        for (final e in _bySdg.entries) SdgQuizResult(e.key, e.value.$1, e.value.$2),
+      ],
       heading: 'Quiz complete',
       summary: 'You scored $_score of $total ($percent%)',
     );

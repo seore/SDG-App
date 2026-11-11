@@ -1,8 +1,12 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../data/sdg_data.dart';
+import '../services/learning_service.dart';
 import '../theme/app_theme.dart';
+import '../widgets/mastery_widgets.dart';
 import '../utils/sdg_utils.dart';
 import '../widgets/app_card.dart';
 import '../widgets/app_scaffold.dart';
@@ -26,8 +30,26 @@ class _LearnSdgScreenState extends State<LearnSdgScreen> {
     initialScrollOffset: (_index * _chipExtent - 120).clamp(0, double.infinity),
   );
 
+  Timer? _readTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    _startReadTimer();
+  }
+
+  /// A lesson counts as read after a few seconds on its page.
+  void _startReadTimer() {
+    _readTimer?.cancel();
+    final sdg = sdgGoals[_index].number;
+    _readTimer = Timer(const Duration(seconds: 4), () {
+      LearningService.instance.markLessonRead(sdg);
+    });
+  }
+
   @override
   void dispose() {
+    _readTimer?.cancel();
     _pages.dispose();
     _strip.dispose();
     super.dispose();
@@ -45,6 +67,7 @@ class _LearnSdgScreenState extends State<LearnSdgScreen> {
   void _onPageChanged(int index) {
     HapticFeedback.selectionClick();
     setState(() => _index = index);
+    _startReadTimer();
     // Keep the selected chip roughly centred in the strip.
     if (_strip.hasClients) {
       final target = (index * _chipExtent -
@@ -96,12 +119,25 @@ class _LearnSdgScreenState extends State<LearnSdgScreen> {
                         boxShadow: selected ? AppShadows.card : null,
                       ),
                       alignment: Alignment.center,
-                      child: Text(
-                        '${g.number}',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w700,
-                          color: selected ? Colors.white : g.color,
-                        ),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            '${g.number}',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w700,
+                              color: selected ? Colors.white : g.color,
+                            ),
+                          ),
+                          ValueListenableBuilder<Map<int, GoalMastery>>(
+                            valueListenable: LearningService.instance.mastery,
+                            builder: (context, m, _) => StarRow(
+                              stars: m[g.number]?.stars ?? 0,
+                              size: 6,
+                              color: selected ? Colors.white : g.color,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ),

@@ -4,6 +4,7 @@ import '../data/sdg_data.dart';
 import '../theme/app_theme.dart';
 import '../widgets/celebration_overlay.dart';
 import 'activity_service.dart';
+import 'learning_service.dart';
 import 'profile_service.dart';
 
 /// Reports a finished game and shows the shared celebration, then returns to
@@ -18,6 +19,7 @@ Future<void> finishGame(
   required int localXp,
   required String heading,
   required String summary,
+  List<SdgQuizResult>? perSdg,
 }) async {
   XpAward? award;
   try {
@@ -27,6 +29,7 @@ Future<void> finishGame(
       total: total,
       localXp: localXp,
       sdgNumber: sdgNumber,
+      perSdg: perSdg,
     );
   } catch (e) {
     debugPrint('completeGame failed: $e');

@@ -1,6 +1,8 @@
 import 'api_client.dart';
 import 'demo_mode.dart';
 import 'impact_service.dart';
+import 'learning_service.dart';
+import '../utils/sdg_utils.dart';
 import 'mission_catalog.dart';
 import 'notification_service.dart';
 import 'profile_service.dart';
@@ -31,6 +33,10 @@ class ActivityService {
       });
       award = ProfileService.instance.applyServerAward(json as Map<String, dynamic>);
     }
+    if (mission != null) {
+      final n = extractSdgNumber(mission.sdg);
+      if (n != null) LearningService.instance.recordMission(n);
+    }
     if (mission?.impactMetric case final metric?) {
       ImpactService.instance.addLocal(metric, mission!.impactAmount);
     }
@@ -47,7 +53,9 @@ class ActivityService {
     required int total,
     required int localXp,
     int? sdgNumber,
+    List<SdgQuizResult>? perSdg,
   }) async {
+    if (perSdg != null) LearningService.instance.recordQuiz(perSdg);
     if (DemoMode.enabled) {
       final award = ProfileService.instance.awardLocally(localXp);
       NotificationService.instance.reschedule();
@@ -58,6 +66,7 @@ class ActivityService {
       'score': score,
       'total': total,
       if (sdgNumber != null) 'sdg_number': sdgNumber,
+      if (perSdg != null) 'per_sdg': [for (final r in perSdg) r.toJson()],
     });
     final award = ProfileService.instance.applyServerAward(json as Map<String, dynamic>);
     NotificationService.instance.reschedule();

@@ -10,6 +10,7 @@ import { auth } from './routes/auth';
 import { consent } from './routes/consent';
 import { privacy } from './routes/privacy';
 import { feed } from './routes/feed';
+import { learning } from './routes/learning';
 import { me } from './routes/me';
 import { teams } from './routes/teams';
 import { uploads } from './routes/uploads';
@@ -41,6 +42,7 @@ export function createApp(resolve: (c: Ctx) => Deps) {
   app.route('/me', me);
   app.route('/feed', feed);
   app.route('/teams', teams);
+  app.route('/', learning);
   app.route('/', activity);
   app.route('/', uploads);
 

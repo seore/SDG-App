@@ -366,6 +366,45 @@ describe('account deletion', () => {
   });
 });
 
+describe('learning path', () => {
+  it('awards a star each for lesson, quiz accuracy and missions', async () => {
+    const s = await newUser();
+    const mastery = async () =>
+      (await call('GET', '/me/mastery', undefined, s.access_token)).json.goals.find((g: any) => g.sdg_number === 6);
+
+    expect((await mastery()).stars).toBe(0);
+    expect((await call('POST', '/me/lessons/6/read', {}, s.access_token)).status).toBe(200);
+    expect((await call('POST', '/me/lessons/99/read', {}, s.access_token)).status).toBe(404);
+    expect((await mastery()).stars).toBe(1);
+
+    await call('POST', '/games/complete', {
+      game_id: 'quiz', score: 4, total: 5,
+      per_sdg: [{ sdg_number: 6, correct: 2, total: 2 }, { sdg_number: 13, correct: 2, total: 3 }],
+    }, s.access_token);
+    const afterQuiz = await mastery();
+    expect([afterQuiz.quiz_correct, afterQuiz.quiz_total, afterQuiz.stars]).toEqual([2, 2, 2]);
+
+    await call('POST', '/missions/m_short_shower/complete', {}, s.access_token);
+    await call('POST', '/missions/m_turn_off_tap/complete', {}, s.access_token);
+    const full = await mastery();
+    expect([full.missions, full.stars]).toEqual([2, 3]);
+
+    const all = (await call('GET', '/me/mastery', undefined, s.access_token)).json;
+    expect(all.goals).toHaveLength(17);
+    expect(all.total_stars).toBe(3 + 0); // SDG 13 quiz was 2/3 (67%) – below 70%
+  });
+
+  it('ignores per-goal results that do not add up', async () => {
+    const s = await newUser();
+    await call('POST', '/games/complete', {
+      game_id: 'quiz', score: 2, total: 2,
+      per_sdg: [{ sdg_number: 1, correct: 9, total: 9 }],
+    }, s.access_token);
+    const g1 = (await call('GET', '/me/mastery', undefined, s.access_token)).json.goals[0];
+    expect(g1.quiz_total).toBe(0);
+  });
+});
+
 describe('feeds and profile', () => {
   it('marks your own completions and coarsens locations', async () => {
     const a = await newUser();

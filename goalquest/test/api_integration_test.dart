@@ -13,6 +13,7 @@ import 'package:goalquest/services/activity_service.dart';
 import 'package:goalquest/services/api_client.dart';
 import 'package:goalquest/services/auth_service.dart';
 import 'package:goalquest/services/impact_service.dart';
+import 'package:goalquest/services/learning_service.dart';
 import 'package:goalquest/services/live_data_service.dart';
 import 'package:goalquest/services/mission_catalog.dart';
 import 'package:goalquest/services/mission_progress_service.dart';
@@ -73,9 +74,19 @@ void main() {
       gameId: 'quiz', score: 8, total: 10, localXp: 0, sdgNumber: 4);
     expect(game.baseXp, 80);
 
+    await LearningService.instance.markLessonRead(6);
+    await ActivityService.instance.completeGame(
+      gameId: 'quiz', score: 2, total: 2, localXp: 0,
+      perSdg: const [SdgQuizResult(6, 2, 2)],
+    );
+    LearningService.instance.mastery.value = {};
+    await LearningService.instance.load();
+    expect(LearningService.instance.mastery.value[6]!.lessonRead, isTrue);
+    expect(LearningService.instance.mastery.value[6]!.quizStar, isTrue);
+
     final week = await WeeklyService.instance.load();
     expect(week.missions, 1);
-    expect(week.xp, mission.xp + 80);
+    expect(week.xp, mission.xp + 80 + 20);
     expect(week.topSdgs, isNotEmpty);
 
     final feed = await LiveDataService.instance.completionsStream.first;
