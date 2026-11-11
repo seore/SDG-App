@@ -100,6 +100,11 @@ void main() {
     expect(TeamService.instance.teams.value!.single.missionsThisWeek, 1);
     final detail = await TeamService.instance.detail(team.id);
     expect(detail.leaderboard.single.isMe, isTrue);
+    final insights = await TeamService.instance.insights(team.id);
+    expect(insights.members, 1);
+    expect(insights.students.single.isMe, isTrue);
+    expect(insights.students.single.lessonsRead, greaterThanOrEqualTo(0));
+    expect(insights.goals, hasLength(17));
     await TeamService.instance.leave(team.id);
     expect(TeamService.instance.teams.value, isEmpty);
 

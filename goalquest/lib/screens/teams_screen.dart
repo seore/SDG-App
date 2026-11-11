@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../services/api_client.dart';
+import 'class_insights_screen.dart';
 import '../services/team_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/app_card.dart';
@@ -542,6 +543,41 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> {
                   ),
                 ),
               ),
+              if (t.isOwner) ...[
+                const SizedBox(height: AppSpacing.md),
+                FadeSlideIn(
+                  delay: const Duration(milliseconds: 90),
+                  child: Pressable(
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => ClassInsightsScreen(team: t)),
+                    ),
+                    builder: (context, state) => AppCard(
+                      padding: const EdgeInsets.all(14),
+                      shadow: state == PressState.hovered ? AppShadows.raised : null,
+                      child: Row(
+                        children: [
+                          IconTile(icon: Icons.insights_rounded, color: AppColors.primary, size: 36),
+                          const SizedBox(width: AppSpacing.md),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text('Class insights', style: TextStyle(fontWeight: FontWeight.w600)),
+                                Text(
+                                  'Activity, lessons and quiz scores by student and goal',
+                                  style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Icon(Icons.chevron_right_rounded, color: AppColors.textTertiary),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
               const SizedBox(height: AppSpacing.xl),
               const SectionHeader(title: 'Leaderboard', subtitle: 'Missions this week'),
               AppCard(

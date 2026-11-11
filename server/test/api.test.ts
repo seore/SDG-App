@@ -302,6 +302,42 @@ describe('teams', () => {
     ]);
   });
 
+  it('gives the team creator class insights and lets them remove members', async () => {
+    const teacher = await newUser();
+    const pupil = await newUser();
+    const outsider = await newUser();
+    const team = (await call('POST', '/teams', { name: 'Class 8A' }, teacher.access_token)).json;
+    await call('POST', '/teams/join', { code: team.code }, pupil.access_token);
+
+    await call('POST', '/me/lessons/6/read', {}, pupil.access_token);
+    await call('POST', '/missions/m_short_shower/complete', {}, pupil.access_token);
+    await call('POST', '/games/complete', {
+      game_id: 'quiz', score: 1, total: 3,
+      per_sdg: [{ sdg_number: 13, correct: 1, total: 3 }],
+    }, pupil.access_token);
+
+    // Only the creator sees insights; outsiders cannot tell the team exists.
+    expect((await call('GET', `/teams/${team.id}/insights`, undefined, pupil.access_token)).status).toBe(403);
+    expect((await call('GET', `/teams/${team.id}/insights`, undefined, outsider.access_token)).status).toBe(404);
+
+    const res = await call('GET', `/teams/${team.id}/insights`, undefined, teacher.access_token);
+    expect(res.status).toBe(200);
+    const insights = res.json;
+    expect(insights.totals).toMatchObject({ members: 2, active_this_week: 1, missions_this_week: 1, lessons_read: 1 });
+    const p = insights.students.find((x: any) => x.user_id === pupil.user.id);
+    expect(p).toMatchObject({ lessons_read: 1, quiz_correct: 1, quiz_total: 3, missions_this_week: 1, stars: 1 });
+    expect(p.last_active).not.toBeNull();
+    expect(insights.students.find((x: any) => x.is_me).last_active).toBeNull();
+    expect(insights.goals).toHaveLength(17);
+    expect(insights.goals[5]).toMatchObject({ sdg_number: 6, lessons_read: 1, missions: 1, average_stars: 0.5 });
+    expect(insights.goals[12]).toMatchObject({ quiz_correct: 1, quiz_total: 3 });
+
+    expect((await call('DELETE', `/teams/${team.id}/members/${teacher.user.id}`, undefined, pupil.access_token)).status).toBe(403);
+    expect((await call('DELETE', `/teams/${team.id}/members/${teacher.user.id}`, undefined, teacher.access_token)).status).toBe(400);
+    expect((await call('DELETE', `/teams/${team.id}/members/${pupil.user.id}`, undefined, teacher.access_token)).status).toBe(200);
+    expect((await call('GET', `/teams/${team.id}`, undefined, pupil.access_token)).status).toBe(404);
+  });
+
   it('rejects bad codes, hides other teams and cleans up empty teams', async () => {
     const a = await newUser();
     const b = await newUser();
