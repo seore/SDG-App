@@ -6,6 +6,7 @@ import { apiError, type AppEnv, type Ctx } from '../context';
 import { hashPassword, randomToken, sha256, verifyPassword } from '../crypto';
 import { loadUser, toProfile, type UserRow } from '../profile';
 import { authRateLimit } from '../rate-limit';
+import { needsParentalConsent, requestParentalConsent } from './consent';
 
 const email = z.string().trim().toLowerCase().email().max(254);
 const password = z.string().min(6).max(200);
@@ -43,10 +44,38 @@ export const auth = new Hono<AppEnv>();
 auth.use('*', authRateLimit);
 
 auth.post('/signup', async (c) => {
+  const config = c.get('config');
+  const thisYear = config.now().getUTCFullYear();
   const body = z
-    .object({ email, password, username })
+    .object({
+      email,
+      password,
+      username,
+      birth_year: z.number().int().min(thisYear - 120).max(thisYear),
+      parent_email: email.optional(),
+      accept_privacy: z.literal(true),
+    })
     .safeParse(await c.req.json().catch(() => null));
-  if (!body.success) throw apiError(400, 'invalid_input', 'Check your username, email and password.');
+  if (!body.success) {
+    const missing = body.error.issues.map((i) => i.path[0]);
+    if (missing.includes('accept_privacy')) {
+      throw apiError(400, 'privacy_not_accepted', 'Please agree to the privacy policy to continue.');
+    }
+    if (missing.includes('birth_year')) {
+      throw apiError(400, 'invalid_birth_year', 'Enter the year you were born.');
+    }
+    throw apiError(400, 'invalid_input', 'Check your username, email and password.');
+  }
+
+  const childNeedsConsent = needsParentalConsent(body.data.birth_year, config);
+  if (childNeedsConsent) {
+    if (!body.data.parent_email) {
+      throw apiError(400, 'parent_email_required', "Enter a parent or guardian's email so they can approve your account.");
+    }
+    if (body.data.parent_email === body.data.email) {
+      throw apiError(400, 'invalid_parent_email', "Use your parent's email, not your own.");
+    }
+  }
 
   const db = c.get('db');
   const exists = await db.query('select 1 from users where lower(email) = $1', [body.data.email]);
@@ -55,11 +84,16 @@ auth.post('/signup', async (c) => {
   }
 
   const [user] = await db.query<UserRow>(
-    `insert into users (email, password_hash, username) values ($1, $2, $3)
+    `insert into users (email, password_hash, username, birth_year, privacy_accepted_at)
+     values ($1, $2, $3, $4, now())
      returning id, email, username, xp, streak, last_active_on, avatar_url, active_avatar_frame,
-               focus_sdgs`,
-    [body.data.email, await hashPassword(body.data.password), body.data.username],
+               focus_sdgs, consent_status`,
+    [body.data.email, await hashPassword(body.data.password), body.data.username, body.data.birth_year],
   );
+  if (childNeedsConsent) {
+    await requestParentalConsent(c, db, user!, body.data.parent_email!);
+    user!.consent_status = 'pending';
+  }
   return c.json(await issueSession(c, user!), 201);
 });
 
@@ -73,7 +107,7 @@ auth.post('/login', async (c) => {
     .get('db')
     .query<UserRow & { password_hash: string }>(
       `select id, email, username, xp, streak, last_active_on, avatar_url, active_avatar_frame,
-              focus_sdgs, password_hash
+              focus_sdgs, consent_status, password_hash
          from users where lower(email) = $1`,
       [body.data.email],
     );

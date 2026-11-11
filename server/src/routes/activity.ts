@@ -3,6 +3,7 @@ import { z } from 'zod';
 
 import { apiError, requireAuth, type AppEnv } from '../context';
 import { checkWithTimeout, type PhotoVerdict } from '../photo-check';
+import { canShare } from './consent';
 import { awardXp, loadUser, toProfile } from '../profile';
 import {
   games,
@@ -38,8 +39,10 @@ activity.post('/missions/:id/complete', async (c) => {
   const userId = c.get('userId');
   const now = c.get('config').now();
   const today = utcDay(now);
+  // Until a parent approves, nothing is shared: no photo, location or story.
+  const sharing = await canShare(db, userId);
   const photoKey =
-    body.data.photo_key && ownsKey(body.data.photo_key, userId) ? body.data.photo_key : null;
+    sharing && body.data.photo_key && ownsKey(body.data.photo_key, userId) ? body.data.photo_key : null;
 
   const [{ count }] = (await db.query<{ count: string | number }>(
     'select count(*) as count from mission_completions where user_id = $1 and completed_on = $2::date',
@@ -67,8 +70,8 @@ activity.post('/missions/:id/complete', async (c) => {
       mission.title,
       mission.sdgNumber,
       mission.xp,
-      body.data.lat ?? null,
-      body.data.lng ?? null,
+      sharing ? body.data.lat ?? null : null,
+      sharing ? body.data.lng ?? null : null,
       photoKey,
       today,
       mission.impact?.metric ?? null,
@@ -105,7 +108,7 @@ activity.post('/missions/:id/complete', async (c) => {
   }
 
   // Photos are only shown publicly once checked as safe to share.
-  await db.query(
+  if (sharing) await db.query(
     'insert into stories (user_id, user_name, message, sdg_number, photo_key, verified) values ($1, $2, $3, $4, $5, $6)',
     [
       userId,

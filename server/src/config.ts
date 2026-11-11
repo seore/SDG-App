@@ -15,6 +15,10 @@ export interface Mailer {
 }
 
 export interface AppConfig {
+  /** Users younger than this need a parent's consent (default 13). */
+  consentAge?: number;
+  /** Contact address shown in the privacy policy. */
+  privacyContact?: string;
   /** Rate limiter for /auth routes (Cloudflare binding); off when unset. */
   authLimiter?: Limiter;
   /** AI photo check (Claude vision); disabled when ANTHROPIC_API_KEY is unset. */
@@ -46,6 +50,8 @@ export interface EnvVars {
   S3_ACCESS_KEY_ID?: string;
   S3_SECRET_ACCESS_KEY?: string;
   ANTHROPIC_API_KEY?: string;
+  CONSENT_AGE?: string;
+  PRIVACY_CONTACT_EMAIL?: string;
 }
 
 /** Sends via Resend when configured; otherwise logs (local development). */
@@ -87,6 +93,8 @@ export function configFromEnv(env: EnvVars): AppConfig {
         }
       : undefined;
   return {
+    consentAge: env.CONSENT_AGE ? Number(env.CONSENT_AGE) : 13,
+    privacyContact: env.PRIVACY_CONTACT_EMAIL,
     photoChecker: env.ANTHROPIC_API_KEY ? createClaudePhotoChecker(env.ANTHROPIC_API_KEY) : undefined,
     loadPhoto: storage ? (key) => loadObject(storage, key) : undefined,
     deletePhoto: storage ? (key) => deleteObject(storage, key) : undefined,

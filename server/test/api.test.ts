@@ -45,6 +45,8 @@ async function newUser() {
     email: `User${n}@Example.com`,
     password: 'secret123',
     username: `user${n}`,
+    birth_year: 1990,
+    accept_privacy: true,
   });
   expect(res.status).toBe(201);
   return res.json as { access_token: string; refresh_token: string; user: any };
@@ -60,6 +62,8 @@ describe('auth', () => {
       email: `USER${n}@example.com`,
       password: 'secret123',
       username: 'dupe',
+      birth_year: 1990,
+      accept_privacy: true,
     });
     expect(dup.status).toBe(409);
 

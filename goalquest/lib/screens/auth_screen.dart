@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 
 import '../services/api_client.dart';
 import '../services/auth_service.dart';
+import '../services/privacy.dart';
 import '../services/mission_progress_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/app_card.dart';
@@ -351,11 +352,20 @@ class _SignUpFormState extends State<_SignUpForm> {
   final _usernameCtrl = TextEditingController();
   final _emailCtrl = TextEditingController();
   final _passwordCtrl = TextEditingController();
+  final _birthYearCtrl = TextEditingController();
+  final _parentEmailCtrl = TextEditingController();
   bool _loading = false;
   bool _obscure = true;
+  bool _acceptedPrivacy = false;
+
+  int? get _birthYear => int.tryParse(_birthYearCtrl.text.trim());
+  bool get _needsParent =>
+      _birthYear != null && _birthYear! > 1900 && needsParentalConsent(_birthYear!);
 
   @override
   void dispose() {
+    _birthYearCtrl.dispose();
+    _parentEmailCtrl.dispose();
     _usernameCtrl.dispose();
     _emailCtrl.dispose();
     _passwordCtrl.dispose();
@@ -366,6 +376,12 @@ class _SignUpFormState extends State<_SignUpForm> {
     if (!_formKey.currentState!.validate()) return;
     final messenger = ScaffoldMessenger.of(context);
     final navigator = Navigator.of(context);
+    if (!_acceptedPrivacy) {
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Please agree to the privacy policy to continue.')),
+      );
+      return;
+    }
     setState(() => _loading = true);
 
     try {
@@ -373,6 +389,9 @@ class _SignUpFormState extends State<_SignUpForm> {
         email: _emailCtrl.text.trim(),
         password: _passwordCtrl.text,
         username: _usernameCtrl.text.trim(),
+        birthYear: _birthYear!,
+        acceptPrivacy: true,
+        parentEmail: _needsParent ? _parentEmailCtrl.text.trim() : null,
       );
       navigator.pushNamedAndRemoveUntil('/onboarding', (route) => false);
     } catch (e) {
@@ -418,6 +437,72 @@ class _SignUpFormState extends State<_SignUpForm> {
           ),
           const SizedBox(height: AppSpacing.md),
           TextFormField(
+            controller: _birthYearCtrl,
+            keyboardType: TextInputType.number,
+            textInputAction: TextInputAction.next,
+            maxLength: 4,
+            onChanged: (_) => setState(() {}),
+            validator: (v) {
+              final y = int.tryParse(v?.trim() ?? '');
+              final now = DateTime.now().year;
+              if (y == null || y < now - 120 || y > now) return 'Enter the year you were born';
+              return null;
+            },
+            decoration: const InputDecoration(
+              labelText: 'Year of birth',
+              hintText: 'e.g. 2011',
+              counterText: '',
+              prefixIcon: Icon(Icons.cake_outlined, size: 20),
+            ),
+          ),
+          AnimatedSize(
+            duration: AppDurations.spring,
+            curve: AppMotion.gentleSpring,
+            child: !_needsParent
+                ? const SizedBox(width: double.infinity)
+                : Padding(
+                    padding: const EdgeInsets.only(top: AppSpacing.md),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(AppSpacing.md),
+                          decoration: BoxDecoration(
+                            color: AppColors.primarySoft,
+                            borderRadius: BorderRadius.circular(AppRadius.md),
+                          ),
+                          child: Text(
+                            "Because you're under $consentAge, a parent or guardian needs to "
+                            "approve your account. Until then you can learn and play, but "
+                            "nothing is shared with other users.",
+                            style: TextStyle(fontSize: 13, color: AppColors.primaryDark),
+                          ),
+                        ),
+                        const SizedBox(height: AppSpacing.md),
+                        TextFormField(
+                          controller: _parentEmailCtrl,
+                          keyboardType: TextInputType.emailAddress,
+                          textInputAction: TextInputAction.next,
+                          validator: (v) {
+                            final err = _validateEmail(v);
+                            if (err != null) return "Enter a parent's email";
+                            if (v!.trim().toLowerCase() ==
+                                _emailCtrl.text.trim().toLowerCase()) {
+                              return "Use your parent's email, not your own";
+                            }
+                            return null;
+                          },
+                          decoration: const InputDecoration(
+                            labelText: "Parent or guardian's email",
+                            prefixIcon: Icon(Icons.family_restroom_rounded, size: 20),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+          ),
+          const SizedBox(height: AppSpacing.md),
+          TextFormField(
             controller: _passwordCtrl,
             obscureText: _obscure,
             textInputAction: TextInputAction.done,
@@ -437,7 +522,37 @@ class _SignUpFormState extends State<_SignUpForm> {
               ),
             ),
           ),
-          const SizedBox(height: AppSpacing.xl),
+          const SizedBox(height: AppSpacing.md),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Checkbox(
+                value: _acceptedPrivacy,
+                onChanged: (v) => setState(() => _acceptedPrivacy = v ?? false),
+              ),
+              Expanded(
+                child: Wrap(
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  children: [
+                    const Text('I agree to the ', style: TextStyle(fontSize: 13)),
+                    InkWell(
+                      onTap: openPrivacyPolicy,
+                      child: Text(
+                        'privacy policy',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: AppColors.primary,
+                          fontWeight: FontWeight.w600,
+                          decoration: TextDecoration.underline,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.md),
           _SubmitButton(
             label: 'Create account',
             loading: _loading,

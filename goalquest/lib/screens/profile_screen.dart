@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../data/sdg_data.dart';
 import '../services/api_client.dart';
 import '../services/demo_mode.dart';
+import '../services/privacy.dart';
 import '../services/profile_service.dart';
 import '../theme/app_theme.dart';
 import '../theme/theme_controller.dart';
@@ -267,6 +268,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         icon: Icons.storefront_rounded,
                         label: 'Shop',
                         onTap: () => Navigator.pushNamed(context, '/shop'),
+                      ),
+                      const Divider(indent: 52),
+                      _SettingsRow(
+                        icon: Icons.privacy_tip_outlined,
+                        label: 'Privacy policy',
+                        onTap: openPrivacyPolicy,
                       ),
                       const Divider(indent: 52),
                       _SettingsRow(

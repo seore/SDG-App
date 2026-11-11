@@ -53,6 +53,10 @@ class HomeScreen extends StatelessWidget {
                           onAvatarTap: () => onOpenTab?.call(4),
                         ),
                       ),
+                      if (profile.awaitingParentConsent) ...[
+                        const SizedBox(height: AppSpacing.lg),
+                        const _ParentConsentBanner(),
+                      ],
                       const SizedBox(height: AppSpacing.xl),
                       FadeSlideIn(
                         delay: const Duration(milliseconds: 60),
@@ -650,6 +654,69 @@ class _TeamSection extends StatelessWidget {
           ],
         );
       },
+    );
+  }
+}
+
+/// Shown until a parent approves a young user's account.
+class _ParentConsentBanner extends StatefulWidget {
+  const _ParentConsentBanner();
+
+  @override
+  State<_ParentConsentBanner> createState() => _ParentConsentBannerState();
+}
+
+class _ParentConsentBannerState extends State<_ParentConsentBanner> {
+  bool _sending = false;
+
+  Future<void> _resend() async {
+    final messenger = ScaffoldMessenger.of(context);
+    setState(() => _sending = true);
+    try {
+      await ProfileService.instance.resendParentConsent();
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Sent again. Ask your parent to check their email.')),
+      );
+    } catch (e) {
+      messenger.showSnackBar(SnackBar(content: Text('$e')));
+    } finally {
+      if (mounted) setState(() => _sending = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AppCard(
+      color: AppColors.primarySoft,
+      shadow: const [],
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(Icons.family_restroom_rounded, color: AppColors.primaryDark),
+          const SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Waiting for a parent to approve',
+                  style: TextStyle(fontWeight: FontWeight.w700, color: AppColors.primaryDark),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  'You can learn and play now. Sharing stories, photos, the map and teams unlock once a parent approves.',
+                  style: TextStyle(fontSize: 12, color: AppColors.primaryDark),
+                ),
+                TextButton(
+                  style: TextButton.styleFrom(padding: EdgeInsets.zero),
+                  onPressed: _sending ? null : _resend,
+                  child: Text(_sending ? 'Sending…' : 'Resend the email'),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

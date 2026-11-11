@@ -18,6 +18,11 @@ class UserProfile {
   /// Up to three SDGs the user wants to focus on.
   final List<int> focusSdgs;
 
+  /// 'not_required', 'pending' (waiting for a parent) or 'granted'.
+  final String consentStatus;
+
+  bool get awaitingParentConsent => consentStatus == 'pending';
+
   const UserProfile({
     required this.id,
     required this.email,
@@ -28,6 +33,7 @@ class UserProfile {
     this.lastActive,
     this.activeAvatarFrame,
     this.focusSdgs = const [],
+    this.consentStatus = 'not_required',
   });
 
   factory UserProfile.fromJson(Map<String, dynamic> map) {
@@ -44,6 +50,7 @@ class UserProfile {
       focusSdgs: ((map['focus_sdgs'] as List?) ?? const [])
           .map((e) => (e as num).toInt())
           .toList(),
+      consentStatus: (map['consent_status'] as String?) ?? 'not_required',
     );
   }
 
@@ -68,6 +75,7 @@ class UserProfile {
       activeAvatarFrame:
           clearAvatarFrame ? null : (activeAvatarFrame ?? this.activeAvatarFrame),
       focusSdgs: focusSdgs ?? this.focusSdgs,
+      consentStatus: consentStatus,
     );
   }
 }
@@ -213,6 +221,13 @@ class ProfileService {
     }
     final json = await _api.patch('/me', {'focus_sdgs': unique}) as Map<String, dynamic>;
     profileListenable.value = UserProfile.fromJson(json);
+  }
+
+  /// Re-sends the parent approval email (optionally to a corrected address).
+  Future<void> resendParentConsent([String? parentEmail]) async {
+    await _api.post('/me/consent/resend', {
+      if (parentEmail != null) 'parent_email': parentEmail,
+    });
   }
 
   /// Permanently deletes the account and all its data on the server.

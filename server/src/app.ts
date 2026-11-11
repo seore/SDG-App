@@ -7,6 +7,8 @@ import type { AppEnv, Ctx } from './context';
 import type { Db } from './db';
 import { activity } from './routes/activity';
 import { auth } from './routes/auth';
+import { consent } from './routes/consent';
+import { privacy } from './routes/privacy';
 import { feed } from './routes/feed';
 import { me } from './routes/me';
 import { teams } from './routes/teams';
@@ -34,6 +36,8 @@ export function createApp(resolve: (c: Ctx) => Deps) {
 
   app.get('/health', (c) => c.json({ ok: true }));
   app.route('/auth', auth);
+  app.route('/', privacy);
+  app.route('/', consent);
   app.route('/me', me);
   app.route('/feed', feed);
   app.route('/teams', teams);

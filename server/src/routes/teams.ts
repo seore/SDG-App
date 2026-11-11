@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { apiError, requireAuth, type AppEnv } from '../context';
 import type { Db } from '../db';
 import { utcDay } from '../rules';
+import { assertConsent } from './consent';
 
 export const MAX_TEAMS_PER_USER = 5;
 
@@ -67,6 +68,7 @@ teams.get('/', async (c) => {
 });
 
 teams.post('/', async (c) => {
+  await assertConsent(c);
   const body = z
     .object({
       name: z.string().trim().min(2).max(40),
@@ -103,6 +105,7 @@ teams.post('/', async (c) => {
 });
 
 teams.post('/join', async (c) => {
+  await assertConsent(c);
   const body = z
     .object({ code: z.string().trim().toUpperCase().regex(/^[A-Z0-9]{6}$/) })
     .safeParse(await c.req.json().catch(() => null));

@@ -53,6 +53,8 @@ async function user(app = withChecker) {
     email: `photo${n}@example.com`,
     password: 'secret123',
     username: `photo${n}`,
+    birth_year: 1990,
+    accept_privacy: true,
   });
   return { token: res.json.access_token as string, key: `mission-photos/${res.json.user.id}/p${n}.jpg` };
 }

@@ -24,11 +24,17 @@ class AuthService {
     required String email,
     required String password,
     required String username,
+    required int birthYear,
+    required bool acceptPrivacy,
+    String? parentEmail,
   }) async {
     final json = await _api.postPublic('/auth/signup', {
       'email': email,
       'password': password,
       'username': username,
+      'birth_year': birthYear,
+      'accept_privacy': acceptPrivacy,
+      if (parentEmail != null && parentEmail.isNotEmpty) 'parent_email': parentEmail,
     });
     await _afterSignIn(json as Map<String, dynamic>);
   }

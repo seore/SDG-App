@@ -40,12 +40,15 @@ void main() {
       email: email,
       password: 'secret123',
       username: 'Integration',
+      birthYear: 1995,
+      acceptPrivacy: true,
     );
     expect(ProfileService.instance.currentProfile?.username, 'Integration');
 
     // Duplicate sign-up gives a readable error.
     await expectLater(
-      AuthService.instance.signUp(email: email, password: 'secret123', username: 'Other'),
+      AuthService.instance.signUp(
+          email: email, password: 'secret123', username: 'Other', birthYear: 1995, acceptPrivacy: true),
       throwsA(isA<ApiException>().having((e) => e.code, 'code', 'email_taken')),
     );
 
