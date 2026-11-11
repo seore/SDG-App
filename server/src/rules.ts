@@ -65,17 +65,31 @@ export const games: Record<string, GameRule> = {
   },
 };
 
-export const shopPackIds = new Set([
-  'cosmetic_ocean_frame',
-  'cosmetic_sunrise_frame',
-  'cosmetic_star_badge',
-  'cosmetic_heart_badge',
-  'cosmetic_lightning_frame',
-  'cosmetic_gold_frame',
-  'cosmetic_eco_frame',
-  'dlc_trash_advanced',
-  'dlc_water_city',
-]);
+/** Rewards are earned through play, never bought. */
+export type Unlock = { type: 'level'; value: number } | { type: 'streak'; value: number };
+
+export const packUnlocks: Record<string, Unlock> = {
+  cosmetic_eco_frame: { type: 'level', value: 2 },
+  cosmetic_heart_badge: { type: 'streak', value: 3 },
+  cosmetic_ocean_frame: { type: 'level', value: 3 },
+  dlc_trash_advanced: { type: 'level', value: 4 },
+  cosmetic_sunrise_frame: { type: 'level', value: 5 },
+  cosmetic_star_badge: { type: 'streak', value: 7 },
+  dlc_water_city: { type: 'level', value: 6 },
+  cosmetic_lightning_frame: { type: 'level', value: 8 },
+  cosmetic_gold_frame: { type: 'level', value: 12 },
+};
+
+export const shopPackIds = new Set(Object.keys(packUnlocks));
+
+/** Same maths as the app's LevelInfo: 100 XP per level, starting at 1. */
+export function levelFor(xp: number): number {
+  return Math.floor(xp / 100) + 1;
+}
+
+export function meetsUnlock(unlock: Unlock, stats: { xp: number; streak: number }): boolean {
+  return unlock.type === 'level' ? levelFor(stats.xp) >= unlock.value : stats.streak >= unlock.value;
+}
 
 /** UTC calendar day as YYYY-MM-DD. */
 export function utcDay(d: Date): string {

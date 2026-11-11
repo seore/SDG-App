@@ -401,9 +401,17 @@ describe('feeds and profile', () => {
     const upd = await call('PATCH', '/me', { username: 'Eco Hero' }, s.access_token);
     expect(upd.json.username).toBe('Eco Hero');
 
-    expect((await call('POST', '/me/packs', { pack_id: 'cosmetic_gold_frame' }, s.access_token)).status).toBe(201);
+    // Rewards are earned, not bought: level 2 needs 100 XP.
+    const locked = await call('POST', '/me/packs', { pack_id: 'cosmetic_eco_frame' }, s.access_token);
+    expect(locked.status).toBe(403);
+    expect(locked.json.message).toBe('Reach level 2 to unlock this.');
+    for (const id of ['m_unplug', 'm_walk_instead', 'm_fan_not_ac', 'm_cleanup']) {
+      await call('POST', `/missions/${id}/complete`, {}, s.access_token); // 20+30+25+30 = 105 XP
+    }
+    expect((await call('POST', '/me/packs', { pack_id: 'cosmetic_eco_frame' }, s.access_token)).status).toBe(201);
+    expect((await call('POST', '/me/packs', { pack_id: 'cosmetic_gold_frame' }, s.access_token)).status).toBe(403);
     expect((await call('POST', '/me/packs', { pack_id: 'free_stuff' }, s.access_token)).status).toBe(400);
-    expect((await call('GET', '/me/packs', undefined, s.access_token)).json.pack_ids).toEqual(['cosmetic_gold_frame']);
+    expect((await call('GET', '/me/packs', undefined, s.access_token)).json.pack_ids).toEqual(['cosmetic_eco_frame']);
   });
 
   it('reports uploads as disabled when storage is not configured', async () => {

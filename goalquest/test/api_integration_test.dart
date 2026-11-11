@@ -92,8 +92,11 @@ void main() {
     await TeamService.instance.leave(team.id);
     expect(TeamService.instance.teams.value, isEmpty);
 
-    await OwnedPackService.instance.addOwnedPack('cosmetic_eco_frame');
-    expect(OwnedPackService.instance.ownedPackIds.value, contains('cosmetic_eco_frame'));
+    // Rewards are earned: a level-12 reward is still locked for a new user.
+    await expectLater(
+      OwnedPackService.instance.addOwnedPack('cosmetic_gold_frame'),
+      throwsA(isA<ApiException>().having((e) => e.code, 'code', 'locked')),
+    );
 
     // Session survives an "app restart" via the stored refresh token.
     final restored = await AuthService.instance.restore();

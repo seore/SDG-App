@@ -67,7 +67,7 @@ const List<MiniGameConfig> _miniGames = [
   MiniGameConfig(
     id: 'trash_sort_advanced',
     title: 'Trash Sorter: Advanced Pack',
-    subtitle: 'More items & bins (premium).',
+    subtitle: 'More items & bins. Unlocks at level 4.',
     sdgNumber: 12,
     icon: Icons.recycling_outlined,
     available: true,
@@ -416,7 +416,7 @@ class _GameCard extends StatelessWidget {
                       if (game.isPremium) ...[
                         const SizedBox(width: 6),
                         const PillChip(
-                          label: 'Premium',
+                          label: 'Reward',
                           color: Color(0xFF6D28D9),
                           fontSize: 9,
                         ),

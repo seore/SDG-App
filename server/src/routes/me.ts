@@ -4,7 +4,7 @@ import { z } from 'zod';
 import { apiError, requireAuth, type AppEnv } from '../context';
 import { verifyPassword } from '../crypto';
 import { loadUser, toProfile, type UserRow } from '../profile';
-import { shopPackIds, utcDay } from '../rules';
+import { meetsUnlock, packUnlocks, shopPackIds, utcDay } from '../rules';
 
 export const me = new Hono<AppEnv>();
 me.use('*', requireAuth);
@@ -191,11 +191,24 @@ me.get('/packs', async (c) => {
   return c.json({ pack_ids: rows.map((r) => r.pack_id) });
 });
 
-// NOTE: purchases are still simulated (no payment provider yet), as before.
+/** Claims a reward once its level or streak requirement is met. */
 me.post('/packs', async (c) => {
   const body = z.object({ pack_id: z.string() }).safeParse(await c.req.json().catch(() => null));
   if (!body.success || !shopPackIds.has(body.data.pack_id)) {
-    throw apiError(400, 'unknown_pack', 'That item is not in the shop.');
+    throw apiError(400, 'unknown_pack', 'That reward does not exist.');
+  }
+  const user = await loadUser(c.get('db'), c.get('userId'));
+  if (!user) throw apiError(401, 'invalid_token', 'Your account no longer exists.');
+  const profile = toProfile(user, c.get('config').now());
+  const unlock = packUnlocks[body.data.pack_id]!;
+  if (!meetsUnlock(unlock, profile)) {
+    throw apiError(
+      403,
+      'locked',
+      unlock.type === 'level'
+        ? `Reach level ${unlock.value} to unlock this.`
+        : `Keep a ${unlock.value}-day streak to unlock this.`,
+    );
   }
   await c
     .get('db')

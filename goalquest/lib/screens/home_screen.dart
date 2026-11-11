@@ -451,8 +451,8 @@ class _ExploreGrid extends StatelessWidget {
         route: '/impactDashboard',
       ),
       _ExploreTileData(
-        title: 'Shop',
-        subtitle: 'Frames and packs',
+        title: 'Rewards',
+        subtitle: 'Unlock frames by playing',
         icon: Icons.storefront_rounded,
         color: Color(0xFF6D28D9),
         route: '/shop',

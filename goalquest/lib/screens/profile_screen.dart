@@ -266,7 +266,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       const Divider(indent: 52),
                       _SettingsRow(
                         icon: Icons.storefront_rounded,
-                        label: 'Shop',
+                        label: 'Rewards',
                         onTap: () => Navigator.pushNamed(context, '/shop'),
                       ),
                       const Divider(indent: 52),
