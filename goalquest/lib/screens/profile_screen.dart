@@ -16,6 +16,7 @@ import '../widgets/app_scaffold.dart';
 import '../widgets/mastery_widgets.dart';
 import '../widgets/motion.dart';
 import '../widgets/progress_widgets.dart';
+import '../l10n/l10n.dart';
 import 'home_screen.dart' show ProfileAvatar;
 
 class _QuizSummary {
@@ -94,16 +95,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Sign out?'),
-        content: const Text('You can sign back in at any time.'),
+        title: Text(context.l10n.signOutQuestion),
+        content: Text(context.l10n.signOutBody),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
+            child: Text(context.l10n.cancel),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Sign out'),
+            child: Text(context.l10n.signOut),
           ),
         ],
       ),
@@ -118,7 +119,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     return AppScaffold(
-      title: 'Profile',
+      title: context.l10n.navProfile,
       body: _loading
           ? Center(
               child: CircularProgressIndicator(color: AppColors.primary),
@@ -162,8 +163,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         SectionHeader(
-                          title: 'Achievements',
-                          subtitle: '$earned of ${achievements.length} earned',
+                          title: context.l10n.achievements,
+                          subtitle: context.l10n.earnedOf(earned, achievements.length),
                         ),
                         _AchievementGrid(stats: stats),
                       ],
@@ -177,18 +178,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ValueListenableBuilder(
                   valueListenable: LearningService.instance.mastery,
                   builder: (context, _, __) => SectionHeader(
-                    title: 'Goal mastery',
+                    title: context.l10n.goalMastery,
                     subtitle:
-                        '${LearningService.instance.totalStars} of ${LearningService.maxStars} stars · lesson, quiz and action for each goal',
+                        context.l10n.goalMasterySubtitle(LearningService.instance.totalStars, LearningService.maxStars),
                   ),
                 ),
               ),
               section(4, const MasteryGrid()),
               const SizedBox(height: AppSpacing.xxl),
-              section(4, const SectionHeader(title: 'Focus SDGs')),
+              section(4, SectionHeader(title: context.l10n.focusSdgs)),
               section(5, _FocusSdgs(focus: profile.focusSdgs)),
               const SizedBox(height: AppSpacing.xxl),
-              section(6, const SectionHeader(title: 'Account')),
+              section(6, SectionHeader(title: context.l10n.account)),
               section(
                 7,
                 AppCard(
@@ -197,7 +198,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     children: [
                       _SettingsRow(
                         icon: Icons.mail_outline_rounded,
-                        label: 'Email',
+                        label: context.l10n.email,
                         value: profile.email,
                       ),
                       const Divider(indent: 52),
@@ -207,45 +208,57 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         valueListenable: ThemeController.instance.mode,
                         builder: (context, mode, _) => _SettingsRow(
                           icon: Icons.dark_mode_outlined,
-                          label: 'Appearance',
+                          label: context.l10n.appearance,
                           value: switch (mode) {
-                            ThemeMode.system => 'System',
-                            ThemeMode.light => 'Light',
-                            ThemeMode.dark => 'Dark',
+                            ThemeMode.system => context.l10n.themeSystem,
+                            ThemeMode.light => context.l10n.themeLight,
+                            ThemeMode.dark => context.l10n.themeDark,
                           },
                           onTap: () => _showAppearanceSheet(context),
                         ),
                       ),
                       const Divider(indent: 52),
+                      ValueListenableBuilder<Locale?>(
+                        valueListenable: LocaleController.instance.locale,
+                        builder: (context, locale, _) => _SettingsRow(
+                          icon: Icons.translate_rounded,
+                          label: context.l10n.language,
+                          value: locale == null
+                              ? context.l10n.languageSystem
+                              : LocaleController.languages[locale.languageCode],
+                          onTap: () => _showLanguageSheet(context),
+                        ),
+                      ),
+                      const Divider(indent: 52),
                       _SettingsRow(
                         icon: Icons.insights_rounded,
-                        label: 'Impact dashboard',
+                        label: context.l10n.impactDashboard,
                         onTap: () =>
                             Navigator.pushNamed(context, '/impactDashboard'),
                       ),
                       const Divider(indent: 52),
                       _SettingsRow(
                         icon: Icons.storefront_rounded,
-                        label: 'Rewards',
+                        label: context.l10n.rewards,
                         onTap: () => Navigator.pushNamed(context, '/shop'),
                       ),
                       const Divider(indent: 52),
                       _SettingsRow(
                         icon: Icons.privacy_tip_outlined,
-                        label: 'Privacy policy',
+                        label: context.l10n.privacyPolicy,
                         onTap: openPrivacyPolicy,
                       ),
                       const Divider(indent: 52),
                       _SettingsRow(
                         icon: Icons.logout_rounded,
-                        label: 'Sign out',
+                        label: context.l10n.signOut,
                         destructive: true,
                         onTap: _signOut,
                       ),
                       const Divider(indent: 52),
                       _SettingsRow(
                         icon: Icons.delete_forever_outlined,
-                        label: 'Delete account',
+                        label: context.l10n.deleteAccount,
                         destructive: true,
                         onTap: _deleteAccount,
                       ),
@@ -273,37 +286,37 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ? '–'
             : '${quiz.averagePercent.toStringAsFixed(0)}%';
         final quizCaption = !snapshot.hasData
-            ? 'Loading…'
+            ? context.l10n.loading
             : quiz.attempts == 0
-            ? 'No quizzes yet'
-            : '${quiz.attempts} attempt${quiz.attempts == 1 ? '' : 's'}';
+            ? context.l10n.noQuizzesYet
+            : context.l10n.quizAttempts(quiz.attempts);
 
         final tiles = [
           _StatTile(
-            label: 'Level',
+            label: context.l10n.level,
             value: '${info.level}',
-            caption: '${info.xpToNext} XP to next',
+            caption: context.l10n.xpToNext(info.xpToNext),
             icon: Icons.military_tech_rounded,
             color: AppColors.primary,
             progress: info.progress,
           ),
           _StatTile(
-            label: 'Impact XP',
+            label: context.l10n.impactXp,
             value: '${profile.xp}',
-            caption: 'Total earned',
+            caption: context.l10n.totalEarned,
             icon: Icons.bolt_rounded,
             color: AppColors.xp,
             animateValue: profile.xp,
           ),
           _StatTile(
-            label: 'Streak',
+            label: context.l10n.streak,
             value: '${profile.streak}',
-            caption: profile.streak == 1 ? 'day in a row' : 'days in a row',
+            caption: context.l10n.daysInARow(profile.streak),
             icon: Icons.local_fire_department_rounded,
             color: AppColors.streak,
           ),
           _StatTile(
-            label: 'Quiz average',
+            label: context.l10n.quizAverage,
             value: quizValue,
             caption: quizCaption,
             icon: Icons.quiz_rounded,
@@ -315,11 +328,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
           padding: EdgeInsets.zero,
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: 2,
             mainAxisSpacing: AppSpacing.md,
             crossAxisSpacing: AppSpacing.md,
-            mainAxisExtent: 116,
+            // Taller tiles for larger system text.
+            mainAxisExtent: 116 * MediaQuery.textScalerOf(context).scale(1).clamp(1.0, 2.0),
           ),
           children: tiles,
         );
@@ -338,7 +352,7 @@ class _IdentityCard extends StatelessWidget {
     final info = LevelInfo(profile.xp);
     final name = profile.username.trim().isNotEmpty
         ? profile.username.trim()
-        : 'Explorer';
+        : context.l10n.explorer;
 
     return AppCard(
       padding: const EdgeInsets.all(20),
@@ -373,7 +387,7 @@ class _IdentityCard extends StatelessWidget {
                 ),
                 const SizedBox(height: AppSpacing.sm),
                 PillChip(
-                  label: 'Level ${info.level} · ${_rankFor(info.level)}',
+                  label: context.l10n.levelRank(info.level, _rankFor(context, info.level)),
                   color: AppColors.primary,
                   icon: Icons.verified_rounded,
                 ),
@@ -385,12 +399,13 @@ class _IdentityCard extends StatelessWidget {
     );
   }
 
-  static String _rankFor(int level) {
-    if (level >= 20) return 'Global Leader';
-    if (level >= 10) return 'Changemaker';
-    if (level >= 5) return 'Advocate';
-    if (level >= 2) return 'Explorer';
-    return 'Newcomer';
+  static String _rankFor(BuildContext context, int level) {
+    final l = context.l10n;
+    if (level >= 20) return l.rankGlobalLeader;
+    if (level >= 10) return l.rankChangemaker;
+    if (level >= 5) return l.rankAdvocate;
+    if (level >= 2) return l.rankExplorer;
+    return l.rankNewcomer;
   }
 }
 
@@ -512,7 +527,7 @@ class _AchievementGridState extends State<_AchievementGrid> {
           if (sorted.length > _collapsedCount)
             TextButton(
               onPressed: () => setState(() => _expanded = !_expanded),
-              child: Text(_expanded ? 'Show fewer' : 'Show all ${sorted.length}'),
+              child: Text(_expanded ? context.l10n.showFewer : context.l10n.showAllCount(sorted.length)),
             ),
         ],
       ),
@@ -544,7 +559,7 @@ class _AchievementTile extends StatelessWidget {
               Text(a.description, textAlign: TextAlign.center, style: TextStyle(color: AppColors.textSecondary)),
               const SizedBox(height: AppSpacing.lg),
               if (earned)
-                Text('Earned', style: TextStyle(color: AppColors.success, fontWeight: FontWeight.w700))
+                Text(context.l10n.earned, style: TextStyle(color: AppColors.success, fontWeight: FontWeight.w700))
               else ...[
                 SpringProgressBar(value: a.progress(stats), color: a.color),
                 const SizedBox(height: 6),
@@ -661,13 +676,13 @@ class _FocusSdgs extends StatelessWidget {
             const SizedBox(width: AppSpacing.md),
             Expanded(
               child: Text(
-                'Pick up to 3 goals you care about. Your daily missions will include them.',
+                context.l10n.focusPrompt,
                 style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
               ),
             ),
             TextButton(
               onPressed: () => showFocusSdgPicker(context),
-              child: const Text('Choose'),
+              child: Text(context.l10n.choose),
             ),
           ],
         ),
@@ -719,7 +734,7 @@ class _FocusSdgs extends StatelessWidget {
             child: TextButton.icon(
               onPressed: () => showFocusSdgPicker(context),
               icon: const Icon(Icons.edit_rounded, size: 16),
-              label: const Text('Edit focus goals'),
+              label: Text(context.l10n.editFocusGoals),
             ),
           ),
         ],
@@ -815,14 +830,14 @@ class _FocusPickerState extends State<_FocusPicker> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Your focus goals',
+              context.l10n.yourFocusGoals,
               style: theme.textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.w700,
               ),
             ),
             const SizedBox(height: 2),
             Text(
-              'Choose up to $_max. Up to 2 of your daily missions will come from these.',
+              context.l10n.focusChooseUpTo(_max),
               style: theme.textTheme.bodySmall?.copyWith(
                 color: AppColors.textSecondary,
               ),
@@ -852,14 +867,14 @@ class _FocusPickerState extends State<_FocusPicker> {
               children: [
                 Expanded(
                   child: Text(
-                    '${_selected.length} of $_max selected',
+                    context.l10n.selectedOf(_selected.length, _max),
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(color: AppColors.textSecondary),
                   ),
                 ),
                 FilledButton(
                   onPressed: _saving ? null : _save,
-                  child: Text(_saving ? 'Saving…' : 'Save'),
+                  child: Text(_saving ? context.l10n.saving : context.l10n.save),
                 ),
               ],
             ),
@@ -1029,14 +1044,14 @@ class _NoProfileState extends StatelessWidget {
             ),
             const SizedBox(height: AppSpacing.lg),
             Text(
-              'No profile yet',
+              context.l10n.noProfileYet,
               style: theme.textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.w600,
               ),
             ),
             const SizedBox(height: AppSpacing.sm),
             Text(
-              'Log in or sign up to see your SDG stats.',
+              context.l10n.noProfileBody,
               textAlign: TextAlign.center,
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: AppColors.textSecondary,
@@ -1049,7 +1064,7 @@ class _NoProfileState extends StatelessWidget {
                 '/auth',
                 (route) => false,
               ),
-              child: const Text('Go to login'),
+              child: Text(context.l10n.goToLogin),
             ),
           ],
         ),
@@ -1076,7 +1091,7 @@ Future<void> _showAppearanceSheet(BuildContext context) {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Appearance',
+                context.l10n.appearance,
                 style: Theme.of(context)
                     .textTheme
                     .titleMedium
@@ -1087,21 +1102,21 @@ Future<void> _showAppearanceSheet(BuildContext context) {
                 width: double.infinity,
                 child: SegmentedButton<ThemeMode>(
                   showSelectedIcon: false,
-                  segments: const [
+                  segments: [
                     ButtonSegment(
                       value: ThemeMode.system,
-                      icon: Icon(Icons.brightness_auto_outlined, size: 18),
-                      label: Text('System'),
+                      icon: const Icon(Icons.brightness_auto_outlined, size: 18),
+                      label: Text(context.l10n.themeSystem),
                     ),
                     ButtonSegment(
                       value: ThemeMode.light,
-                      icon: Icon(Icons.light_mode_outlined, size: 18),
-                      label: Text('Light'),
+                      icon: const Icon(Icons.light_mode_outlined, size: 18),
+                      label: Text(context.l10n.themeLight),
                     ),
                     ButtonSegment(
                       value: ThemeMode.dark,
-                      icon: Icon(Icons.dark_mode_outlined, size: 18),
-                      label: Text('Dark'),
+                      icon: const Icon(Icons.dark_mode_outlined, size: 18),
+                      label: Text(context.l10n.themeDark),
                     ),
                   ],
                   selected: {mode},
@@ -1112,6 +1127,49 @@ Future<void> _showAppearanceSheet(BuildContext context) {
             ],
           ),
         ),
+      ),
+    ),
+  );
+}
+
+Future<void> _showLanguageSheet(BuildContext context) {
+  return showModalBottomSheet<void>(
+    context: context,
+    showDragHandle: true,
+    builder: (context) => SafeArea(
+      child: ValueListenableBuilder<Locale?>(
+        valueListenable: LocaleController.instance.locale,
+        builder: (context, locale, _) {
+          final l = context.l10n;
+          final options = <String?, String>{null: l.languageSystem, ...LocaleController.languages};
+          return Padding(
+            padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(l.language, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+                const SizedBox(height: AppSpacing.sm),
+                RadioGroup<String?>(
+                  groupValue: locale?.languageCode,
+                  onChanged: (code) => LocaleController.instance.setLanguage(code),
+                  child: Column(
+                    children: [
+                      for (final e in options.entries)
+                        RadioListTile<String?>(
+                          value: e.key,
+                          title: Text(e.value),
+                          contentPadding: EdgeInsets.zero,
+                        ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                Text(l.languageNote, style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+              ],
+            ),
+          );
+        },
       ),
     ),
   );
@@ -1158,14 +1216,13 @@ class _DeleteAccountDialogState extends State<_DeleteAccountDialog> {
   Widget build(BuildContext context) {
     final needsPassword = !DemoMode.enabled;
     return AlertDialog(
-      title: const Text('Delete your account?'),
+      title: Text(context.l10n.deleteAccountQuestion),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'This permanently deletes your profile, XP, missions, quiz and game '
-            'history, stories, photos and team memberships. It cannot be undone.',
+          Text(
+            context.l10n.deleteAccountBody,
           ),
           if (needsPassword) ...[
             const SizedBox(height: AppSpacing.lg),
@@ -1174,7 +1231,7 @@ class _DeleteAccountDialogState extends State<_DeleteAccountDialog> {
               obscureText: true,
               autofocus: true,
               decoration: InputDecoration(
-                labelText: 'Password',
+                labelText: context.l10n.password,
                 errorText: _error,
               ),
               onChanged: (_) => setState(() {}),
@@ -1185,12 +1242,12 @@ class _DeleteAccountDialogState extends State<_DeleteAccountDialog> {
       actions: [
         TextButton(
           onPressed: _busy ? null : () => Navigator.pop(context, false),
-          child: const Text('Cancel'),
+          child: Text(context.l10n.cancel),
         ),
         FilledButton(
           style: FilledButton.styleFrom(backgroundColor: const Color(0xFFDC2626)),
           onPressed: _busy || (needsPassword && _password.text.isEmpty) ? null : _delete,
-          child: Text(_busy ? 'Deleting…' : 'Delete forever'),
+          child: Text(_busy ? context.l10n.deleting : context.l10n.deleteForever),
         ),
       ],
     );
@@ -1218,7 +1275,7 @@ class _RemindersRow extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('Reminders', style: TextStyle(fontWeight: FontWeight.w500)),
+                    Text(context.l10n.reminders, style: TextStyle(fontWeight: FontWeight.w500)),
                     if (on)
                       InkWell(
                         onTap: () async {
@@ -1228,7 +1285,7 @@ class _RemindersRow extends StatelessWidget {
                         child: Padding(
                           padding: const EdgeInsets.symmetric(vertical: 2),
                           child: Text(
-                            'Daily at ${time.format(context)} · streak nudge at 8 pm',
+                            context.l10n.remindersOn(time.format(context)),
                             style: TextStyle(
                               fontSize: 12,
                               color: AppColors.primary,
@@ -1239,7 +1296,7 @@ class _RemindersRow extends StatelessWidget {
                       )
                     else
                       Text(
-                        'Daily mission reminder and streak nudge',
+                        context.l10n.remindersOff,
                         style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
                       ),
                   ],
@@ -1251,8 +1308,8 @@ class _RemindersRow extends StatelessWidget {
                   final messenger = ScaffoldMessenger.of(context);
                   final result = await n.setEnabled(v);
                   if (v && !result) {
-                    messenger.showSnackBar(const SnackBar(
-                      content: Text('Notifications are turned off for this app. Turn them on in your phone settings.'),
+                    messenger.showSnackBar(SnackBar(
+                      content: Text(l10nNow().notificationsBlocked),
                     ));
                   }
                 },

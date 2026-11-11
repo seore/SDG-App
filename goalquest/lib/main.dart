@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 
 import 'app.dart';
 import 'data/monthly_challenges.dart';
+import 'l10n/l10n.dart';
 import 'services/auth_service.dart';
 import 'services/demo_mode.dart';
 import 'services/mission_catalog.dart';
@@ -26,6 +27,7 @@ Future<void> main() async {
     MissionCatalogService.instance.load(),
     ChallengeCalendar.instance.load(),
     ThemeController.instance.load(),
+    LocaleController.instance.load(),
     NotificationService.instance.init(),
   ]);
 

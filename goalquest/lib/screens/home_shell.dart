@@ -12,6 +12,7 @@ import 'home_screen.dart';
 import 'live_map_screen.dart';
 import 'mini_games_screen.dart';
 import 'profile_screen.dart';
+import '../l10n/l10n.dart';
 
 /// Root of the signed-in app: bottom navigation between the main tabs.
 ///
@@ -107,31 +108,31 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
             selectedIndex: _index,
             onDestinationSelected: _select,
             animationDuration: AppDurations.medium,
-            destinations: const [
+            destinations: [
               NavigationDestination(
                 icon: Icon(Icons.home_outlined),
                 selectedIcon: Icon(Icons.home_rounded),
-                label: 'Home',
+                label: context.l10n.navHome,
               ),
               NavigationDestination(
                 icon: Icon(Icons.flag_outlined),
                 selectedIcon: Icon(Icons.flag_rounded),
-                label: 'Missions',
+                label: context.l10n.navMissions,
               ),
               NavigationDestination(
                 icon: Icon(Icons.sports_esports_outlined),
                 selectedIcon: Icon(Icons.sports_esports_rounded),
-                label: 'Play',
+                label: context.l10n.navPlay,
               ),
               NavigationDestination(
                 icon: Icon(Icons.public_outlined),
                 selectedIcon: Icon(Icons.public_rounded),
-                label: 'Map',
+                label: context.l10n.navMap,
               ),
               NavigationDestination(
                 icon: Icon(Icons.person_outline_rounded),
                 selectedIcon: Icon(Icons.person_rounded),
-                label: 'Profile',
+                label: context.l10n.navProfile,
               ),
             ],
           ),

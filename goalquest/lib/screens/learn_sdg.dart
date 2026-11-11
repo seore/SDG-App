@@ -24,7 +24,7 @@ class LearnSdgScreen extends StatefulWidget {
 }
 
 class _LearnSdgScreenState extends State<LearnSdgScreen> {
-  static const _chipExtent = 44.0 + AppSpacing.sm;
+  static const _chipExtent = 48.0 + AppSpacing.sm; // 48px touch targets
 
   late int _index = (widget.sdgNumber - 1).clamp(0, sdgGoals.length - 1);
   late final PageController _pages = PageController(initialPage: _index);
@@ -72,9 +72,10 @@ class _LearnSdgScreenState extends State<LearnSdgScreen> {
     _startReadTimer();
     // Keep the selected chip roughly centred in the strip.
     if (_strip.hasClients) {
-      final target = (index * _chipExtent -
-              (_strip.position.viewportDimension - _chipExtent) / 2)
-          .clamp(0.0, _strip.position.maxScrollExtent);
+      final target =
+          (index * _chipExtent -
+                  (_strip.position.viewportDimension - _chipExtent) / 2)
+              .clamp(0.0, _strip.position.maxScrollExtent);
       _strip.animateTo(
         target,
         duration: AppDurations.spring,
@@ -91,60 +92,68 @@ class _LearnSdgScreenState extends State<LearnSdgScreen> {
       title: 'Learn',
       body: Column(
         children: [
-          // Goal selector
+          // Goal selector (compact number badges: text grows at most 1.3×;
+          // each badge's tooltip and the lesson below carry the full name).
           SizedBox(
-            height: 56,
-            child: ListView.separated(
-              controller: _strip,
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
-              itemCount: sdgGoals.length,
-              separatorBuilder: (_, __) => const SizedBox(width: AppSpacing.sm),
-              itemBuilder: (context, i) {
-                final g = sdgGoals[i];
-                final selected = i == _index;
-                return Tooltip(
-                  message: g.shortTitle,
-                  child: Pressable(
-                    onTap: () => _goTo(i),
-                    hoverLift: 1,
-                    child: AnimatedContainer(
-                      duration: AppDurations.medium,
-                      curve: Curves.easeOut,
-                      width: 44,
-                      decoration: BoxDecoration(
-                        color: selected ? g.color : AppColors.surface,
-                        borderRadius: BorderRadius.circular(AppRadius.md),
-                        border: Border.all(
-                          color: selected ? g.color : AppColors.border,
+            height: 60,
+            child: MediaQuery.withClampedTextScaling(
+              maxScaleFactor: 1.3,
+              child: ListView.separated(
+                controller: _strip,
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 6,
+                ),
+                itemCount: sdgGoals.length,
+                separatorBuilder: (_, __) =>
+                    const SizedBox(width: AppSpacing.sm),
+                itemBuilder: (context, i) {
+                  final g = sdgGoals[i];
+                  final selected = i == _index;
+                  return Tooltip(
+                    message: g.shortTitle,
+                    child: Pressable(
+                      onTap: () => _goTo(i),
+                      hoverLift: 1,
+                      child: AnimatedContainer(
+                        duration: AppDurations.medium,
+                        curve: Curves.easeOut,
+                        width: 48,
+                        decoration: BoxDecoration(
+                          color: selected ? g.color : AppColors.surface,
+                          borderRadius: BorderRadius.circular(AppRadius.md),
+                          border: Border.all(
+                            color: selected ? g.color : AppColors.border,
+                          ),
+                          boxShadow: selected ? AppShadows.card : null,
                         ),
-                        boxShadow: selected ? AppShadows.card : null,
-                      ),
-                      alignment: Alignment.center,
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            '${g.number}',
-                            style: TextStyle(
-                              fontWeight: FontWeight.w700,
-                              color: selected ? Colors.white : g.color,
+                        alignment: Alignment.center,
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              '${g.number}',
+                              style: TextStyle(
+                                fontWeight: FontWeight.w700,
+                                color: selected ? Colors.white : g.color,
+                              ),
                             ),
-                          ),
-                          ValueListenableBuilder<Map<int, GoalMastery>>(
-                            valueListenable: LearningService.instance.mastery,
-                            builder: (context, m, _) => StarRow(
-                              stars: m[g.number]?.stars ?? 0,
-                              size: 6,
-                              color: selected ? Colors.white : g.color,
+                            ValueListenableBuilder<Map<int, GoalMastery>>(
+                              valueListenable: LearningService.instance.mastery,
+                              builder: (context, m, _) => StarRow(
+                                stars: m[g.number]?.stars ?? 0,
+                                size: 6,
+                                color: selected ? Colors.white : g.color,
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
-                  ),
-                );
-              },
+                  );
+                },
+              ),
             ),
           ),
           // Swipeable lessons
@@ -187,23 +196,27 @@ class _LearnSdgScreenState extends State<LearnSdgScreen> {
                             const SizedBox(height: 6),
                             Padding(
                               padding: const EdgeInsets.symmetric(
-                                  horizontal: AppSpacing.lg),
+                                horizontal: AppSpacing.lg,
+                              ),
                               child: ClipRRect(
-                                borderRadius:
-                                    BorderRadius.circular(AppRadius.pill),
+                                borderRadius: BorderRadius.circular(
+                                  AppRadius.pill,
+                                ),
                                 child: TweenAnimationBuilder<double>(
                                   tween: Tween(
-                                      end: (_index + 1) / sdgGoals.length),
+                                    end: (_index + 1) / sdgGoals.length,
+                                  ),
                                   duration: AppDurations.spring,
                                   curve: AppMotion.gentleSpring,
                                   builder: (context, v, _) =>
                                       LinearProgressIndicator(
-                                    value: v.clamp(0.0, 1.0),
-                                    minHeight: 4,
-                                    backgroundColor: AppColors.surfaceMuted,
-                                    valueColor:
-                                        AlwaysStoppedAnimation(current.color),
-                                  ),
+                                        value: v.clamp(0.0, 1.0),
+                                        minHeight: 4,
+                                        backgroundColor: AppColors.surfaceMuted,
+                                        valueColor: AlwaysStoppedAnimation(
+                                          current.color,
+                                        ),
+                                      ),
                                 ),
                               ),
                             ),
@@ -246,10 +259,10 @@ class _LessonPage extends StatelessWidget {
     final actions = goal.actions == null
         ? _defaultActions
         : goal.actions!
-            .split('\n')
-            .map((l) => l.replaceFirst(RegExp(r'^\s*•\s*'), '').trim())
-            .where((l) => l.isNotEmpty)
-            .toList();
+              .split('\n')
+              .map((l) => l.replaceFirst(RegExp(r'^\s*•\s*'), '').trim())
+              .where((l) => l.isNotEmpty)
+              .toList();
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
@@ -283,14 +296,16 @@ class _LessonPage extends StatelessWidget {
                             height: 56,
                             decoration: BoxDecoration(
                               color: goal.color,
-                              borderRadius:
-                                  BorderRadius.circular(AppRadius.md),
+                              borderRadius: BorderRadius.circular(AppRadius.md),
                             ),
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Icon(iconForSdg(goal.number),
-                                    color: Colors.white, size: 20),
+                                Icon(
+                                  iconForSdg(goal.number),
+                                  color: Colors.white,
+                                  size: 20,
+                                ),
                                 Text(
                                   '${goal.number}',
                                   style: const TextStyle(
@@ -359,8 +374,7 @@ class _LessonPage extends StatelessWidget {
                     color: goal.color,
                     child: Text(
                       goal.example!,
-                      style:
-                          theme.textTheme.bodyMedium?.copyWith(height: 1.55),
+                      style: theme.textTheme.bodyMedium?.copyWith(height: 1.55),
                     ),
                   ),
                 ],
@@ -370,14 +384,17 @@ class _LessonPage extends StatelessWidget {
                   shadow: const [],
                   child: Row(
                     children: [
-                      Icon(Icons.edit_note_rounded,
-                          color: AppColors.textSecondary),
+                      Icon(
+                        Icons.edit_note_rounded,
+                        color: AppColors.textSecondary,
+                      ),
                       const SizedBox(width: AppSpacing.md),
                       Expanded(
                         child: Text(
                           'A full lesson for this goal is coming soon.',
-                          style: theme.textTheme.bodyMedium
-                              ?.copyWith(color: AppColors.textSecondary),
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: AppColors.textSecondary,
+                          ),
                         ),
                       ),
                     ],
@@ -393,7 +410,8 @@ class _LessonPage extends StatelessWidget {
                     for (var i = 0; i < actions.length; i++)
                       Padding(
                         padding: EdgeInsets.only(
-                            bottom: i == actions.length - 1 ? 0 : 10),
+                          bottom: i == actions.length - 1 ? 0 : 10,
+                        ),
                         child: Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -419,8 +437,9 @@ class _LessonPage extends StatelessWidget {
                             Expanded(
                               child: Text(
                                 actions[i],
-                                style: theme.textTheme.bodyMedium
-                                    ?.copyWith(height: 1.45),
+                                style: theme.textTheme.bodyMedium?.copyWith(
+                                  height: 1.45,
+                                ),
                               ),
                             ),
                           ],
@@ -475,10 +494,14 @@ class _OfficialTargetsState extends State<_OfficialTargets> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              if (SdgTargets.instance.officialTitle(widget.goal.number) case final official?) ...[
+              if (SdgTargets.instance.officialTitle(widget.goal.number)
+                  case final official?) ...[
                 Text(
                   '“$official”',
-                  style: theme.textTheme.bodyMedium?.copyWith(fontStyle: FontStyle.italic, height: 1.45),
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    fontStyle: FontStyle.italic,
+                    height: 1.45,
+                  ),
                 ),
                 const SizedBox(height: AppSpacing.md),
               ],
@@ -498,12 +521,19 @@ class _OfficialTargetsState extends State<_OfficialTargets> {
                             style: TextStyle(
                               fontWeight: FontWeight.w700,
                               color: widget.goal.color,
-                              fontFeatures: const [FontFeature.tabularFigures()],
+                              fontFeatures: const [
+                                FontFeature.tabularFigures(),
+                              ],
                             ),
                           ),
                         ),
                         Expanded(
-                          child: Text(t.title, style: theme.textTheme.bodySmall?.copyWith(height: 1.45)),
+                          child: Text(
+                            t.title,
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              height: 1.45,
+                            ),
+                          ),
                         ),
                       ],
                     ),
@@ -513,7 +543,11 @@ class _OfficialTargetsState extends State<_OfficialTargets> {
                 TextButton(
                   style: TextButton.styleFrom(padding: EdgeInsets.zero),
                   onPressed: () => setState(() => _expanded = !_expanded),
-                  child: Text(_expanded ? 'Show fewer' : 'Show all ${targets.length} targets'),
+                  child: Text(
+                    _expanded
+                        ? 'Show fewer'
+                        : 'Show all ${targets.length} targets',
+                  ),
                 ),
               Text(
                 'Source: ${SdgTargets.source}. Wording as adopted by the UN; some dates (e.g. 2020) have passed.',
@@ -553,10 +587,9 @@ class _LessonSection extends StatelessWidget {
               Flexible(
                 child: Text(
                   title,
-                  style: Theme.of(context)
-                      .textTheme
-                      .titleSmall
-                      ?.copyWith(fontWeight: FontWeight.w600),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
                 ),
               ),
             ],

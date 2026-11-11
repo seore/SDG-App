@@ -281,7 +281,9 @@ class _MissionDetailScreenState extends State<MissionDetailScreen> {
                         height: 160,
                         width: double.infinity,
                         child:
-                            Image.file(File(_photo!.path), fit: BoxFit.cover),
+                            Image.file(File(_photo!.path),
+                                fit: BoxFit.cover,
+                                semanticLabel: 'Your mission photo'),
                       ),
                     ),
                   ),

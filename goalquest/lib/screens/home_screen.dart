@@ -19,6 +19,7 @@ import '../widgets/motion.dart';
 import '../widgets/progress_widgets.dart';
 import 'mission_detail_screen.dart';
 import 'teams_screen.dart';
+import '../l10n/l10n.dart';
 
 /// Home dashboard tab. [onOpenTab] switches the bottom navigation tab.
 class HomeScreen extends StatelessWidget {
@@ -82,20 +83,20 @@ class HomeScreen extends StatelessWidget {
                         child: ChallengeCard(),
                       ),
                       const SizedBox(height: AppSpacing.xxl),
-                      const FadeSlideIn(
+                      FadeSlideIn(
                         delay: Duration(milliseconds: 140),
-                        child: SectionHeader(title: 'Continue learning'),
+                        child: SectionHeader(title: context.l10n.continueLearning),
                       ),
                       const FadeSlideIn(
                         delay: Duration(milliseconds: 145),
                         child: NextLessonCard(),
                       ),
                       const SizedBox(height: AppSpacing.xxl),
-                      const FadeSlideIn(
+                      FadeSlideIn(
                         delay: Duration(milliseconds: 148),
                         child: SectionHeader(
-                          title: 'Your world',
-                          subtitle: 'Grows with every goal star you earn',
+                          title: context.l10n.yourWorld,
+                          subtitle: context.l10n.yourWorldSubtitle,
                         ),
                       ),
                       const FadeSlideIn(
@@ -108,9 +109,9 @@ class HomeScreen extends StatelessWidget {
                         child: _TeamSection(),
                       ),
                       const SizedBox(height: AppSpacing.xxl),
-                      const FadeSlideIn(
+                      FadeSlideIn(
                         delay: Duration(milliseconds: 180),
-                        child: SectionHeader(title: 'Explore'),
+                        child: SectionHeader(title: context.l10n.explore),
                       ),
                       const _ExploreGrid(),
                     ],
@@ -125,11 +126,11 @@ class HomeScreen extends StatelessWidget {
   }
 }
 
-String _greetingForNow() {
+String _greetingForNow(BuildContext context) {
   final h = DateTime.now().hour;
-  if (h < 12) return 'Good morning';
-  if (h < 18) return 'Good afternoon';
-  return 'Good evening';
+  if (h < 12) return context.l10n.goodMorning;
+  if (h < 18) return context.l10n.goodAfternoon;
+  return context.l10n.goodEvening;
 }
 
 class _Header extends StatelessWidget {
@@ -140,8 +141,9 @@ class _Header extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final name =
-        profile.username.trim().isNotEmpty ? profile.username.trim() : 'Explorer';
+    final name = profile.username.trim().isNotEmpty
+        ? profile.username.trim()
+        : context.l10n.explorer;
     return Row(
       children: [
         Expanded(
@@ -149,9 +151,10 @@ class _Header extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                _greetingForNow(),
-                style: theme.textTheme.bodyMedium
-                    ?.copyWith(color: AppColors.textSecondary),
+                _greetingForNow(context),
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: AppColors.textSecondary,
+                ),
               ),
               const SizedBox(height: 2),
               Text(
@@ -166,10 +169,18 @@ class _Header extends StatelessWidget {
         ),
         Pressable(
           onTap: onAvatarTap,
+          semanticLabel: context.l10n.openYourProfile,
+          // 48×48 touch target around the 40px avatar.
           child: SizedBox(
-            width: 40,
-            height: 40,
-            child: ProfileAvatar(profile: profile, fontSize: 16),
+            width: 48,
+            height: 48,
+            child: Center(
+              child: SizedBox(
+                width: 40,
+                height: 40,
+                child: ProfileAvatar(profile: profile, fontSize: 16),
+              ),
+            ),
           ),
         ),
       ],
@@ -198,25 +209,28 @@ class _ProgressCard extends StatelessWidget {
                   progress: info.progress,
                   size: 72,
                   child: Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          'LVL',
-                          style: theme.textTheme.labelSmall?.copyWith(
-                            color: AppColors.textSecondary,
-                            fontSize: 9,
-                            letterSpacing: 0.8,
+                    child: MediaQuery.withClampedTextScaling(
+                      maxScaleFactor: 1.3,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            context.l10n.levelShort,
+                            style: theme.textTheme.labelSmall?.copyWith(
+                              color: AppColors.textSecondary,
+                              fontSize: 9,
+                              letterSpacing: 0.8,
+                            ),
                           ),
-                        ),
-                        Text(
-                          '${info.level}',
-                          style: theme.textTheme.titleLarge?.copyWith(
-                            fontWeight: FontWeight.w700,
-                            height: 1.1,
+                          Text(
+                            '${info.level}',
+                            style: theme.textTheme.titleLarge?.copyWith(
+                              fontWeight: FontWeight.w700,
+                              height: 1.1,
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
                 ),
@@ -226,9 +240,10 @@ class _ProgressCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Impact XP',
-                        style: theme.textTheme.bodySmall
-                            ?.copyWith(color: AppColors.textSecondary),
+                        context.l10n.impactXp,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: AppColors.textSecondary,
+                        ),
                       ),
                       AnimatedCount(
                         value: profile.xp,
@@ -241,9 +256,10 @@ class _ProgressCard extends StatelessWidget {
                       SpringProgressBar(value: info.progress),
                       const SizedBox(height: 6),
                       Text(
-                        '${info.xpToNext} XP to level ${info.level + 1}',
-                        style: theme.textTheme.bodySmall
-                            ?.copyWith(color: AppColors.textSecondary),
+                        context.l10n.xpToLevel(info.xpToNext, info.level + 1),
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: AppColors.textSecondary,
+                        ),
                       ),
                     ],
                   ),
@@ -265,16 +281,24 @@ class _ProgressCard extends StatelessWidget {
                     ),
                   ),
                 ),
-                TextButton(
-                  onPressed: () =>
-                      Navigator.pushNamed(context, '/impactDashboard'),
-                  child: const Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text('View impact'),
-                      SizedBox(width: 2),
-                      Icon(Icons.arrow_forward_rounded, size: 16),
-                    ],
+                Flexible(
+                  child: TextButton(
+                    onPressed: () =>
+                        Navigator.pushNamed(context, '/impactDashboard'),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Flexible(
+                          child: Text(
+                            context.l10n.viewImpact,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        SizedBox(width: 2),
+                        Icon(Icons.arrow_forward_rounded, size: 16),
+                      ],
+                    ),
                   ),
                 ),
               ],
@@ -299,6 +323,7 @@ class ProfileAvatar extends StatelessWidget {
       return ClipOval(
         child: Image.network(
           url,
+          excludeFromSemantics: true, // The name is shown next to it.
           fit: BoxFit.cover,
           errorBuilder: (_, __, ___) => _initial(),
         ),
@@ -350,10 +375,10 @@ class _TodaySection extends StatelessWidget {
           children: [
             SectionHeader(
               title: "Today's missions",
-              subtitle: '$done of ${missions.length} completed',
+              subtitle: context.l10n.completedOf(done, missions.length),
               trailing: TextButton(
                 onPressed: onSeeAll,
-                child: const Text('View all'),
+                child: Text(context.l10n.viewAll),
               ),
             ),
             AppCard(
@@ -404,7 +429,10 @@ class _MissionRow extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           child: Row(
             children: [
-              Hero(tag: heroTag, child: IconTile(icon: icon, color: color)),
+              Hero(
+                tag: heroTag,
+                child: IconTile(icon: icon, color: color),
+              ),
               const SizedBox(width: AppSpacing.md),
               Expanded(
                 child: Column(
@@ -419,19 +447,21 @@ class _MissionRow extends StatelessWidget {
                         color: completed
                             ? AppColors.textTertiary
                             : AppColors.textPrimary,
-                        decoration:
-                            completed ? TextDecoration.lineThrough : null,
+                        decoration: completed
+                            ? TextDecoration.lineThrough
+                            : null,
                       ),
                     ),
                     const SizedBox(height: 2),
                     Text(
                       sdg != null
-                          ? 'SDG ${sdg.number} · ${sdg.shortTitle}'
+                          ? context.l10n.sdgLabel(sdg.number, sdg.shortTitle)
                           : mission.sdg,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: theme.textTheme.bodySmall
-                          ?.copyWith(color: AppColors.textSecondary),
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: AppColors.textSecondary,
+                      ),
                     ),
                   ],
                 ),
@@ -443,8 +473,11 @@ class _MissionRow extends StatelessWidget {
                 transitionBuilder: (c, a) =>
                     ScaleTransition(scale: a, child: c),
                 child: completed
-                    ? Icon(Icons.check_circle_rounded,
-                        key: ValueKey('done'), color: AppColors.success)
+                    ? Icon(
+                        Icons.check_circle_rounded,
+                        key: ValueKey('done'),
+                        color: AppColors.success,
+                      )
                     : Text(
                         '+${mission.xp} XP',
                         key: const ValueKey('xp'),
@@ -468,39 +501,41 @@ class _ExploreGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const tiles = [
+    final l = context.l10n;
+    final tiles = [
       _ExploreTileData(
-        title: 'Learn',
-        subtitle: 'Lessons on all 17 goals',
+        title: l.learn,
+        subtitle: l.learnSubtitle,
         icon: Icons.menu_book_rounded,
-        color: Color(0xFFC2410C),
+        color: const Color(0xFFC2410C),
         route: '/learnSdg',
       ),
       _ExploreTileData(
-        title: 'Community',
-        subtitle: 'Stories from others',
+        title: l.community,
+        subtitle: l.communitySubtitle,
         icon: Icons.forum_rounded,
-        color: Color(0xFFBE185D),
+        color: const Color(0xFFBE185D),
         route: '/community',
       ),
       _ExploreTileData(
-        title: 'Your impact',
-        subtitle: 'Progress over time',
+        title: l.yourImpact,
+        subtitle: l.yourImpactSubtitle,
         icon: Icons.insights_rounded,
-        color: Color(0xFF0369A1),
+        color: const Color(0xFF0369A1),
         route: '/impactDashboard',
       ),
       _ExploreTileData(
-        title: 'Rewards',
-        subtitle: 'Unlock frames by playing',
+        title: l.rewards,
+        subtitle: l.rewardsSubtitle,
         icon: Icons.storefront_rounded,
-        color: Color(0xFF6D28D9),
+        color: const Color(0xFF6D28D9),
         route: '/shop',
       ),
     ];
 
     // Fixed height (scaled with text size) so tiles never clip on narrow phones.
-    final tileHeight = 118 * MediaQuery.textScalerOf(context).scale(1).clamp(1.0, 1.6);
+    final tileHeight =
+        118 * MediaQuery.textScalerOf(context).scale(1).clamp(1.0, 1.6);
     return GridView(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
@@ -562,8 +597,11 @@ class _ExploreTile extends StatelessWidget {
                       : Offset.zero,
                   duration: AppDurations.medium,
                   curve: AppMotion.spring,
-                  child: Icon(Icons.arrow_outward_rounded,
-                      size: 16, color: AppColors.textTertiary),
+                  child: Icon(
+                    Icons.arrow_outward_rounded,
+                    size: 16,
+                    color: AppColors.textTertiary,
+                  ),
                 ),
               ],
             ),
@@ -572,20 +610,14 @@ class _ExploreTile extends StatelessWidget {
               data.title,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                fontWeight: FontWeight.w600,
-                fontSize: 14,
-              ),
+              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
             ),
             const SizedBox(height: 2),
             Text(
               data.subtitle,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                color: AppColors.textSecondary,
-                fontSize: 12,
-              ),
+              style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
             ),
           ],
         ),
@@ -607,27 +639,33 @@ class _LoggedOutState extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             IconTile(
-                icon: Icons.lock_outline_rounded,
-                color: AppColors.primary,
-                size: 56),
+              icon: Icons.lock_outline_rounded,
+              color: AppColors.primary,
+              size: 56,
+            ),
             const SizedBox(height: AppSpacing.lg),
             Text(
               "You're not signed in",
-              style: theme.textTheme.titleMedium
-                  ?.copyWith(fontWeight: FontWeight.w600),
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
             ),
             const SizedBox(height: AppSpacing.sm),
             Text(
-              'Log in or sign up to start earning XP and tracking your SDG impact.',
+              context.l10n.loginToStart,
               textAlign: TextAlign.center,
-              style: theme.textTheme.bodyMedium
-                  ?.copyWith(color: AppColors.textSecondary),
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: AppColors.textSecondary,
+              ),
             ),
             const SizedBox(height: AppSpacing.lg),
             FilledButton(
               onPressed: () => Navigator.pushNamedAndRemoveUntil(
-                  context, '/auth', (route) => false),
-              child: const Text('Go to login'),
+                context,
+                '/auth',
+                (route) => false,
+              ),
+              child: Text(context.l10n.goToLogin),
             ),
           ],
         ),
@@ -650,11 +688,11 @@ class _TeamSection extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             SectionHeader(
-              title: 'Team challenge',
+              title: context.l10n.teamChallenge,
               trailing: hasTeams
                   ? TextButton(
                       onPressed: () => Navigator.pushNamed(context, '/teams'),
-                      child: Text(teams.length > 1 ? 'All teams' : 'Manage'),
+                      child: Text(teams.length > 1 ? context.l10n.allTeams : context.l10n.manage),
                     )
                   : null,
             ),
@@ -665,7 +703,9 @@ class _TeamSection extends StatelessWidget {
                 pressedScale: 0.985,
                 onTap: () => Navigator.pushNamed(context, '/teams'),
                 builder: (context, state) => AppCard(
-                  shadow: state == PressState.hovered ? AppShadows.raised : null,
+                  shadow: state == PressState.hovered
+                      ? AppShadows.raised
+                      : null,
                   child: Row(
                     children: [
                       const IconTile(
@@ -678,12 +718,12 @@ class _TeamSection extends StatelessWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text(
-                              'Team up with your class',
+                            Text(
+                              context.l10n.teamUpTitle,
                               style: TextStyle(fontWeight: FontWeight.w600),
                             ),
                             Text(
-                              'Set a weekly target and reach it together.',
+                              context.l10n.teamUpBody,
                               style: TextStyle(
                                 fontSize: 12,
                                 color: AppColors.textSecondary,
@@ -692,7 +732,10 @@ class _TeamSection extends StatelessWidget {
                           ],
                         ),
                       ),
-                      Icon(Icons.chevron_right_rounded, color: AppColors.textTertiary),
+                      Icon(
+                        Icons.chevron_right_rounded,
+                        color: AppColors.textTertiary,
+                      ),
                     ],
                   ),
                 ),
@@ -721,7 +764,9 @@ class _ParentConsentBannerState extends State<_ParentConsentBanner> {
     try {
       await ProfileService.instance.resendParentConsent();
       messenger.showSnackBar(
-        const SnackBar(content: Text('Sent again. Ask your parent to check their email.')),
+        SnackBar(
+          content: Text(l10nNow().consentResent),
+        ),
       );
     } catch (e) {
       messenger.showSnackBar(SnackBar(content: Text('$e')));
@@ -745,18 +790,21 @@ class _ParentConsentBannerState extends State<_ParentConsentBanner> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Waiting for a parent to approve',
-                  style: TextStyle(fontWeight: FontWeight.w700, color: AppColors.primaryDark),
+                  context.l10n.waitingForParent,
+                  style: TextStyle(
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.primaryDark,
+                  ),
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  'You can learn and play now. Sharing stories, photos, the map and teams unlock once a parent approves.',
+                  context.l10n.waitingForParentBody,
                   style: TextStyle(fontSize: 12, color: AppColors.primaryDark),
                 ),
                 TextButton(
                   style: TextButton.styleFrom(padding: EdgeInsets.zero),
                   onPressed: _sending ? null : _resend,
-                  child: Text(_sending ? 'Sending…' : 'Resend the email'),
+                  child: Text(_sending ? context.l10n.sending : context.l10n.resendEmail),
                 ),
               ],
             ),

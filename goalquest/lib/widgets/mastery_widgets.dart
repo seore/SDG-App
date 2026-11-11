@@ -13,7 +13,12 @@ class StarRow extends StatelessWidget {
   final double size;
   final Color color;
 
-  const StarRow({super.key, required this.stars, this.size = 12, required this.color});
+  const StarRow({
+    super.key,
+    required this.stars,
+    this.size = 12,
+    required this.color,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -31,11 +36,15 @@ class StarRow extends StatelessWidget {
                       height: size,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: i < stars ? color : color.withValues(alpha: 0.25),
+                        color: i < stars
+                            ? color
+                            : color.withValues(alpha: 0.25),
                       ),
                     )
                   : Icon(
-                      i < stars ? Icons.star_rounded : Icons.star_outline_rounded,
+                      i < stars
+                          ? Icons.star_rounded
+                          : Icons.star_outline_rounded,
                       size: size,
                       color: i < stars ? color : color.withValues(alpha: 0.4),
                     ),
@@ -60,11 +69,12 @@ class NextLessonCard extends StatelessWidget {
         final hint = !next.lessonRead
             ? 'Read the lesson'
             : !next.quizStar
-                ? 'Try the quiz to earn a star'
-                : 'Do 2 missions for this goal';
+            ? 'Try the quiz to earn a star'
+            : 'Do 2 missions for this goal';
         return Pressable(
           pressedScale: 0.985,
-          onTap: () => Navigator.pushNamed(context, '/learnSdg', arguments: goal.number),
+          onTap: () =>
+              Navigator.pushNamed(context, '/learnSdg', arguments: goal.number),
           builder: (context, state) => AppCard(
             shadow: state == PressState.hovered ? AppShadows.raised : null,
             child: Row(
@@ -90,13 +100,22 @@ class NextLessonCard extends StatelessWidget {
                         style: const TextStyle(fontWeight: FontWeight.w600),
                       ),
                       const SizedBox(height: 2),
-                      Text(hint, style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                      Text(
+                        hint,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
                       const SizedBox(height: 4),
                       StarRow(stars: next.stars, size: 14, color: goal.color),
                     ],
                   ),
                 ),
-                Icon(Icons.chevron_right_rounded, color: AppColors.textTertiary),
+                Icon(
+                  Icons.chevron_right_rounded,
+                  color: AppColors.textTertiary,
+                ),
               ],
             ),
           ),
@@ -116,44 +135,66 @@ class MasteryGrid extends StatelessWidget {
       valueListenable: LearningService.instance.mastery,
       builder: (context, m, _) => AppCard(
         padding: const EdgeInsets.all(AppSpacing.md),
-        child: GridView(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          padding: EdgeInsets.zero,
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 6,
-            mainAxisSpacing: 6,
-            crossAxisSpacing: 6,
-            mainAxisExtent: 58,
-          ),
-          children: [
-            for (final g in sdgGoals)
-              Tooltip(
-                message: '${g.shortTitle}: ${m[g.number]?.stars ?? 0} of 3 stars',
-                child: InkWell(
-                  borderRadius: BorderRadius.circular(AppRadius.sm),
-                  onTap: () => Navigator.pushNamed(context, '/learnSdg', arguments: g.number),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: g.color.withValues(alpha: (m[g.number]?.stars ?? 0) == 3 ? 0.18 : 0.07),
-                      borderRadius: BorderRadius.circular(AppRadius.sm),
-                      border: Border.all(color: g.color.withValues(alpha: 0.25)),
+        // Compact number badges; each has a tooltip and screen-reader label.
+        child: MediaQuery.withClampedTextScaling(
+          maxScaleFactor: 1.3,
+          child: GridView(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            padding: EdgeInsets.zero,
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 6,
+              mainAxisSpacing: 6,
+              crossAxisSpacing: 6,
+              mainAxisExtent:
+                  58 *
+                  MediaQuery.textScalerOf(context).scale(1).clamp(1.0, 1.3),
+            ),
+            children: [
+              for (final g in sdgGoals)
+                Tooltip(
+                  message:
+                      '${g.shortTitle}: ${m[g.number]?.stars ?? 0} of 3 stars',
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(AppRadius.sm),
+                    onTap: () => Navigator.pushNamed(
+                      context,
+                      '/learnSdg',
+                      arguments: g.number,
                     ),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          '${g.number}',
-                          style: TextStyle(fontWeight: FontWeight.w800, color: g.color),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: g.color.withValues(
+                          alpha: (m[g.number]?.stars ?? 0) == 3 ? 0.18 : 0.07,
                         ),
-                        const SizedBox(height: 4),
-                        StarRow(stars: m[g.number]?.stars ?? 0, size: 6, color: g.color),
-                      ],
+                        borderRadius: BorderRadius.circular(AppRadius.sm),
+                        border: Border.all(
+                          color: g.color.withValues(alpha: 0.25),
+                        ),
+                      ),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            '${g.number}',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w800,
+                              color: g.color,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          StarRow(
+                            stars: m[g.number]?.stars ?? 0,
+                            size: 6,
+                            color: g.color,
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
-              ),
-          ],
+            ],
+          ),
         ),
       ),
     );

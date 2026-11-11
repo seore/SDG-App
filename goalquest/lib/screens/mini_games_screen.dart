@@ -291,7 +291,7 @@ class _FeaturedGameCard extends StatelessWidget {
           children: [
             // Quiet tinted banner with an oversized icon watermark.
             Container(
-              height: 112,
+              height: 112 * MediaQuery.textScalerOf(context).scale(1).clamp(1.0, 1.3),
               width: double.infinity,
               decoration: BoxDecoration(
                 color: color.withValues(alpha: 0.07),

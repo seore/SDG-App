@@ -23,6 +23,10 @@ class Pressable extends StatefulWidget {
   final double hoverLift;
   final bool haptics;
 
+  /// What a screen reader announces. When null, the text inside the
+  /// child is merged into one label so the whole card reads as one button.
+  final String? semanticLabel;
+
   const Pressable({
     super.key,
     this.child,
@@ -31,6 +35,7 @@ class Pressable extends StatefulWidget {
     this.pressedScale = 0.97,
     this.hoverLift = 2,
     this.haptics = true,
+    this.semanticLabel,
   }) : assert(child != null || builder != null);
 
   @override
@@ -75,7 +80,7 @@ class _PressableState extends State<Pressable>
   Widget build(BuildContext context) {
     final child = widget.builder?.call(context, _state) ?? widget.child!;
 
-    return MouseRegion(
+    final pressable = MouseRegion(
       cursor: _enabled ? SystemMouseCursors.click : MouseCursor.defer,
       onEnter: (_) {
         _hovered = true;
@@ -110,6 +115,15 @@ class _PressableState extends State<Pressable>
           },
           child: child,
         ),
+      ),
+    );
+    if (!_enabled) return pressable;
+    return MergeSemantics(
+      child: Semantics(
+        button: true,
+        label: widget.semanticLabel,
+        excludeSemantics: widget.semanticLabel != null,
+        child: pressable,
       ),
     );
   }

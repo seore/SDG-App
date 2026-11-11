@@ -6,14 +6,15 @@ import 'package:flutter/services.dart';
 
 import '../theme/app_theme.dart';
 import 'motion.dart';
+import '../l10n/l10n.dart';
 
 /// What to show in the celebration.
 class CelebrationData {
   /// Big heading, e.g. "Mission complete" or "Quiz complete".
-  final String heading;
+  final String? heading; // defaults to "Mission complete"
 
   /// Label for the main XP row in the breakdown.
-  final String xpLabel;
+  final String? xpLabel; // defaults to "Mission XP"
 
   final String title;
   final String? subtitle;
@@ -29,8 +30,8 @@ class CelebrationData {
   final int? newLevel;
 
   const CelebrationData({
-    this.heading = 'Mission complete',
-    this.xpLabel = 'Mission XP',
+    this.heading,
+    this.xpLabel,
     required this.title,
     this.subtitle,
     required this.color,
@@ -48,7 +49,7 @@ Future<void> showCelebration(BuildContext context, CelebrationData data) {
     PageRouteBuilder<void>(
       opaque: false,
       barrierDismissible: true,
-      barrierLabel: 'Dismiss',
+      barrierLabel: context.l10n.dismiss,
       barrierColor: const Color(0x66101828),
       transitionDuration: AppDurations.medium,
       reverseTransitionDuration: AppDurations.fast,
@@ -231,7 +232,7 @@ class _CelebrationOverlayState extends State<CelebrationOverlay>
             ),
             const SizedBox(height: AppSpacing.lg),
             Text(
-              data.heading,
+              data.heading ?? context.l10n.missionComplete,
               style: theme.textTheme.titleLarge?.copyWith(
                 fontWeight: FontWeight.w700,
                 letterSpacing: -0.3,
@@ -263,7 +264,7 @@ class _CelebrationOverlayState extends State<CelebrationOverlay>
                       _RewardRow(
                         icon: Icons.bolt_rounded,
                         iconColor: AppColors.xp,
-                        label: data.xpLabel,
+                        label: data.xpLabel ?? context.l10n.missionXp,
                         value: '+${(data.xpEarned * _xp.value).round()}',
                       ),
                       if (data.streakBonus > 0) ...[
@@ -271,7 +272,7 @@ class _CelebrationOverlayState extends State<CelebrationOverlay>
                         _RewardRow(
                           icon: Icons.local_fire_department_rounded,
                           iconColor: AppColors.streak,
-                          label: '${data.streak}-day streak bonus',
+                          label: context.l10n.streakBonus(data.streak),
                           value: '+${(data.streakBonus * _xp.value).round()}',
                         ),
                       ],
@@ -311,7 +312,7 @@ class _CelebrationOverlayState extends State<CelebrationOverlay>
                       const SizedBox(width: 6),
                       Flexible(
                         child: Text(
-                          'Level up — you reached level ${data.newLevel}',
+                          context.l10n.levelUpReached(data.newLevel!),
                           style: TextStyle(
                             color: AppColors.primaryDark,
                             fontWeight: FontWeight.w600,
@@ -329,7 +330,7 @@ class _CelebrationOverlayState extends State<CelebrationOverlay>
               width: double.infinity,
               child: FilledButton(
                 onPressed: () => Navigator.of(context).pop(),
-                child: const Text('Continue'),
+                child: Text(context.l10n.continueLabel),
               ),
             ),
           ],
@@ -400,7 +401,7 @@ class _LevelBar extends StatelessWidget {
         Row(
           children: [
             Text(
-              'Level ${info.level}',
+              context.l10n.levelN(info.level),
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w600,

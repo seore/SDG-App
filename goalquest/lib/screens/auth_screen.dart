@@ -9,25 +9,26 @@ import '../theme/app_theme.dart';
 import '../widgets/app_card.dart';
 import '../widgets/brand.dart';
 import '../widgets/motion.dart';
+import '../l10n/l10n.dart';
 
 /// Turns API/network exceptions into a sentence a user can act on.
 /// The server already sends user-facing messages.
 String friendlyAuthError(Object e) {
   if (e is ApiException) return e.message;
-  return 'Something went wrong. Please try again.';
+  return l10nNow().authGenericError;
 }
 
 String? _validateEmail(String? v) {
   final value = v?.trim() ?? '';
-  if (value.isEmpty) return 'Enter your email';
+  if (value.isEmpty) return l10nNow().enterEmail;
   if (!RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(value)) {
-    return 'Enter a valid email';
+    return l10nNow().enterValidEmail;
   }
   return null;
 }
 
 String? _validatePassword(String? v) {
-  if ((v ?? '').length < 6) return 'Use at least 6 characters';
+  if ((v ?? '').length < 6) return l10nNow().passwordTooShort;
   return null;
 }
 
@@ -80,8 +81,8 @@ class _AuthScreenState extends State<AuthScreen> {
                       duration: AppDurations.medium,
                       child: Text(
                         _isLogin
-                            ? 'Welcome back. Pick up where you left off.'
-                            : 'Small actions, global impact. Join in.',
+                            ? context.l10n.welcomeBack
+                            : context.l10n.joinTagline,
                         key: ValueKey(_isLogin),
                         textAlign: TextAlign.center,
                         style: theme.textTheme.bodyMedium
@@ -136,8 +137,8 @@ class _AuthScreenState extends State<AuthScreen> {
                     onPressed: () => _setMode(!_isLogin),
                     child: Text(
                       _isLogin
-                          ? "New here? Create an account"
-                          : 'Already have an account? Log in',
+                          ? context.l10n.newHereCreateAccount
+                          : context.l10n.haveAccountLogIn,
                     ),
                   ),
                 ],
@@ -207,8 +208,8 @@ class _ModeToggle extends StatelessWidget {
           ),
           Row(
             children: [
-              option('Log in', true),
-              option('Sign up', false),
+              option(context.l10n.logIn, true),
+              option(context.l10n.signUp, false),
             ],
           ),
         ],
@@ -264,7 +265,7 @@ class _LoginFormState extends State<_LoginForm> {
     final email = _emailCtrl.text.trim();
     if (_validateEmail(email) != null) {
       messenger.showSnackBar(
-        const SnackBar(content: Text('Enter your email above first.')),
+        SnackBar(content: Text(context.l10n.enterEmailFirst)),
       );
       return;
     }
@@ -298,8 +299,8 @@ class _LoginFormState extends State<_LoginForm> {
             textInputAction: TextInputAction.next,
             autofillHints: const [AutofillHints.email],
             validator: _validateEmail,
-            decoration: const InputDecoration(
-              labelText: 'Email',
+            decoration: InputDecoration(
+              labelText: context.l10n.email,
               prefixIcon: Icon(Icons.mail_outline_rounded, size: 20),
             ),
           ),
@@ -312,10 +313,10 @@ class _LoginFormState extends State<_LoginForm> {
             validator: _validatePassword,
             onFieldSubmitted: (_) => _loading ? null : _login(),
             decoration: InputDecoration(
-              labelText: 'Password',
+              labelText: context.l10n.password,
               prefixIcon: const Icon(Icons.lock_outline_rounded, size: 20),
               suffixIcon: IconButton(
-                tooltip: _obscure ? 'Show password' : 'Hide password',
+                tooltip: _obscure ? context.l10n.showPassword : context.l10n.hidePassword,
                 icon: Icon(_obscure
                     ? Icons.visibility_off_outlined
                     : Icons.visibility_outlined),
@@ -327,11 +328,11 @@ class _LoginFormState extends State<_LoginForm> {
             alignment: Alignment.centerRight,
             child: TextButton(
               onPressed: _loading ? null : _onForgotPassword,
-              child: const Text('Forgot password?'),
+              child: Text(context.l10n.forgotPassword),
             ),
           ),
           const SizedBox(height: AppSpacing.sm),
-          _SubmitButton(label: 'Log in', loading: _loading, onPressed: _login),
+          _SubmitButton(label: context.l10n.logIn, loading: _loading, onPressed: _login),
         ],
       ),
     );
@@ -378,7 +379,7 @@ class _SignUpFormState extends State<_SignUpForm> {
     final navigator = Navigator.of(context);
     if (!_acceptedPrivacy) {
       messenger.showSnackBar(
-        const SnackBar(content: Text('Please agree to the privacy policy to continue.')),
+        SnackBar(content: Text(context.l10n.agreePrivacyFirst)),
       );
       return;
     }
@@ -414,12 +415,12 @@ class _SignUpFormState extends State<_SignUpForm> {
             autofillHints: const [AutofillHints.newUsername],
             validator: (v) {
               final value = v?.trim() ?? '';
-              if (value.length < 2) return 'Choose a username (2+ characters)';
-              if (value.length > 24) return 'Keep it under 24 characters';
+              if (value.length < 2) return context.l10n.usernameTooShort;
+              if (value.length > 24) return context.l10n.usernameTooLong;
               return null;
             },
-            decoration: const InputDecoration(
-              labelText: 'Username',
+            decoration: InputDecoration(
+              labelText: context.l10n.username,
               prefixIcon: Icon(Icons.person_outline_rounded, size: 20),
             ),
           ),
@@ -430,8 +431,8 @@ class _SignUpFormState extends State<_SignUpForm> {
             textInputAction: TextInputAction.next,
             autofillHints: const [AutofillHints.email],
             validator: _validateEmail,
-            decoration: const InputDecoration(
-              labelText: 'Email',
+            decoration: InputDecoration(
+              labelText: context.l10n.email,
               prefixIcon: Icon(Icons.mail_outline_rounded, size: 20),
             ),
           ),
@@ -445,11 +446,11 @@ class _SignUpFormState extends State<_SignUpForm> {
             validator: (v) {
               final y = int.tryParse(v?.trim() ?? '');
               final now = DateTime.now().year;
-              if (y == null || y < now - 120 || y > now) return 'Enter the year you were born';
+              if (y == null || y < now - 120 || y > now) return context.l10n.enterBirthYear;
               return null;
             },
-            decoration: const InputDecoration(
-              labelText: 'Year of birth',
+            decoration: InputDecoration(
+              labelText: context.l10n.birthYear,
               hintText: 'e.g. 2011',
               counterText: '',
               prefixIcon: Icon(Icons.cake_outlined, size: 20),
@@ -510,11 +511,11 @@ class _SignUpFormState extends State<_SignUpForm> {
             validator: _validatePassword,
             onFieldSubmitted: (_) => _loading ? null : _signUp(),
             decoration: InputDecoration(
-              labelText: 'Password',
-              helperText: 'At least 6 characters',
+              labelText: context.l10n.password,
+              helperText: context.l10n.passwordHelper,
               prefixIcon: const Icon(Icons.lock_outline_rounded, size: 20),
               suffixIcon: IconButton(
-                tooltip: _obscure ? 'Show password' : 'Hide password',
+                tooltip: _obscure ? context.l10n.showPassword : context.l10n.hidePassword,
                 icon: Icon(_obscure
                     ? Icons.visibility_off_outlined
                     : Icons.visibility_outlined),
@@ -534,11 +535,11 @@ class _SignUpFormState extends State<_SignUpForm> {
                 child: Wrap(
                   crossAxisAlignment: WrapCrossAlignment.center,
                   children: [
-                    const Text('I agree to the ', style: TextStyle(fontSize: 13)),
+                    Text(context.l10n.iAgreeToThe, style: const TextStyle(fontSize: 13)),
                     InkWell(
                       onTap: openPrivacyPolicy,
                       child: Text(
-                        'privacy policy',
+                        context.l10n.privacyPolicyLink,
                         style: TextStyle(
                           fontSize: 13,
                           color: AppColors.primary,
@@ -554,7 +555,7 @@ class _SignUpFormState extends State<_SignUpForm> {
           ),
           const SizedBox(height: AppSpacing.md),
           _SubmitButton(
-            label: 'Create account',
+            label: context.l10n.createAccount,
             loading: _loading,
             onPressed: _signUp,
           ),

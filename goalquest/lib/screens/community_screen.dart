@@ -148,6 +148,7 @@ class _StoryCard extends StatelessWidget {
                   aspectRatio: 4 / 3,
                   child: Image.network(
                     story.photoUrl!,
+                    semanticLabel: 'Photo shared by ${story.userName}',
                     fit: BoxFit.cover,
                     loadingBuilder: (context, child, progress) =>
                         progress == null

@@ -29,6 +29,7 @@ import 'screens/teams_screen.dart';
 import 'main.dart' show resetRouteFor;
 
 import 'models/mission.dart';
+import 'l10n/l10n.dart';
 
 class GoalQuestApp extends StatefulWidget {
   final String initialRoute;
@@ -51,6 +52,7 @@ class _GoalQuestAppState extends State<GoalQuestApp>
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     ThemeController.instance.mode.addListener(_applyPalette);
+    LocaleController.instance.locale.addListener(_applyLocale);
     _palette = _resolvePalette();
     AppColors.current = _palette;
     _appLinks = AppLinks();
@@ -68,6 +70,7 @@ class _GoalQuestAppState extends State<GoalQuestApp>
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     ThemeController.instance.mode.removeListener(_applyPalette);
+    LocaleController.instance.locale.removeListener(_applyLocale);
     _sub?.cancel();
     super.dispose();
   }
@@ -80,6 +83,8 @@ class _GoalQuestAppState extends State<GoalQuestApp>
 
   @override
   void didChangePlatformBrightness() => _applyPalette();
+
+  void _applyLocale() => setState(() {});
 
   /// Switches palette and repaints everything without losing state.
   void _applyPalette() {
@@ -98,6 +103,9 @@ class _GoalQuestAppState extends State<GoalQuestApp>
     return MaterialApp(
       navigatorKey: _navKey,
       title: 'SDG Journey',
+      locale: LocaleController.instance.locale.value,
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
       debugShowCheckedModeBanner: false,
       theme: AppTheme.build(_palette),
 
@@ -109,6 +117,12 @@ class _GoalQuestAppState extends State<GoalQuestApp>
       ],
 
       onGenerateRoute: _onGenerateRoute,
+      // Respect the system text size, up to 2× so layouts stay usable at the
+      // largest accessibility sizes.
+      builder: (context, child) => MediaQuery.withClampedTextScaling(
+        maxScaleFactor: 2.0,
+        child: child!,
+      ),
     );
   }
 

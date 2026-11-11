@@ -12,6 +12,7 @@ import '../widgets/app_scaffold.dart';
 import '../widgets/motion.dart';
 import '../widgets/progress_widgets.dart';
 import 'mission_detail_screen.dart';
+import '../l10n/l10n.dart';
 
 class DailyMissionsScreen extends StatelessWidget {
   const DailyMissionsScreen({super.key});
@@ -21,7 +22,7 @@ class DailyMissionsScreen extends StatelessWidget {
     final progress = MissionProgressService.instance;
 
     return AppScaffold(
-      title: 'Missions',
+      title: context.l10n.navMissions,
       body: ValueListenableBuilder(
         // Today's set depends on the user's focus goals.
         valueListenable: ProfileService.instance.profileListenable,
@@ -55,11 +56,11 @@ class DailyMissionsScreen extends StatelessWidget {
                               ),
                             ),
                             const SizedBox(height: AppSpacing.xl),
-                            const FadeSlideIn(
+                            FadeSlideIn(
                               delay: Duration(milliseconds: 60),
                               child: SectionHeader(
-                                title: 'Today',
-                                subtitle: 'A new set of missions every day',
+                                title: context.l10n.today,
+                                subtitle: context.l10n.todaySubtitle,
                               ),
                             ),
                             for (var i = 0; i < missions.length; i++)
@@ -106,7 +107,7 @@ class _DailyProgressCard extends StatelessWidget {
             children: [
               Expanded(
                 child: Text(
-                  allDone ? 'All missions complete' : 'Daily progress',
+                  allDone ? context.l10n.allMissionsComplete : context.l10n.dailyProgress,
                   style: theme.textTheme.titleSmall?.copyWith(
                     fontWeight: FontWeight.w600,
                   ),
@@ -130,8 +131,8 @@ class _DailyProgressCard extends StatelessWidget {
           const SizedBox(height: AppSpacing.sm),
           Text(
             allDone
-                ? 'Great work. New missions arrive tomorrow.'
-                : 'Complete small real-world actions to earn XP.',
+                ? context.l10n.missionsDoneForToday
+                : context.l10n.missionsIntro,
             style: theme.textTheme.bodySmall?.copyWith(
               color: AppColors.textSecondary,
             ),
@@ -200,7 +201,7 @@ class MissionListCard extends StatelessWidget {
                   const SizedBox(height: 2),
                   Text(
                     sdg != null
-                        ? 'SDG ${sdg.number} · ${sdg.shortTitle}'
+                        ? context.l10n.sdgLabel(sdg.number, sdg.shortTitle)
                         : mission.sdg,
                     style: theme.textTheme.bodySmall?.copyWith(
                       color: AppColors.textSecondary,
@@ -248,10 +249,10 @@ class MissionListCard extends StatelessWidget {
 (Color, String, IconData) statusStyle(MissionStatus status) {
   switch (status) {
     case MissionStatus.completed:
-      return (AppColors.success, 'Completed', Icons.check_circle_rounded);
+      return (AppColors.success, l10nNow().statusCompleted, Icons.check_circle_rounded);
     case MissionStatus.inProgress:
-      return (AppColors.warning, 'In progress', Icons.timelapse_rounded);
+      return (AppColors.warning, l10nNow().statusInProgress, Icons.timelapse_rounded);
     case MissionStatus.notStarted:
-      return (AppColors.textSecondary, 'Not started', Icons.circle_outlined);
+      return (AppColors.textSecondary, l10nNow().statusNotStarted, Icons.circle_outlined);
   }
 }

@@ -47,6 +47,9 @@ class AppPalette {
 
   bool get isDark => brightness == Brightness.dark;
 
+  /// Text and icons on [primary] (buttons); passes WCAG AA in both themes.
+  Color get onPrimary => isDark ? const Color(0xFF06201D) : Colors.white;
+
   static const light = AppPalette(
     brightness: Brightness.light,
     primary: Color(0xFF0F766E), // teal-700
@@ -62,8 +65,9 @@ class AppPalette {
     border: Color(0xFFE4E7EC),
     divider: Color(0xFFEDEFF2),
     textPrimary: Color(0xFF101828),
-    textSecondary: Color(0xFF667085),
-    textTertiary: Color(0xFF98A2B3),
+    // Meet WCAG AA (4.5:1) for small text on surface and background.
+    textSecondary: Color(0xFF5D6878),
+    textTertiary: Color(0xFF667085),
     cardShadow: [
       BoxShadow(color: Color(0x0A101828), blurRadius: 2, offset: Offset(0, 1)),
       BoxShadow(color: Color(0x0F101828), blurRadius: 12, offset: Offset(0, 4)),
@@ -90,7 +94,7 @@ class AppPalette {
     divider: Color(0xFF232832),
     textPrimary: Color(0xFFECEFF4),
     textSecondary: Color(0xFFA2AABA),
-    textTertiary: Color(0xFF6E7787),
+    textTertiary: Color(0xFF8A93A3), // WCAG AA on dark surfaces
     cardShadow: [
       BoxShadow(color: Color(0x40000000), blurRadius: 12, offset: Offset(0, 4)),
     ],
@@ -113,6 +117,7 @@ class AppColors {
   static Color get primary => current.primary;
   static Color get primaryDark => current.primaryDark;
   static Color get primarySoft => current.primarySoft;
+  static Color get onPrimary => current.onPrimary;
   static Color get xp => current.xp;
   static Color get streak => current.streak;
   static Color get success => current.success;
@@ -209,6 +214,7 @@ class AppTheme {
     final scheme = ColorScheme.fromSeed(
       seedColor: p.primary,
       primary: p.primary,
+      onPrimary: p.onPrimary,
       surface: p.surface,
       brightness: p.brightness,
     );
@@ -259,7 +265,7 @@ class AppTheme {
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
           backgroundColor: p.primary,
-          foregroundColor: Colors.white,
+          foregroundColor: p.onPrimary,
           textStyle: GoogleFonts.inter(fontWeight: FontWeight.w600),
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
           shape: RoundedRectangleBorder(
@@ -270,7 +276,7 @@ class AppTheme {
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           backgroundColor: p.primary,
-          foregroundColor: Colors.white,
+          foregroundColor: p.onPrimary,
           elevation: 0,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppRadius.md),

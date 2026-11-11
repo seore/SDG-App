@@ -9,6 +9,7 @@ import '../widgets/app_card.dart';
 import '../widgets/brand.dart';
 import '../widgets/motion.dart';
 import '../widgets/progress_widgets.dart';
+import '../l10n/l10n.dart';
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
@@ -35,31 +36,31 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   final _pages = PageController();
   int _index = 0;
 
-  static const _slides = [
+  static const _slideCount = 3;
+
+  List<_Slide> _slides(BuildContext context) => [
+
     _Slide(
-      eyebrow: 'WELCOME',
-      title: 'Small actions.\nGlobal impact.',
-      body:
-          'The UN set 17 Sustainable Development Goals for a fairer, greener world. Your everyday choices help reach them.',
-      illustration: _GoalsGrid(),
+      eyebrow: context.l10n.obEyebrow1,
+      title: context.l10n.obTitle1,
+      body: context.l10n.obBody1,
+      illustration: const _GoalsGrid(),
     ),
     _Slide(
-      eyebrow: 'DAILY MISSIONS',
-      title: 'Five quick actions,\nevery day.',
-      body:
-          'Unplug for an hour, take a shorter shower, walk instead of drive. Each mission takes minutes and earns XP.',
-      illustration: _MissionStack(),
+      eyebrow: context.l10n.obEyebrow2,
+      title: context.l10n.obTitle2,
+      body: context.l10n.obBody2,
+      illustration: const _MissionStack(),
     ),
     _Slide(
-      eyebrow: 'YOUR IMPACT',
-      title: 'Watch your impact\ngrow.',
-      body:
-          'Level up, keep your streak alive, and see your actions on a live map alongside people around the world.',
-      illustration: _ImpactPreview(),
+      eyebrow: context.l10n.obEyebrow3,
+      title: context.l10n.obTitle3,
+      body: context.l10n.obBody3,
+      illustration: const _ImpactPreview(),
     ),
   ];
 
-  bool get _isLast => _index == _slides.length - 1;
+  bool get _isLast => _index == _slideCount - 1;
 
   void _finish() {
     Navigator.of(context, rootNavigator: true)
@@ -115,7 +116,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     duration: AppDurations.medium,
                     child: TextButton(
                       onPressed: _isLast ? null : _finish,
-                      child: const Text('Skip'),
+                      child: Text(context.l10n.skip),
                     ),
                   ),
                 ],
@@ -125,12 +126,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             Expanded(
               child: PageView.builder(
                 controller: _pages,
-                itemCount: _slides.length,
+                itemCount: _slideCount,
                 onPageChanged: (i) {
                   HapticFeedback.selectionClick();
                   setState(() => _index = i);
                 },
-                itemBuilder: (context, i) => _SlideView(slide: _slides[i]),
+                itemBuilder: (context, i) => _SlideView(slide: _slides(context)[i]),
               ),
             ),
             // Footer
@@ -140,7 +141,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 constraints: const BoxConstraints(maxWidth: 420),
                 child: Column(
                   children: [
-                    _PageDots(count: _slides.length, index: _index),
+                    _PageDots(count: _slideCount, index: _index),
                     const SizedBox(height: AppSpacing.xl),
                     FilledButton(
                       onPressed: _next,
@@ -150,7 +151,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       child: AnimatedSwitcher(
                         duration: AppDurations.medium,
                         child: Text(
-                          _isLast ? 'Start your first mission' : 'Continue',
+                          _isLast ? context.l10n.startFirstMission : context.l10n.continueLabel,
                           key: ValueKey(_isLast),
                         ),
                       ),
